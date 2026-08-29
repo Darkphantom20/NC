@@ -203,7 +203,7 @@ function buildAcknowledgementPage(studentName: string, degreeProgram: string, ac
   for (const text of ackParas) {
     children.push(
       new Paragraph({
-        alignment: AlignmentType.JUSTIFY,
+        alignment: AlignmentType.JUSTIFIED,
         spacing: { after: 200 }, 
         children: [
           new TextRun({ text, size: 24, font: 'Times New Roman' }), 
@@ -268,7 +268,7 @@ function buildSectionPage(sectionTitle: string, sections: SectionData[]) {
       
       children.push(
         new Paragraph({
-          alignment: section.isBullet ? AlignmentType.LEFT : AlignmentType.JUSTIFY,
+          alignment: section.isBullet ? AlignmentType.LEFT : AlignmentType.JUSTIFIED,
           bullet: section.isBullet ? { level: 0 } : undefined,
           spacing: { after: 120 },
           children: [
