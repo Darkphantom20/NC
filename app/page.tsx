@@ -71,6 +71,49 @@ const fieldClass =
 const fileInputClass = 
   'mt-2 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20';
 
+async function compressImageDataUrl(file: File, maxWidth = 1400, quality = 0.75): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, maxWidth / Math.max(img.width, img.height));
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas is not available in this browser.'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('Failed to process image.'));
+      img.src = String(reader.result);
+    };
+    reader.onerror = () => reject(new Error('Could not read selected image.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function readErrorMessage(response: Response): Promise<string> {
+  const text = await response.text();
+
+  if (!text) {
+    return 'Failed to generate the report';
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+    return parsed?.error || text || 'Failed to generate the report';
+  } catch {
+    return text || 'Failed to generate the report';
+  }
+}
+
 export default function Home() {
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
@@ -161,7 +204,7 @@ export default function Home() {
   };
 
   // Handle standard appendix documents (Strictly Images Only)
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, appendixKey: keyof typeof defaultForm.appendices) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, appendixKey: keyof typeof defaultForm.appendices) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -170,19 +213,20 @@ export default function Home() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
+    try {
+      const compressed = await compressImageDataUrl(file);
       setForm((prev) => ({
         ...prev,
-        appendices: { ...prev.appendices, [appendixKey]: base64 }
+        appendices: { ...prev.appendices, [appendixKey]: compressed }
       }));
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error(error);
+      alert('The selected image could not be processed. Please try another file.');
+    }
   };
 
   // Base64 image uploader for Daily Journal
-  const handleJournalImageUpload = (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
+  const handleJournalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -191,20 +235,21 @@ export default function Home() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
+    try {
+      const compressed = await compressImageDataUrl(file, 1200, 0.7);
       setForm((prev) => {
         const newJournal = [...prev.appendices.dailyJournal];
         if (newJournal[weekIndex].images.length < 3) {
-          newJournal[weekIndex].images.push({ base64, detail: `Photo documentation for Week ${newJournal[weekIndex].weekNumber}` });
+          newJournal[weekIndex].images.push({ base64: compressed, detail: `Photo documentation for Week ${newJournal[weekIndex].weekNumber}` });
         } else {
           alert('Maximum of 3 images allowed per week.');
         }
         return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error(error);
+      alert('The selected journal image could not be processed. Please try another file.');
+    }
   };
 
   const handleGenerate = async () => {
@@ -219,8 +264,8 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to generate the report');
+        const errorMessage = await readErrorMessage(response);
+        throw new Error(errorMessage);
       }
 
       const blob = await response.blob();
