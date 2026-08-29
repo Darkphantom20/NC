@@ -37,7 +37,6 @@ const defaultForm = {
   selfEvaluation: 'The OJT journey served as a transformative learning process, pushing me to transition from theoretical classroom knowledge to practical, fast-paced technical execution.',
   relevancy: 'The host organization directly aligns with my degree program, allowing me to fulfill my expected professional goals of mastering enterprise systems administration and IT support workflows.',
   
-  // --- NEW APPENDICES STATE ---
   appendices: {
     dailyJournal: [
       {
@@ -45,13 +44,13 @@ const defaultForm = {
         totalHours: 40,
         narrative: 'This week focused on orientation and basic network troubleshooting.',
         activities: [
-          { date: 'Oct 2', accomplishment: 'Orientation', hours: 8 },
-          { date: 'Oct 3', accomplishment: 'Network cable termination', hours: 8 },
-          { date: 'Oct 4', accomplishment: 'Hardware maintenance', hours: 8 },
-          { date: 'Oct 5', accomplishment: 'Software updates', hours: 8 },
-          { date: 'Oct 6', accomplishment: 'Ticketing system review', hours: 8 }
+          { day: 'Day 1', date: 'Oct 2', accomplishment: 'Orientation and facility tour', hours: 8 },
+          { day: 'Day 2', date: 'Oct 3', accomplishment: 'Network cable termination and testing', hours: 8 },
+          { day: 'Day 3', date: 'Oct 4', accomplishment: 'PC hardware cleaning and maintenance', hours: 8 },
+          { day: 'Day 4', date: 'Oct 5', accomplishment: 'Operating system updates deployment', hours: 8 },
+          { day: 'Day 5', date: 'Oct 6', accomplishment: 'Helpdesk ticketing queue review', hours: 8 }
         ],
-        images: [] as { base64: string, detail: string }[]
+        images: [] as { base64: string; detail: string }[]
       }
     ],
     certParticipation: '',
@@ -88,7 +87,82 @@ export default function Home() {
     }));
   };
 
-  // Helper to convert uploaded files to Base64 for the API
+  // Add / Remove Weeks dynamically
+  const addWeek = () => {
+    setForm((prev) => {
+      const nextWeekNum = prev.appendices.dailyJournal.length + 1;
+      const startDayNum = (nextWeekNum - 1) * 5 + 1;
+      return {
+        ...prev,
+        appendices: {
+          ...prev.appendices,
+          dailyJournal: [
+            ...prev.appendices.dailyJournal,
+            {
+              weekNumber: nextWeekNum,
+              totalHours: 40,
+              narrative: '',
+              activities: Array.from({ length: 5 }, (_, i) => ({
+                day: `Day ${startDayNum + i}`,
+                date: '',
+                accomplishment: '',
+                hours: 8
+              })),
+              images: []
+            }
+          ]
+        }
+      };
+    });
+  };
+
+  const removeWeek = (weekIndex: number) => {
+    setForm((prev) => {
+      const updated = prev.appendices.dailyJournal.filter((_, idx) => idx !== weekIndex);
+      return { ...prev, appendices: { ...prev.appendices, dailyJournal: updated } };
+    });
+  };
+
+  // Add / Remove Days within a week (e.g. Day 1 to Last Day)
+  const addDay = (weekIndex: number) => {
+    setForm((prev) => {
+      const journal = [...prev.appendices.dailyJournal];
+      const week = journal[weekIndex];
+      const totalDaysOverall = journal.reduce((acc, w) => acc + w.activities.length, 0);
+      week.activities.push({
+        day: `Day ${totalDaysOverall + 1}`,
+        date: '',
+        accomplishment: '',
+        hours: 8
+      });
+      // Recalculate total hours
+      week.totalHours = week.activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
+      return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
+    });
+  };
+
+  const updateDayActivity = (weekIndex: number, dayIndex: number, key: string, value: any) => {
+    setForm((prev) => {
+      const journal = [...prev.appendices.dailyJournal];
+      const activities = [...journal[weekIndex].activities];
+      activities[dayIndex] = { ...activities[dayIndex], [key]: value };
+      journal[weekIndex].activities = activities;
+      // Recalculate total hours
+      journal[weekIndex].totalHours = activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
+      return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
+    });
+  };
+
+  const removeDay = (weekIndex: number, dayIndex: number) => {
+    setForm((prev) => {
+      const journal = [...prev.appendices.dailyJournal];
+      journal[weekIndex].activities = journal[weekIndex].activities.filter((_, idx) => idx !== dayIndex);
+      journal[weekIndex].totalHours = journal[weekIndex].activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
+      return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
+    });
+  };
+
+  // Base64 file uploader for standard appendix documents
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, appendixKey: keyof typeof defaultForm.appendices) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -104,7 +178,7 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  // Helper to upload images to the Daily Journal
+  // Base64 image uploader for Daily Journal (Max 3 pictures per week block)
   const handleJournalImageUpload = (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -115,9 +189,9 @@ export default function Home() {
       setForm((prev) => {
         const newJournal = [...prev.appendices.dailyJournal];
         if (newJournal[weekIndex].images.length < 3) {
-          newJournal[weekIndex].images.push({ base64, detail: `Week ${newJournal[weekIndex].weekNumber} Activity Image` });
+          newJournal[weekIndex].images.push({ base64, detail: `Photo documentation for Week ${newJournal[weekIndex].weekNumber}` });
         } else {
-          alert('Maximum of 3 images per week allowed.');
+          alert('Maximum of 3 images allowed per week.');
         }
         return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
       });
@@ -175,10 +249,6 @@ export default function Home() {
               <p className="mt-1 text-lg font-bold text-cyan-300 sm:text-xl">{status}</p>
             </div>
           </div>
-
-          <p className="mt-5 max-w-3xl text-sm text-slate-300 sm:mt-6 sm:text-lg">
-            A realistic internship report builder designed to turn your OJT experiences into a polished narrative report with chapter-based guidance and professional Word export.
-          </p>
         </header>
 
         <section className="mb-6 grid gap-4 sm:mb-10 sm:grid-cols-3 sm:gap-6">
@@ -309,38 +379,153 @@ export default function Home() {
             </SectionBlock>
 
             <SectionBlock title="7. Appendices">
-              <div className="space-y-6">
+              <div className="space-y-8">
                 
-                {/* Daily Journal & Images Block */}
-                <div className="rounded-xl border border-slate-700 bg-slate-900/50 p-4">
-                  <h3 className="mb-2 font-bold text-cyan-400">Daily Journal (Week 1)</h3>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Weekly Narrative
-                    <textarea value={form.appendices.dailyJournal[0].narrative} onChange={(e) => {
-                      const newJournal = [...form.appendices.dailyJournal];
-                      newJournal[0].narrative = e.target.value;
-                      setForm(prev => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal }}));
-                    }} rows={2} className={fieldClass} />
-                  </label>
-                  
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-slate-200">
-                      Upload Daily Pictures (Max 3)
-                      <input type="file" accept="image/*" onChange={(e) => handleJournalImageUpload(e, 0)} className={fileInputClass} />
-                    </label>
-                    <div className="mt-2 text-xs text-slate-400">
-                      {form.appendices.dailyJournal[0].images.length} / 3 Images Uploaded
-                    </div>
+                {/* Dynamic Daily Journal Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-cyan-300">Daily Journal (Day 1 to Last Day)</h3>
+                    <button
+                      type="button"
+                      onClick={addWeek}
+                      className="rounded-xl bg-cyan-500/20 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30"
+                    >
+                      + Add Week
+                    </button>
                   </div>
+
+                  {form.appendices.dailyJournal.map((week, weekIdx) => (
+                    <div key={weekIdx} className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white">WEEK {week.weekNumber} (Total Hours: {week.totalHours})</span>
+                        {form.appendices.dailyJournal.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeWeek(weekIdx)}
+                            className="text-xs text-rose-400 hover:underline"
+                          >
+                            Remove Week
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Day 1 ... Day N Entries */}
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Activities</p>
+                        {week.activities.map((act, dayIdx) => (
+                          <div key={dayIdx} className="grid gap-2 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-center bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                            <input
+                              type="text"
+                              placeholder="Day (e.g. Day 1)"
+                              value={act.day}
+                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)}
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Date (e.g. Oct 2)"
+                              value={act.date}
+                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)}
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Daily Accomplishment"
+                              value={act.accomplishment}
+                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)}
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                            />
+                            <input
+                              type="number"
+                              placeholder="Hours"
+                              value={act.hours}
+                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)}
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeDay(weekIdx, dayIdx)}
+                              className="text-rose-400 text-xs px-2 hover:text-rose-300"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => addDay(weekIdx)}
+                          className="mt-2 text-xs font-semibold text-cyan-400 hover:underline"
+                        >
+                          + Add Day to Week {week.weekNumber}
+                        </button>
+                      </div>
+
+                      {/* Weekly Narrative */}
+                      <label className="block text-sm font-medium text-slate-200">
+                        Weekly Narrative Report
+                        <textarea
+                          value={week.narrative}
+                          onChange={(e) => {
+                            const newJournal = [...form.appendices.dailyJournal];
+                            newJournal[weekIdx].narrative = e.target.value;
+                            setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                          }}
+                          rows={2}
+                          className={fieldClass}
+                        />
+                      </label>
+
+                      {/* 1-3 Pictures Uploader */}
+                      <div>
+                        <label className="block text-sm font-medium text-slate-200">
+                          Upload Pictures for Week {week.weekNumber} (Max 3)
+                          <input type="file" accept="image/*" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
+                        </label>
+                        
+                        {week.images.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {week.images.map((img, imgIdx) => (
+                              <div key={imgIdx} className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                <img src={img.base64} alt="Preview" className="h-10 w-10 object-cover rounded-lg" />
+                                <input
+                                  type="text"
+                                  placeholder="Caption / Picture Detail"
+                                  value={img.detail}
+                                  onChange={(e) => {
+                                    const newJournal = [...form.appendices.dailyJournal];
+                                    newJournal[weekIdx].images[imgIdx].detail = e.target.value;
+                                    setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                                  }}
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newJournal = [...form.appendices.dailyJournal];
+                                    newJournal[weekIdx].images = newJournal[weekIdx].images.filter((_, idx) => idx !== imgIdx);
+                                    setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                                  }}
+                                  className="text-xs text-rose-400 px-2"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Text Reports */}
+                {/* PRIME Narrative */}
                 <label className="block text-sm font-medium text-slate-200">
-                  Narrative Report of PRIME
+                  One Page Narrative Report of PRIME
                   <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={3} className={fieldClass} />
                 </label>
 
-                {/* Certificates / Image Uploads */}
+                {/* Standard Document Uploads */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <FileUpload label="Certificate of Participation (PRIME)" onChange={(e) => handleFileUpload(e, 'certParticipation')} />
                   <FileUpload label="Resume and Application Letter" onChange={(e) => handleFileUpload(e, 'resume')} />
@@ -404,7 +589,7 @@ function SectionBlock({ title, children }: { title: string; children: React.Reac
   );
 }
 
-function FileUpload({ label, onChange }: { label: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+function FileUpload({ label, onChange }: { label: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   return (
     <label className="block text-sm font-medium text-slate-200">
       {label}

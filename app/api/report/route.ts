@@ -9,15 +9,21 @@ const OUTPUT_FILE_NAME = process.env.OUTPUT_FILE_NAME || 'JRMSU_Exact_Template.d
 const HEADER_IMAGE_PATH = path.join(process.cwd(), 'public', 'Picture1.png');
 const HEADER_IMAGE = fs.existsSync(HEADER_IMAGE_PATH) ? fs.readFileSync(HEADER_IMAGE_PATH) : null;
 
-// --- Interfaces for Strong Typing ---
 interface AppendixImage {
   base64: string;
   detail?: string;
 }
 
+interface DailyActivity {
+  day: string; // e.g., "Day 1", "Day 2", "Monday"
+  date: string;
+  accomplishment: string;
+  hours: number | string;
+}
+
 interface DailyJournalWeek {
   weekNumber: number;
-  activities: any[];
+  activities: DailyActivity[];
   totalHours: number | string;
   narrative?: string;
   images?: (string | AppendixImage)[];
@@ -65,9 +71,6 @@ function ensureArray(val: any): string[] {
   return [];
 }
 
-/**
- * Helper to safely convert base64 strings from the frontend into Buffers for docx
- */
 function parseBase64Image(base64String: string): Buffer {
   return Buffer.from(base64String.replace(/^data:image\/\w+;base64,/, ""), 'base64');
 }
@@ -172,7 +175,7 @@ export async function POST(request: Request) {
 }
 
 function buildAcknowledgementPage(studentName: string, degreeProgram: string, acknowledgement: string): Paragraph[] {
-  const children: any[] = [
+  return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 120, after: 200 },
@@ -193,7 +196,6 @@ function buildAcknowledgementPage(studentName: string, degreeProgram: string, ac
       children: [new TextRun({ text: acknowledgement || 'No acknowledgement provided.', size: 24, font: 'Times New Roman' })],
     }),
   ];
-  return children;
 }
 
 function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
@@ -262,7 +264,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
 
   if (!appendicesData) return children;
 
-  // 1. Daily Journal
+  // 1. Daily Journal (Supports all days from Day 1 to Last Day across weeks)
   if (appendicesData.dailyJournal && Array.isArray(appendicesData.dailyJournal)) {
     children.push(
       new Paragraph({
@@ -292,7 +294,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
         })
       );
 
-      // Attach 1-3 Images for the Daily Report
+      // Attach 1-3 Images with optional captions
       if (weekData.images && Array.isArray(weekData.images)) {
         weekData.images.slice(0, 3).forEach((imgData) => {
           const isObject = typeof imgData === 'object' && imgData !== null;
@@ -388,7 +390,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
   return children;
 }
 
-function buildWeeklyTable(activities: any[], totalHours: number | string) {
+function buildWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
   const tableRows = [
     new TableRow({
       children: [
@@ -400,17 +402,23 @@ function buildWeeklyTable(activities: any[], totalHours: number | string) {
     }),
   ];
 
-  const defaultDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  
-  defaultDays.forEach((day, index) => {
-    const act = activities && activities[index] ? activities[index] : { date: '', accomplishment: '', hours: '' };
+  const days = activities && activities.length > 0 ? activities : [
+    { day: 'Day 1', date: '', accomplishment: '', hours: '' },
+    { day: 'Day 2', date: '', accomplishment: '', hours: '' },
+    { day: 'Day 3', date: '', accomplishment: '', hours: '' },
+    { day: 'Day 4', date: '', accomplishment: '', hours: '' },
+    { day: 'Day 5', date: '', accomplishment: '', hours: '' },
+  ];
+
+  days.forEach((act, index) => {
+    const dayName = act.day || `Day ${index + 1}`;
     tableRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: day, size: 22 })] })] }),
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date, size: 22 })] })] }),
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.accomplishment, size: 22 })] })] }),
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(act.hours), size: 22 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: dayName, size: 22 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || '', size: 22 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.accomplishment || '', size: 22 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(act.hours || ''), size: 22 })] })] }),
         ],
       })
     );
