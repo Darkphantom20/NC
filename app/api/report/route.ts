@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Table, TableRow, TableCell, WidthType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 
 export const runtime = 'nodejs';
 
@@ -71,7 +71,6 @@ function ensureArray(val: any): string[] {
   return [];
 }
 
-// SAFE IMAGE PARSER: Prevents DOCX from crashing on PDFs or corrupted Base64 strings
 function parseBase64Image(base64String: string): Buffer | null {
   if (!base64String || typeof base64String !== 'string') return null;
   if (!base64String.startsWith('data:image/')) return null;
@@ -249,6 +248,102 @@ function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
   return children;
 }
 
+// Side-by-Side Photo Grid Layout Builder matching user's reference layout
+function buildImageGridTable(images: (string | AppendixImage)[]) {
+  const rows: TableRow[] = [];
+  const invisibleBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+  const tableBorders = { top: invisibleBorder, bottom: invisibleBorder, left: invisibleBorder, right: invisibleBorder, insideHorizontal: invisibleBorder, insideVertical: invisibleBorder };
+
+  for (let i = 0; i < images.length; i += 2) {
+    const img1 = images[i];
+    const img2 = images[i + 1];
+
+    const cell1Children: any[] = [];
+    const cell2Children: any[] = [];
+
+    // Process Left Image
+    if (img1) {
+      const isObj1 = typeof img1 === 'object' && img1 !== null;
+      const base64_1 = isObj1 ? (img1 as AppendixImage).base64 : (img1 as string);
+      const detail_1 = isObj1 ? (img1 as AppendixImage).detail : '';
+      const buf1 = parseBase64Image(base64_1);
+
+      if (buf1) {
+        cell1Children.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 60 },
+            children: [
+              new ImageRun({
+                type: 'png',
+                data: buf1,
+                transformation: { width: 280, height: 210 },
+              }),
+            ],
+          })
+        );
+        if (detail_1) {
+          cell1Children.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 120 },
+              children: [new TextRun({ text: detail_1, size: 20, font: 'Times New Roman' })],
+            })
+          );
+        }
+      }
+    }
+
+    // Process Right Image
+    if (img2) {
+      const isObj2 = typeof img2 === 'object' && img2 !== null;
+      const base64_2 = isObj2 ? (img2 as AppendixImage).base64 : (img2 as string);
+      const detail_2 = isObj2 ? (img2 as AppendixImage).detail : '';
+      const buf2 = parseBase64Image(base64_2);
+
+      if (buf2) {
+        cell2Children.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 60 },
+            children: [
+              new ImageRun({
+                type: 'png',
+                data: buf2,
+                transformation: { width: 280, height: 210 },
+              }),
+            ],
+          })
+        );
+        if (detail_2) {
+          cell2Children.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 120 },
+              children: [new TextRun({ text: detail_2, size: 20, font: 'Times New Roman' })],
+            })
+          );
+        }
+      }
+    }
+
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({ children: cell1Children, width: { size: 50, type: WidthType.PERCENTAGE } }),
+          new TableCell({ children: cell2Children, width: { size: 50, type: WidthType.PERCENTAGE } }),
+        ],
+      })
+    );
+  }
+
+  return new Table({
+    rows,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: tableBorders,
+  });
+}
+
 function buildAppendicesPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
@@ -290,40 +385,9 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
         })
       );
 
-      // Attach Images Safely
-      if (weekData.images && Array.isArray(weekData.images)) {
-        weekData.images.slice(0, 3).forEach((imgData) => {
-          const isObject = typeof imgData === 'object' && imgData !== null;
-          const base64 = isObject ? (imgData as AppendixImage).base64 : (imgData as string);
-          const detail = isObject ? (imgData as AppendixImage).detail : '';
-
-          const imgBuffer = parseBase64Image(base64);
-          if (imgBuffer) {
-            children.push(
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: detail ? 60 : 120 },
-                children: [
-                  new ImageRun({
-                    type: 'png',
-                    data: imgBuffer,
-                    transformation: { width: 400, height: 300 },
-                  }),
-                ],
-              })
-            );
-
-            if (detail) {
-              children.push(
-                new Paragraph({
-                  alignment: AlignmentType.CENTER,
-                  spacing: { after: 120 },
-                  children: [new TextRun({ text: detail, italics: true, size: 20, font: 'Times New Roman' })]
-                })
-              );
-            }
-          }
-        });
+      // Attach Images in side-by-side grid pairs
+      if (weekData.images && weekData.images.length > 0) {
+        children.push(buildImageGridTable(weekData.images));
       }
     });
   }
@@ -370,7 +434,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
                 new ImageRun({
                   type: 'png',
                   data: imgBuffer,
-                  transformation: { width: 550, height: 750 },
+                  transformation: { width: 500, height: 650 },
                 }),
               ],
             })
