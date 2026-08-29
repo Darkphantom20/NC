@@ -9,6 +9,7 @@ const sectionOrder = [
   'Tasks & Duties',
   'Case Analysis',
   'Reflections',
+  'Appendices'
 ];
 
 const defaultForm = {
@@ -35,10 +36,41 @@ const defaultForm = {
   lessons: 'These situations taught the vital importance of systematic troubleshooting, maintaining proper system backups, and remaining calm under pressure.',
   selfEvaluation: 'The OJT journey served as a transformative learning process, pushing me to transition from theoretical classroom knowledge to practical, fast-paced technical execution.',
   relevancy: 'The host organization directly aligns with my degree program, allowing me to fulfill my expected professional goals of mastering enterprise systems administration and IT support workflows.',
+  
+  // --- NEW APPENDICES STATE ---
+  appendices: {
+    dailyJournal: [
+      {
+        weekNumber: 1,
+        totalHours: 40,
+        narrative: 'This week focused on orientation and basic network troubleshooting.',
+        activities: [
+          { date: 'Oct 2', accomplishment: 'Orientation', hours: 8 },
+          { date: 'Oct 3', accomplishment: 'Network cable termination', hours: 8 },
+          { date: 'Oct 4', accomplishment: 'Hardware maintenance', hours: 8 },
+          { date: 'Oct 5', accomplishment: 'Software updates', hours: 8 },
+          { date: 'Oct 6', accomplishment: 'Ticketing system review', hours: 8 }
+        ],
+        images: [] as { base64: string, detail: string }[]
+      }
+    ],
+    certParticipation: '',
+    primeNarrative: 'The PRIME seminar provided profound insights into professional workplace ethics and modern enterprise standards.',
+    resume: '',
+    grades: '',
+    medicalWaiver: '',
+    letterAcceptance: '',
+    dtr: '',
+    ratingSheet: '',
+    certCompletion: ''
+  }
 };
 
 const fieldClass =
   'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-base';
+
+const fileInputClass = 
+  'mt-2 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20';
 
 export default function Home() {
   const [form, setForm] = useState(defaultForm);
@@ -47,6 +79,50 @@ export default function Home() {
 
   const updateField = (key: keyof typeof defaultForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const updateAppendixText = (key: keyof typeof defaultForm.appendices, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      appendices: { ...prev.appendices, [key]: value }
+    }));
+  };
+
+  // Helper to convert uploaded files to Base64 for the API
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, appendixKey: keyof typeof defaultForm.appendices) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setForm((prev) => ({
+        ...prev,
+        appendices: { ...prev.appendices, [appendixKey]: base64 }
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Helper to upload images to the Daily Journal
+  const handleJournalImageUpload = (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setForm((prev) => {
+        const newJournal = [...prev.appendices.dailyJournal];
+        if (newJournal[weekIndex].images.length < 3) {
+          newJournal[weekIndex].images.push({ base64, detail: `Week ${newJournal[weekIndex].weekNumber} Activity Image` });
+        } else {
+          alert('Maximum of 3 images per week allowed.');
+        }
+        return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleGenerate = async () => {
@@ -106,13 +182,14 @@ export default function Home() {
         </header>
 
         <section className="mb-6 grid gap-4 sm:mb-10 sm:grid-cols-3 sm:gap-6">
-          <Card label="Sections" value="6" color="cyan" />
+          <Card label="Sections" value="7" color="cyan" />
           <Card label="Format" value="DOCX" color="violet" />
           <Card label="Mode" value="Web" color="emerald" />
         </section>
 
         <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
           <form className="space-y-6 rounded-[24px] border border-slate-800 bg-slate-900/80 p-4 sm:space-y-8 sm:rounded-[28px] sm:p-6">
+            
             <SectionBlock title="1. Acknowledgement">
               <label className="block text-sm font-medium text-slate-200">
                 Student Name
@@ -230,6 +307,53 @@ export default function Home() {
                 <textarea value={form.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
               </label>
             </SectionBlock>
+
+            <SectionBlock title="7. Appendices">
+              <div className="space-y-6">
+                
+                {/* Daily Journal & Images Block */}
+                <div className="rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+                  <h3 className="mb-2 font-bold text-cyan-400">Daily Journal (Week 1)</h3>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Weekly Narrative
+                    <textarea value={form.appendices.dailyJournal[0].narrative} onChange={(e) => {
+                      const newJournal = [...form.appendices.dailyJournal];
+                      newJournal[0].narrative = e.target.value;
+                      setForm(prev => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal }}));
+                    }} rows={2} className={fieldClass} />
+                  </label>
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-slate-200">
+                      Upload Daily Pictures (Max 3)
+                      <input type="file" accept="image/*" onChange={(e) => handleJournalImageUpload(e, 0)} className={fileInputClass} />
+                    </label>
+                    <div className="mt-2 text-xs text-slate-400">
+                      {form.appendices.dailyJournal[0].images.length} / 3 Images Uploaded
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Reports */}
+                <label className="block text-sm font-medium text-slate-200">
+                  Narrative Report of PRIME
+                  <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={3} className={fieldClass} />
+                </label>
+
+                {/* Certificates / Image Uploads */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FileUpload label="Certificate of Participation (PRIME)" onChange={(e) => handleFileUpload(e, 'certParticipation')} />
+                  <FileUpload label="Resume and Application Letter" onChange={(e) => handleFileUpload(e, 'resume')} />
+                  <FileUpload label="Evaluation of Grades & Validated Enrolment" onChange={(e) => handleFileUpload(e, 'grades')} />
+                  <FileUpload label="Medical Certificate & Parent's Waiver" onChange={(e) => handleFileUpload(e, 'medicalWaiver')} />
+                  <FileUpload label="Letter of Acceptance" onChange={(e) => handleFileUpload(e, 'letterAcceptance')} />
+                  <FileUpload label="Daily Time Record (DTR)" onChange={(e) => handleFileUpload(e, 'dtr')} />
+                  <FileUpload label="Intern Rating Sheet & Eval" onChange={(e) => handleFileUpload(e, 'ratingSheet')} />
+                  <FileUpload label="Cert. of Completion & MOA" onChange={(e) => handleFileUpload(e, 'certCompletion')} />
+                </div>
+              </div>
+            </SectionBlock>
+
           </form>
 
           <aside className="flex flex-col gap-4 rounded-[24px] border border-slate-800 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-violet-500/10 p-4 sm:rounded-[28px] sm:p-6">
@@ -277,6 +401,15 @@ function SectionBlock({ title, children }: { title: string; children: React.Reac
       <h2 className="mb-4 text-lg font-bold text-white sm:text-xl">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function FileUpload({ label, onChange }: { label: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+  return (
+    <label className="block text-sm font-medium text-slate-200">
+      {label}
+      <input type="file" accept="image/*,application/pdf" onChange={onChange} className={fileInputClass} />
+    </label>
   );
 }
 
