@@ -334,7 +334,7 @@ function buildAppendicesPage(appendicesData: any) {
       children.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: '[Document not provided]', italic: true, size: 24, font: 'Times New Roman' })],
+          children: [new TextRun({ text: '[Document not provided]', italics: true, size: 24, font: 'Times New Roman' })],
         })
       );
     }
