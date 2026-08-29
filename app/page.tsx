@@ -210,13 +210,13 @@ export default function Home() {
 
   const handleJoyrideCallback = (data: EventData) => {
     const { status, type, step } = data;
-    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
+    const finishedStatuses = new Set<string>([STATUS.FINISHED, STATUS.SKIPPED]);
 
     if (type === 'tooltip' || type === 'step:after') {
       speakText(step.content);
     }
 
-    if (finishedStatuses.includes(status)) {
+    if (finishedStatuses.has(status)) {
       setRunTour(false);
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -385,16 +385,13 @@ export default function Home() {
           steps={tourSteps}
           run={runTour}
           continuous={true}
-          showProgress={true}
-          showSkipButton={true}
           onEvent={handleJoyrideCallback}
-          styles={{
-            options: {
-              primaryColor: '#06b6d4',
-              backgroundColor: '#1e293b',
-              textColor: '#f1f5f9',
-              arrowColor: '#1e293b',
-            },
+          options={{
+            primaryColor: '#06b6d4',
+            backgroundColor: '#1e293b',
+            textColor: '#f1f5f9',
+            arrowColor: '#1e293b',
+            showProgress: true,
           }}
         />
       )}
