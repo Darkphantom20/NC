@@ -9,6 +9,39 @@ const OUTPUT_FILE_NAME = process.env.OUTPUT_FILE_NAME || 'JRMSU_Exact_Template.d
 const HEADER_IMAGE_PATH = path.join(process.cwd(), 'public', 'Picture1.png');
 const HEADER_IMAGE = fs.existsSync(HEADER_IMAGE_PATH) ? fs.readFileSync(HEADER_IMAGE_PATH) : null;
 
+// --- Interfaces for Strong Typing ---
+interface AppendixImage {
+  base64: string;
+  detail?: string;
+}
+
+interface DailyJournalWeek {
+  weekNumber: number;
+  activities: any[];
+  totalHours: number | string;
+  narrative?: string;
+  images?: (string | AppendixImage)[];
+}
+
+interface AppendicesData {
+  dailyJournal?: DailyJournalWeek[];
+  certParticipation?: string;
+  primeNarrative?: string;
+  resume?: string;
+  grades?: string;
+  medicalWaiver?: string;
+  letterAcceptance?: string;
+  dtr?: string;
+  ratingSheet?: string;
+  certCompletion?: string;
+}
+
+interface SectionData {
+  title: string;
+  content: any;
+  isBullet?: boolean;
+}
+
 function buildHeaderImage() {
   if (!HEADER_IMAGE) return [];
   return [
@@ -32,10 +65,11 @@ function ensureArray(val: any): string[] {
   return [];
 }
 
-interface SectionData {
-  title: string;
-  content: any;
-  isBullet?: boolean;
+/**
+ * Helper to safely convert base64 strings from the frontend into Buffers for docx
+ */
+function parseBase64Image(base64String: string): Buffer {
+  return Buffer.from(base64String.replace(/^data:image\/\w+;base64,/, ""), 'base64');
 }
 
 export async function POST(request: Request) {
@@ -53,7 +87,6 @@ export async function POST(request: Request) {
       const supabase = createClient(supabaseUrl!, supabaseKey!);
       const payload = {
         student_name: data.studentName || null,
-        // ... (Keep existing Supabase mapping logic)
         appendices: JSON.stringify(data.appendices) || null,
       };
 
@@ -78,7 +111,6 @@ export async function POST(request: Request) {
             }),
           },
           children: [
-            // Sections 1-6 (Keep existing implementation)
             ...buildAcknowledgementPage(data.studentName, data.degreeProgram, data.acknowledgement),
             new Paragraph({ pageBreakBefore: true }),
             ...buildSectionPage('2. INTRODUCTION', [
@@ -115,8 +147,6 @@ export async function POST(request: Request) {
               { title: 'Self-Evaluation', content: data.selfEvaluation },
               { title: 'Relevancy of the Organization', content: data.relevancy },
             ]),
-            
-            // Section 7: Appendices
             new Paragraph({ pageBreakBefore: true }),
             ...buildAppendicesPage(data.appendices),
           ],
@@ -163,7 +193,6 @@ function buildAcknowledgementPage(studentName: string, degreeProgram: string, ac
       children: [new TextRun({ text: acknowledgement || 'No acknowledgement provided.', size: 24, font: 'Times New Roman' })],
     }),
   ];
-
   return children;
 }
 
@@ -220,7 +249,7 @@ function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
   return children;
 }
 
-function buildAppendicesPage(appendicesData: any) {
+function buildAppendicesPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -243,7 +272,7 @@ function buildAppendicesPage(appendicesData: any) {
       })
     );
 
-    appendicesData.dailyJournal.forEach((weekData: any) => {
+    appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek) => {
       children.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
@@ -265,36 +294,52 @@ function buildAppendicesPage(appendicesData: any) {
 
       // Attach 1-3 Images for the Daily Report
       if (weekData.images && Array.isArray(weekData.images)) {
-        weekData.images.slice(0, 3).forEach((imgBase64: string) => {
-          children.push(
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 120 },
-              children: [
-                new ImageRun({
-                  type: 'png',
-                  data: Buffer.from(imgBase64.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
-                  transformation: { width: 400, height: 300 },
-                }),
-              ],
-            })
-          );
+        weekData.images.slice(0, 3).forEach((imgData) => {
+          const isObject = typeof imgData === 'object' && imgData !== null;
+          const base64 = isObject ? (imgData as AppendixImage).base64 : (imgData as string);
+          const detail = isObject ? (imgData as AppendixImage).detail : '';
+
+          if (base64) {
+            children.push(
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: detail ? 60 : 120 },
+                children: [
+                  new ImageRun({
+                    type: 'png',
+                    data: parseBase64Image(base64),
+                    transformation: { width: 400, height: 300 },
+                  }),
+                ],
+              })
+            );
+
+            if (detail) {
+              children.push(
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 120 },
+                  children: [new TextRun({ text: detail, italics: true, size: 20, font: 'Times New Roman' })]
+                })
+              );
+            }
+          }
         });
       }
     });
   }
 
-  // Helper to add standard appendix documents (Certificates, Resume, etc.)
+  // Appendix Documents List
   const appendixList = [
-    { title: 'Certificate of Participation (PRIME Seminar)', key: 'certParticipation' },
-    { title: 'One page narrative report of PRIME', key: 'primeNarrative', isText: true },
-    { title: 'Resume and Application Letter', key: 'resume' },
-    { title: 'Evaluation of Grades & Validated Enrolment Form', key: 'grades' },
-    { title: 'Medical Certificate & Parent\'s Waiver', key: 'medicalWaiver' },
-    { title: 'Letter of Acceptance', key: 'letterAcceptance' },
-    { title: 'Daily Time Record (DTR) - hours rendered', key: 'dtr' },
-    { title: 'Student’s Intern Rating Sheet & Performance Evaluation', key: 'ratingSheet' },
-    { title: 'Certificate of Completion & Memorandum of Agreement', key: 'certCompletion' },
+    { title: 'Certificate of Participation (PRIME Seminar)', key: 'certParticipation' as const },
+    { title: 'One page narrative report of PRIME', key: 'primeNarrative' as const, isText: true },
+    { title: 'Resume and Application Letter', key: 'resume' as const },
+    { title: 'Evaluation of Grades & Validated Enrolment Form', key: 'grades' as const },
+    { title: 'Medical Certificate & Parent\'s Waiver', key: 'medicalWaiver' as const },
+    { title: 'Letter of Acceptance', key: 'letterAcceptance' as const },
+    { title: 'Daily Time Record (DTR) - hours rendered', key: 'dtr' as const },
+    { title: 'Student’s Intern Rating Sheet & Performance Evaluation', key: 'ratingSheet' as const },
+    { title: 'Certificate of Completion & Memorandum of Agreement', key: 'certCompletion' as const },
   ];
 
   appendixList.forEach(app => {
@@ -323,7 +368,7 @@ function buildAppendicesPage(appendicesData: any) {
             children: [
               new ImageRun({
                 type: 'png',
-                data: Buffer.from(data.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
+                data: parseBase64Image(data),
                 transformation: { width: 550, height: 750 },
               }),
             ],
