@@ -272,8 +272,9 @@ function buildAppendicesPage(appendicesData: any) {
               spacing: { after: 120 },
               children: [
                 new ImageRun({
+                  type: 'png',
                   data: Buffer.from(imgBase64.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
-                  transformation: { width: 400, height: 300 }, // Adjust dimensions as needed
+                  transformation: { width: 400, height: 300 },
                 }),
               ],
             })
@@ -321,8 +322,9 @@ function buildAppendicesPage(appendicesData: any) {
             alignment: AlignmentType.CENTER,
             children: [
               new ImageRun({
+                type: 'png',
                 data: Buffer.from(data.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
-                transformation: { width: 550, height: 750 }, // Standard full-page fit
+                transformation: { width: 550, height: 750 },
               }),
             ],
           })
