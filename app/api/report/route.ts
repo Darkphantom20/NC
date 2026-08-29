@@ -8,6 +8,18 @@ export const runtime = 'nodejs';
 const OUTPUT_FILE_NAME = process.env.OUTPUT_FILE_NAME || 'JRMSU_Exact_Template.docx';
 const HEADER_IMAGE_PATH = path.join(process.cwd(), 'public', 'Picture1.png');
 const HEADER_IMAGE = fs.existsSync(HEADER_IMAGE_PATH) ? fs.readFileSync(HEADER_IMAGE_PATH) : null;
+
+function buildHeaderImage() {
+  if (!HEADER_IMAGE) return [];
+
+  return [
+    new ImageRun({
+      data: HEADER_IMAGE,
+      type: 'png',
+      transformation: { width: 140, height: 70 },
+    }),
+  ];
+}
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const hasSupabaseConfig = Boolean(supabaseUrl && supabaseKey);
@@ -132,16 +144,7 @@ function buildAcknowledgementPage(studentName: string, degreeProgram: string, ac
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 20 },
-      children: [
-        ...(HEADER_IMAGE
-          ? [
-              new ImageRun({
-                data: HEADER_IMAGE,
-                transformation: { width: 140, height: 70 },
-              }),
-            ]
-          : []),
-      ],
+      children: buildHeaderImage(),
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -179,16 +182,7 @@ function buildSectionPage(sectionTitle: string, sections: Array<[string, string]
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 14 },
-      children: [
-        ...(HEADER_IMAGE
-          ? [
-              new ImageRun({
-                data: HEADER_IMAGE,
-                transformation: { width: 140, height: 70 },
-              }),
-            ]
-          : []),
-      ],
+      children: buildHeaderImage(),
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
