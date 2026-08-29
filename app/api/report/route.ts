@@ -118,6 +118,8 @@ export async function POST(request: Request) {
             }),
           },
           children: [
+            ...buildCoverPage(data),
+            new Paragraph({ pageBreakBefore: true }),
             ...buildAcknowledgementPage(data.studentName, data.degreeProgram, data.acknowledgement),
             new Paragraph({ pageBreakBefore: true }),
             ...buildSectionPage('2. INTRODUCTION', [
@@ -174,6 +176,89 @@ export async function POST(request: Request) {
     console.error(error);
     return new Response(JSON.stringify({ error: 'Something went wrong while generating the report.' }), { status: 500 });
   }
+}
+
+function buildCoverPage(data: any): Paragraph[] {
+  const org = data.trainingOrganization || 'Zamboanga del Norte Medical Center Dialysis Clinic';
+  const location = data.trainingLocation || 'Sicayab, Dipolog City, Philippines';
+  const faculty = data.collegeFaculty || 'College of Computing Studies';
+  const degree = data.degreeProgram || 'Bachelor of Science in Computer Science';
+  const student = data.studentName || 'Emerald Mae Charity G. Alamat';
+  const adviserName = data.submittedToName || 'Mr. Erson A. Rodriguez';
+  const adviserTitle = data.submittedToTitle || 'Associate Dean of the College of Computing Studies';
+
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 360, after: 120 },
+      children: [new TextRun({ text: 'A Narrative Report on the', size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [new TextRun({ text: 'On-the-Job Training conducted at', size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [new TextRun({ text: `${org},`, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 360 },
+      children: [new TextRun({ text: location, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 60 },
+      children: [new TextRun({ text: 'Presented to the faculty of', size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 360 },
+      children: [new TextRun({ text: faculty, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 60 },
+      children: [new TextRun({ text: 'In partial fulfillment of the requirements for the degree of', size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 360 },
+      children: [new TextRun({ text: degree, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 60 },
+      children: [new TextRun({ text: 'Submitted by:', size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [new TextRun({ text: student, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 360 },
+      children: [new TextRun({ text: degree, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 60 },
+      children: [new TextRun({ text: 'Submitted to:', size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [new TextRun({ text: adviserName, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [new TextRun({ text: adviserTitle, size: 24, font: 'Times New Roman' })],
+    }),
+  ];
 }
 
 function buildAcknowledgementPage(studentName: string, degreeProgram: string, acknowledgement: string): Paragraph[] {
@@ -248,7 +333,6 @@ function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
   return children;
 }
 
-// Side-by-Side Photo Grid Layout Builder matching user's reference layout
 function buildImageGridTable(images: (string | AppendixImage)[]) {
   const rows: TableRow[] = [];
   const invisibleBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
@@ -261,7 +345,6 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
     const cell1Children: any[] = [];
     const cell2Children: any[] = [];
 
-    // Process Left Image
     if (img1) {
       const isObj1 = typeof img1 === 'object' && img1 !== null;
       const base64_1 = isObj1 ? (img1 as AppendixImage).base64 : (img1 as string);
@@ -294,7 +377,6 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
       }
     }
 
-    // Process Right Image
     if (img2) {
       const isObj2 = typeof img2 === 'object' && img2 !== null;
       const base64_2 = isObj2 ? (img2 as AppendixImage).base64 : (img2 as string);
@@ -344,6 +426,42 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
   });
 }
 
+function buildFeaturedImageLayout(imgData: string | AppendixImage) {
+  const children: any[] = [];
+  const isObj = typeof imgData === 'object' && imgData !== null;
+  const base64 = isObj ? (imgData as AppendixImage).base64 : (imgData as string);
+  const detail = isObj ? (imgData as AppendixImage).detail : '';
+  const buf = parseBase64Image(base64);
+
+  if (buf) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 120, after: 100 },
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: buf,
+            transformation: { width: 420, height: 315 },
+          }),
+        ],
+      })
+    );
+
+    if (detail) {
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+          children: [new TextRun({ text: detail, size: 22, font: 'Times New Roman' })],
+        })
+      );
+    }
+  }
+
+  return children;
+}
+
 function buildAppendicesPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
@@ -355,7 +473,6 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
 
   if (!appendicesData) return children;
 
-  // 1. Daily Journal
   if (appendicesData.dailyJournal && Array.isArray(appendicesData.dailyJournal)) {
     children.push(
       new Paragraph({
@@ -385,14 +502,12 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
         })
       );
 
-      // Attach Images in side-by-side grid pairs
       if (weekData.images && weekData.images.length > 0) {
         children.push(buildImageGridTable(weekData.images));
       }
     });
   }
 
-  // Appendix Documents List
   const appendixList = [
     { title: 'Certificate of Participation (PRIME Seminar)', key: 'certParticipation' as const },
     { title: 'One page narrative report of PRIME', key: 'primeNarrative' as const, isText: true },
@@ -425,28 +540,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
           })
         );
       } else {
-        const imgBuffer = parseBase64Image(data);
-        if (imgBuffer) {
-          children.push(
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [
-                new ImageRun({
-                  type: 'png',
-                  data: imgBuffer,
-                  transformation: { width: 500, height: 650 },
-                }),
-              ],
-            })
-          );
-        } else {
-          children.push(
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [new TextRun({ text: '[Invalid format uploaded - please ensure this is an image file]', italics: true, size: 20, font: 'Times New Roman', color: 'FF0000' })],
-            })
-          );
-        }
+        children.push(...buildFeaturedImageLayout(data));
       }
     } else {
       children.push(
