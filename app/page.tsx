@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Joyride, CallBackProps, STATUS, Step } from 'react-joyride';
+import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
 import { HelpCircle } from 'lucide-react';
 
 const sectionOrder = [
@@ -208,11 +208,11 @@ export default function Home() {
     }
   };
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = (data: EventData) => {
     const { status, type, step } = data;
-    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
 
-    if (type === 'tooltip:update' || type === 'step:after') {
+    if (type === 'tooltip' || type === 'step:after') {
       speakText(step.content);
     }
 
@@ -387,12 +387,12 @@ export default function Home() {
           continuous={true}
           showProgress={true}
           showSkipButton={true}
-          callback={handleJoyrideCallback}
+          onEvent={handleJoyrideCallback}
           styles={{
             options: {
-              primaryColor: '#06b6d4', // Matches cyan-500
-              backgroundColor: '#1e293b', // Matches slate-800
-              textColor: '#f1f5f9', // Matches slate-100
+              primaryColor: '#06b6d4',
+              backgroundColor: '#1e293b',
+              textColor: '#f1f5f9',
               arrowColor: '#1e293b',
             },
           }}
