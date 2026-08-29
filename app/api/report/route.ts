@@ -1,4 +1,11 @@
+import { createClient } from '@supabase/supabase-js';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+
+export const runtime = 'nodejs';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseKey);
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +16,42 @@ export async function POST(request: Request) {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    if (hasSupabaseConfig) {
+      const supabase = createClient(supabaseUrl!, supabaseKey!);
+      const payload = {
+        student_name: data.studentName || null,
+        degree_program: data.degreeProgram || null,
+        acknowledgement: data.acknowledgement || null,
+        organization_background: data.background || null,
+        vision: data.vision || null,
+        mission: data.mission || null,
+        objectives: data.objectives || null,
+        core_values: data.coreValues || null,
+        services: data.services || null,
+        strengths: data.strengths || null,
+        weaknesses: data.weaknesses || null,
+        opportunities: data.opportunities || null,
+        threats: data.threats || null,
+        recommendations: data.recommendations || null,
+        tasks: data.tasks || null,
+        procedures: data.procedures || null,
+        issue_1_description: data.issue1 || null,
+        issue_1_strategy: data.issue1Action || null,
+        issue_2_description: data.issue2 || null,
+        issue_2_strategy: data.issue2Action || null,
+        lessons: data.lessons || null,
+        self_evaluation: data.selfEvaluation || null,
+        relevancy: data.relevancy || null,
+      };
+
+      const { error } = await supabase.from('reports').insert([payload]);
+      if (error) {
+        console.error('Supabase insert error:', error);
+      }
+    } else {
+      console.warn('Supabase environment variables are not configured. Report data was not stored.');
     }
 
     const doc = new Document({
@@ -23,9 +66,7 @@ export async function POST(request: Request) {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               spacing: { after: 240 },
-              children: [
-                new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 30 }),
-              ],
+              children: [new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 30 })],
             }),
             new Paragraph({
               spacing: { after: 200 },
