@@ -710,6 +710,17 @@ export default function Home() {
             </button>
           </aside>
         </div>
+
+        <footer className="flex justify-center pb-2">
+          <a
+            href="https://ianpadilla-opal.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-slate-400 transition hover:text-cyan-300"
+          >
+            Developed by <span className="font-semibold text-cyan-300">Ian P. Padilla</span>
+          </a>
+        </footer>
       </div>
     </main>
   );
