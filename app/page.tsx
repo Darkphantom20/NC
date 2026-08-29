@@ -148,6 +148,7 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
+    setRunTour(true);
   }, []);
 
   const tourSteps: Step[] = [
@@ -198,29 +199,12 @@ export default function Home() {
     }
   ];
 
-  const speakText = (text: string | React.ReactNode) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); 
-      const textToSpeak = typeof text === 'string' ? text : text?.toString() || '';
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.rate = 0.95; 
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
   const handleJoyrideCallback = (data: EventData) => {
     const { status, type, step } = data;
     const finishedStatuses = new Set<string>([STATUS.FINISHED, STATUS.SKIPPED]);
 
-    if (type === 'tooltip' || type === 'step:after') {
-      speakText(step.content);
-    }
-
     if (finishedStatuses.has(status)) {
       setRunTour(false);
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
     }
   };
 
@@ -410,17 +394,13 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              {/* Voice Tour Start Button */}
               <button
-                onClick={() => {
-                  setRunTour(true);
-                  speakText(tourSteps[0].content);
-                }}
+                onClick={() => setRunTour(true)}
                 className="tour-start-btn flex items-center gap-2 rounded-2xl bg-cyan-500/20 px-5 py-3.5 text-sm font-bold text-cyan-300 hover:bg-cyan-500/30 transition-colors border border-cyan-500/30"
                 type="button"
               >
                 <HelpCircle size={20} />
-                Audio Guide
+                Show Me How
               </button>
 
               <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-left sm:px-5 sm:py-3.5 md:text-right">
