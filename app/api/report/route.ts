@@ -16,7 +16,8 @@ function buildHeaderImage() {
     new ImageRun({
       data: HEADER_IMAGE,
       type: 'png',
-      transformation: { width: 500, height: 100 },
+      // Widened to approximately 6.5 inches to span the printable area like the image
+      transformation: { width: 624, height: 125 },
     }),
   ];
 }
@@ -91,16 +92,20 @@ export async function POST(request: Request) {
         {
           properties: {
             page: {
+              // Legal size page settings (8.5 x 14 inches measured in twips: 1 inch = 1440 twips)
+              size: {
+                width: 12240,
+                height: 20160,
+              },
               margin: { 
-                top: 1440,    // 1.0 inch for standard balanced margins
-                bottom: 1440, 
-                left: 1440,  
-                right: 1440,
-                header: 720,  // 0.5 inch margin for the header
+                top: 1440,    // 1.0 inch
+                bottom: 1440, // 1.0 inch
+                left: 1440,   // 1.0 inch
+                right: 1440,  // 1.0 inch
+                header: 720,  // 0.5 inch anchor for the header image placement
               },
             },
           },
-          // Embed the header at the document section level
           headers: {
             default: new Header({
               children: [
