@@ -141,7 +141,84 @@ export async function POST(request: Request) {
   }
 }
 
-// ... (Keep existing buildAcknowledgementPage and buildSectionPage functions here)
+function buildAcknowledgementPage(studentName: string, degreeProgram: string, acknowledgement: string): Paragraph[] {
+  const children: any[] = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 200 },
+      children: [new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 28, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      spacing: { before: 80, after: 80 },
+      children: [new TextRun({ text: `Student Name: ${studentName || 'N/A'}`, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      spacing: { before: 80, after: 80 },
+      children: [new TextRun({ text: `Degree Program: ${degreeProgram || 'N/A'}`, size: 24, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      indent: { left: 720 },
+      spacing: { before: 120, after: 120 },
+      children: [new TextRun({ text: acknowledgement || 'No acknowledgement provided.', size: 24, font: 'Times New Roman' })],
+    }),
+  ];
+
+  return children;
+}
+
+function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
+  const children: any[] = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 180 },
+      children: [new TextRun({ text: title, bold: true, size: 28, font: 'Times New Roman' })],
+    }),
+  ];
+
+  sections.forEach((section) => {
+    const text = typeof section.content === 'string'
+      ? section.content
+      : Array.isArray(section.content)
+        ? section.content.join('\n')
+        : String(section.content ?? '');
+
+    const contentLines = ensureArray(text);
+
+    if (section.title) {
+      children.push(
+        new Paragraph({
+          spacing: { before: 120, after: 60 },
+          children: [new TextRun({ text: `${section.title}:`, bold: true, size: 24, font: 'Times New Roman' })],
+        })
+      );
+    }
+
+    if (section.isBullet) {
+      contentLines.forEach((line) => {
+        children.push(
+          new Paragraph({
+            bullet: { level: 0 },
+            indent: { left: 720 },
+            spacing: { after: 60 },
+            children: [new TextRun({ text: line, size: 24, font: 'Times New Roman' })],
+          })
+        );
+      });
+    } else if (contentLines.length > 0) {
+      const combinedText = contentLines.join(' ');
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 80 },
+          children: [new TextRun({ text: combinedText, size: 24, font: 'Times New Roman' })],
+        })
+      );
+    }
+  });
+
+  return children;
+}
 
 function buildAppendicesPage(appendicesData: any) {
   const children: any[] = [
