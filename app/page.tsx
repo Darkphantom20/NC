@@ -1,18 +1,26 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
-import { AlignmentType, Document, PageBreak, Paragraph, Packer, TextRun } from 'docx';
 
-const initialState = {
+const sectionOrder = [
+  'Acknowledgement',
+  'Introduction',
+  'Organization Analysis',
+  'Tasks & Duties',
+  'Case Analysis',
+  'Reflections',
+];
+
+const defaultForm = {
   studentName: 'Ian P. Padilla',
   degreeProgram: 'Bachelor of Science in Information System',
-  acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT.',
-  organizationBackground: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
+  acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
+  background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
   vision: 'To be a premier provider of innovative, reliable, and secure technological solutions and digital services.',
   mission: 'To empower the organization through efficient IT infrastructure, responsive technical support, and robust systems development.',
   objectives: 'To streamline administrative processes and ensure system reliability.',
   coreValues: 'Integrity, Excellence, and Commitment to Public Service.',
-  services: 'Provide reliable technical support and ICT services.',
+  services: 'Provide reliable technical support and ICT services to the institution and its stakeholders.',
   strengths: 'The organization possesses highly skilled and dedicated technical personnel capable of handling complex network and software demands.',
   weaknesses: 'Internal operations occasionally face limitations due to aging hardware upgrades and constrained resource allocations.',
   opportunities: 'There are significant external prospects for adopting advanced cloud solutions and process automation technologies.',
@@ -20,200 +28,55 @@ const initialState = {
   recommendations: 'It is highly recommended to upgrade legacy infrastructure and conduct continuous staff training programs.',
   tasks: 'Assigned tasks included troubleshooting office hardware issues, maintaining network cables, and updating internal database records.',
   procedures: 'Followed strict IT ticketing protocols, observed safety compliance guidelines during hardware repairs, and conformed to daily attendance logs.',
-  issue1Description: 'Encountered unexpected network downtime during a critical system update, disrupting office communications.',
-  issue1Strategy: 'Conducted a line check, isolated the faulty switch port, and switched the main office routing temporarily to a secondary backup line.',
-  issue2Description: 'Faced compatibility errors when deploying a legacy database script onto the updated server environment.',
-  issue2Strategy: 'Debugged SQL syntax constraints, updated driver packages, and successfully refactored connection strings.',
+  issue1: 'Encountered unexpected network downtime during a critical system update, disrupting office communications.',
+  issue1Action: 'Conducted a line check, isolated the faulty switch port, and switched the main office routing temporarily to a secondary backup line.',
+  issue2: 'Faced compatibility errors when deploying a legacy database script onto the updated server environment.',
+  issue2Action: 'Debugged SQL syntax constraints, updated driver packages, and successfully refactored connection strings.',
   lessons: 'These situations taught the vital importance of systematic troubleshooting, maintaining proper system backups, and remaining calm under pressure.',
   selfEvaluation: 'The OJT journey served as a transformative learning process, pushing me to transition from theoretical classroom knowledge to practical, fast-paced technical execution.',
   relevancy: 'The host organization directly aligns with my degree program, allowing me to fulfill my expected professional goals of mastering enterprise systems administration and IT support workflows.',
 };
 
-const fields = [
-  ['studentName', 'Student Name'],
-  ['degreeProgram', 'Degree Program'],
-  ['acknowledgement', 'Acknowledgement'],
-  ['organizationBackground', 'Background of the Organization'],
-  ['vision', 'Vision'],
-  ['mission', 'Mission'],
-  ['objectives', 'Objectives'],
-  ['coreValues', 'Core Values'],
-  ['services', 'Products and Services Offered'],
-  ['strengths', 'Strengths'],
-  ['weaknesses', 'Weaknesses'],
-  ['opportunities', 'Opportunities'],
-  ['threats', 'Threats'],
-  ['recommendations', 'Recommendations'],
-  ['tasks', 'Assigned Tasks'],
-  ['procedures', 'Duties and Procedures'],
-  ['issue1Description', 'Issue 1 Description'],
-  ['issue1Strategy', 'Issue 1 Strategy'],
-  ['issue2Description', 'Issue 2 Description'],
-  ['issue2Strategy', 'Issue 2 Strategy'],
-  ['lessons', 'Lessons Learned'],
-  ['selfEvaluation', 'Self Evaluation'],
-  ['relevancy', 'Relevancy'],
-] as const;
+const fieldClass =
+  'mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30';
 
-const normalizeParagraphs = (value: string | string[] | undefined) => {
-  if (Array.isArray(value)) {
-    return value.filter((item) => item && item.trim().length > 0);
-  }
-
-  return value && value.trim().length > 0 ? [value] : [];
-};
-
-const createParagraph = (text: string, options: { bold?: boolean; before?: number; bullet?: boolean; indent?: number } = {}) => {
-  const para = new Paragraph({
-    alignment: AlignmentType.JUSTIFY,
-    spacing: { after: 120, before: options.before ?? 0, line: 360 },
-    indent: options.indent ? { left: options.indent } : undefined,
-    bullet: options.bullet ? { level: 0 } : undefined,
-  });
-
-  para.addChildElement(
-    new TextRun({
-      text,
-      font: 'Times New Roman',
-      size: 22,
-      bold: options.bold ?? false,
-    }),
-  );
-
-  return para;
-};
-
-const buildReportDocument = (data: typeof initialState) => {
-  const doc = new Document({
-    sections: [
-      {
-        properties: {
-          page: {
-            margin: {
-              top: 400,
-              bottom: 1000,
-              left: 800,
-              right: 800,
-            },
-          },
-        },
-        children: [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 180, after: 120 },
-            children: [new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 28, font: 'Times New Roman' })],
-          }),
-          ...normalizeParagraphs(data.acknowledgement).map((item) => createParagraph(item)),
-          new Paragraph({
-            spacing: { before: 120 },
-            children: [
-              new TextRun({ text: `${String(data.studentName || 'Student Name').toUpperCase()}\n`, bold: true, font: 'Times New Roman', size: 22 }),
-              new TextRun({ text: `${data.degreeProgram || 'Degree Program'}\n`, font: 'Times New Roman', size: 22 }),
-              new TextRun({ text: 'Jose Rizal Memorial State University', font: 'Times New Roman', size: 22 }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 180, after: 120 },
-            children: [new TextRun({ text: '2. INTRODUCTION', bold: true, size: 28, font: 'Times New Roman' })],
-          }),
-          createParagraph('Background of the Organization', { bold: true, before: 100 }),
-          createParagraph(data.organizationBackground || 'No background provided.'),
-          createParagraph('Vision', { bold: true, before: 100 }),
-          createParagraph(data.vision || 'No vision provided.'),
-          createParagraph('Mission', { bold: true, before: 100 }),
-          createParagraph(data.mission || 'No mission provided.'),
-          createParagraph('Objectives', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.objectives).map((item) => createParagraph(item, { bullet: true, indent: 720 })),
-          createParagraph('Core Values', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.coreValues).map((item) => createParagraph(item, { bullet: true, indent: 720 })),
-          createParagraph('Products and Services Offered', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.services).map((item) => createParagraph(item, { bullet: true, indent: 720 })),
-          new Paragraph({ children: [new PageBreak()] }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 180, after: 120 },
-            children: [new TextRun({ text: '3. ORGANIZATION / COMPANY ANALYSIS', bold: true, size: 28, font: 'Times New Roman' })],
-          }),
-          createParagraph('Strengths of the Organization (Internal factors)', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.strengths).map((item) => createParagraph(item)),
-          createParagraph('Weaknesses of the Organization (Internal factors)', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.weaknesses).map((item) => createParagraph(item)),
-          createParagraph('Opportunities of the Organization (External factors)', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.opportunities).map((item) => createParagraph(item)),
-          createParagraph('Threats of the Organization (External factors)', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.threats).map((item) => createParagraph(item)),
-          createParagraph('Recommendations for Improvement', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.recommendations).map((item) => createParagraph(item)),
-          new Paragraph({ children: [new PageBreak()] }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 180, after: 120 },
-            children: [new TextRun({ text: '4. TASKS AND DUTIES', bold: true, size: 28, font: 'Times New Roman' })],
-          }),
-          createParagraph('Assigned Tasks and Responsibilities', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.tasks).map((item) => createParagraph(item)),
-          createParagraph('Duties and Procedures Conformed', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.procedures).map((item) => createParagraph(item)),
-          new Paragraph({ children: [new PageBreak()] }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 180, after: 120 },
-            children: [new TextRun({ text: '5. CASE ANALYSIS', bold: true, size: 28, font: 'Times New Roman' })],
-          }),
-          createParagraph('Issue / Problem 1', { bold: true, before: 100 }),
-          createParagraph(`Description: ${data.issue1Description || 'No issue description provided.'}`),
-          createParagraph(`Strategy/Action Undertaken: ${data.issue1Strategy || 'No strategy provided.'}`),
-          createParagraph('Issue / Problem 2', { bold: true, before: 100 }),
-          createParagraph(`Description: ${data.issue2Description || 'No issue description provided.'}`),
-          createParagraph(`Strategy/Action Undertaken: ${data.issue2Strategy || 'No strategy provided.'}`),
-          createParagraph('Lessons Learned from the Situations', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.lessons).map((item) => createParagraph(item)),
-          new Paragraph({ children: [new PageBreak()] }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 180, after: 120 },
-            children: [new TextRun({ text: '6. REFLECTIONS', bold: true, size: 28, font: 'Times New Roman' })],
-          }),
-          createParagraph('Self-Evaluation from the Learning Process Experienced', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.selfEvaluation).map((item) => createParagraph(item)),
-          createParagraph('Relevancy of the Organization with Your Programme of Study and Expected Goals', { bold: true, before: 100 }),
-          ...normalizeParagraphs(data.relevancy).map((item) => createParagraph(item)),
-        ],
-      },
-    ],
-  });
-
-  return doc;
-};
-
-export default function Page() {
-  const [form, setForm] = useState(initialState);
+export default function Home() {
+  const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('Draft ready');
 
-  const handleChange = (key: keyof typeof initialState, value: string) => {
+  const updateField = (key: keyof typeof defaultForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleGenerate = async () => {
     setLoading(true);
-    setStatus('Generating report...');
+    setStatus('Generating DOCX...');
 
     try {
-      const doc = buildReportDocument(form);
-      const blob = await Packer.toBlob(doc);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'JRMSU_Narrative_Report_Sections_1_to_6.docx';
-      a.click();
-      window.URL.revokeObjectURL(url);
-      setStatus('Document downloaded successfully.');
+      const response = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate the report');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'JRMSU_Narrative_Report.docx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      setStatus('Download started');
     } catch (error) {
-      setStatus('Something went wrong while generating the document.');
+      setStatus('Something went wrong');
       console.error(error);
     } finally {
       setLoading(false);
@@ -221,32 +84,222 @@ export default function Page() {
   };
 
   return (
-    <main style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>JRMSU Narrative Report Generator</h1>
+    <main className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-10 overflow-hidden rounded-[28px] border border-cyan-500/20 bg-slate-900/80 p-8 shadow-glow backdrop-blur-xl">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.35em] text-cyan-300">JRMSU</p>
+              <h1 className="mt-3 text-4xl font-black tracking-tight text-white md:text-6xl">
+                Narrative Report Generator
+              </h1>
+            </div>
+            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-right">
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-200">Status</p>
+              <p className="text-xl font-bold text-cyan-300">{status}</p>
+            </div>
+          </div>
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-          {fields.map(([key, label]) => (
-            <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 600 }}>
-              {label}
-              <textarea
-                value={String(form[key])}
-                onChange={(e) => handleChange(key, e.target.value)}
-                rows={4}
-                style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', resize: 'vertical' }}
-              />
-            </label>
-          ))}
+          <p className="mt-6 max-w-3xl text-lg text-slate-300">
+            A realistic internship report builder designed to turn your OJT experiences into a polished narrative report with chapter-based guidance and professional Word export.
+          </p>
+        </header>
+
+        <section className="mb-10 grid gap-6 md:grid-cols-3">
+          <Card label="Sections" value="6" color="cyan" />
+          <Card label="Format" value="DOCX" color="violet" />
+          <Card label="Mode" value="Web" color="emerald" />
+        </section>
+
+        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
+          <form className="space-y-8 rounded-[28px] border border-slate-800 bg-slate-900/80 p-6">
+            <SectionBlock title="1. Acknowledgement">
+              <label className="block text-sm font-medium text-slate-200">
+                Student Name
+                <input value={form.studentName} onChange={(e) => updateField('studentName', e.target.value)} className={fieldClass} />
+              </label>
+              <label className="mt-4 block text-sm font-medium text-slate-200">
+                Degree Program
+                <input value={form.degreeProgram} onChange={(e) => updateField('degreeProgram', e.target.value)} className={fieldClass} />
+              </label>
+              <label className="mt-4 block text-sm font-medium text-slate-200">
+                Acknowledgement Paragraph
+                <textarea value={form.acknowledgement} onChange={(e) => updateField('acknowledgement', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+            </SectionBlock>
+
+            <SectionBlock title="2. Introduction">
+              <label className="block text-sm font-medium text-slate-200">
+                Background of Organization
+                <textarea value={form.background} onChange={(e) => updateField('background', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <label className="block text-sm font-medium text-slate-200">
+                  Vision
+                  <input value={form.vision} onChange={(e) => updateField('vision', e.target.value)} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Mission
+                  <input value={form.mission} onChange={(e) => updateField('mission', e.target.value)} className={fieldClass} />
+                </label>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <label className="block text-sm font-medium text-slate-200">
+                  Objectives
+                  <textarea value={form.objectives} onChange={(e) => updateField('objectives', e.target.value)} rows={3} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Core Values
+                  <textarea value={form.coreValues} onChange={(e) => updateField('coreValues', e.target.value)} rows={3} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Services Offered
+                  <textarea value={form.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
+                </label>
+              </div>
+            </SectionBlock>
+
+            <SectionBlock title="3. Organization Analysis">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block text-sm font-medium text-slate-200">
+                  Strengths
+                  <textarea value={form.strengths} onChange={(e) => updateField('strengths', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Weaknesses
+                  <textarea value={form.weaknesses} onChange={(e) => updateField('weaknesses', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Opportunities
+                  <textarea value={form.opportunities} onChange={(e) => updateField('opportunities', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Threats
+                  <textarea value={form.threats} onChange={(e) => updateField('threats', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+              </div>
+              <label className="mt-4 block text-sm font-medium text-slate-200">
+                Recommendations
+                <textarea value={form.recommendations} onChange={(e) => updateField('recommendations', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+            </SectionBlock>
+
+            <SectionBlock title="4. Tasks and Duties">
+              <label className="block text-sm font-medium text-slate-200">
+                Assigned Tasks
+                <textarea value={form.tasks} onChange={(e) => updateField('tasks', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+              <label className="mt-4 block text-sm font-medium text-slate-200">
+                Procedures Conformed
+                <textarea value={form.procedures} onChange={(e) => updateField('procedures', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+            </SectionBlock>
+
+            <SectionBlock title="5. Case Analysis">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block text-sm font-medium text-slate-200">
+                  Problem 1
+                  <textarea value={form.issue1} onChange={(e) => updateField('issue1', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Solution/Action 1
+                  <textarea value={form.issue1Action} onChange={(e) => updateField('issue1Action', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Problem 2
+                  <textarea value={form.issue2} onChange={(e) => updateField('issue2', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Solution/Action 2
+                  <textarea value={form.issue2Action} onChange={(e) => updateField('issue2Action', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+              </div>
+              <label className="mt-4 block text-sm font-medium text-slate-200">
+                Lessons Learned
+                <textarea value={form.lessons} onChange={(e) => updateField('lessons', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+            </SectionBlock>
+
+            <SectionBlock title="6. Reflections">
+              <label className="block text-sm font-medium text-slate-200">
+                Self-Evaluation
+                <textarea value={form.selfEvaluation} onChange={(e) => updateField('selfEvaluation', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+              <label className="mt-4 block text-sm font-medium text-slate-200">
+                Relevancy to Course and Goals
+                <textarea value={form.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
+              </label>
+            </SectionBlock>
+          </form>
+
+          <aside className="flex flex-col gap-4 rounded-[28px] border border-slate-800 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-violet-500/10 p-6">
+            <h3 className="text-xl font-bold text-white">Report Preview</h3>
+
+            <div className="space-y-4 text-sm text-slate-300">
+              <Box label="Student" value={form.studentName} />
+              <Box label="Program" value={form.degreeProgram} />
+              <Box label="Organization" value={form.background.slice(0, 90) + (form.background.length > 90 ? '...' : '')} />
+              <Box label="Status" value={status} />
+            </div>
+
+            <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Current flow</p>
+              <div className="mt-4 space-y-3">
+                {sectionOrder.map((section, index) => (
+                  <div key={section} className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/15 text-xs font-bold text-cyan-300">
+                      {index + 1}
+                    </span>
+                    <span className="text-slate-200">{section}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={loading}
+              className="mt-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-3 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? 'Generating...' : 'Generate Report'}
+            </button>
+          </aside>
         </div>
-
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <button type="submit" disabled={loading} style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: '#0f172a', color: '#fff', cursor: 'pointer' }}>
-            {loading ? 'Generating...' : 'Generate Word Document'}
-          </button>
-        </div>
-
-        {status ? <p style={{ textAlign: 'center', marginTop: '1rem' }}>{status}</p> : null}
-      </form>
+      </div>
     </main>
+  );
+}
+
+function SectionBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+      <h2 className="mb-4 text-xl font-bold text-white">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Card({ label, value, color }: { label: string; value: string; color: 'cyan' | 'violet' | 'emerald' }) {
+  const tone = {
+    cyan: 'text-cyan-300',
+    violet: 'text-violet-300',
+    emerald: 'text-emerald-300',
+  }[color];
+
+  return (
+    <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-5">
+      <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{label}</p>
+      <p className={`mt-4 text-4xl font-bold ${tone}`}>{value}</p>
+    </div>
+  );
+}
+
+function Box({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</p>
+      <p className="mt-2 text-base font-semibold text-white">{value}</p>
+    </div>
   );
 }
