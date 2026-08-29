@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from 'react';
 
 const sectionOrder = [
@@ -14,12 +12,12 @@ const sectionOrder = [
 ];
 
 const defaultForm = {
-  // Front Page / Cover Page Fields
-  trainingOrganization: 'Zamboanga del Norte Medical Center Dialysis Clinic',
-  trainingLocation: 'Sicayab, Dipolog City, Philippines',
+  // Front Page / Cover Page Fields (Updated to match the target example format)
+  trainingOrganization: 'Zamboanga del Norte Provincial Capitol',
+  trainingLocation: 'Dipolog City',
   collegeFaculty: 'College of Computing Studies',
-  degreeProgram: 'Bachelor of Science in Computer Science',
-  studentName: 'Emerald Mae Charity G. Alamat',
+  degreeProgram: 'Bachelor of Science in Information System',
+  studentName: 'Ian P. Padilla',
   submittedToName: 'Mr. Erson A. Rodriguez',
   submittedToTitle: 'Associate Dean of the College of Computing Studies',
 
@@ -75,10 +73,10 @@ const defaultForm = {
 };
 
 const fieldClass =
-  'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-base';
+  'mt-2.5 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:rounded-2xl sm:px-4 sm:py-3.5 sm:text-base';
 
 const fileInputClass = 
-  'mt-2 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20';
+  'mt-2.5 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20';
 
 async function compressImageDataUrl(file: File, maxWidth = 1400, quality = 0.75): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -294,234 +292,248 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-10 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-6 overflow-hidden rounded-[24px] border border-cyan-500/20 bg-slate-900/80 p-5 shadow-glow backdrop-blur-xl sm:mb-10 sm:rounded-[28px] sm:p-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300 sm:text-sm">JRMSU</p>
-              <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl md:text-6xl">
+    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 sm:py-12 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-8 sm:space-y-12">
+        <header className="overflow-hidden rounded-[24px] border border-cyan-500/20 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl sm:rounded-[32px] sm:p-10">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300 sm:text-sm font-semibold">JRMSU</p>
+              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
                 Narrative Report Generator
               </h1>
             </div>
-            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2.5 text-left sm:px-4 sm:py-3 md:text-right">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-200 sm:text-xs">Status</p>
-              <p className="mt-1 text-lg font-bold text-cyan-300 sm:text-xl">{status}</p>
+            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-left sm:px-5 sm:py-3.5 md:text-right">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-200 sm:text-xs font-semibold">Status</p>
+              <p className="mt-1.5 text-lg font-bold text-cyan-300 sm:text-xl">{status}</p>
             </div>
           </div>
         </header>
 
-        <section className="mb-6 grid gap-4 sm:mb-10 sm:grid-cols-3 sm:gap-6">
+        <section className="grid gap-4 sm:grid-cols-3 sm:gap-6">
           <Card label="Sections" value="8" color="cyan" />
           <Card label="Format" value="DOCX" color="violet" />
           <Card label="Mode" value="Web" color="emerald" />
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
-          <form className="space-y-6 rounded-[24px] border border-slate-800 bg-slate-900/80 p-4 sm:space-y-8 sm:rounded-[28px] sm:p-6">
+        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
+          <form className="space-y-8 rounded-[24px] border border-slate-800 bg-slate-900/80 p-6 sm:rounded-[32px] sm:p-8">
             
             {/* Front Page / Cover Page Section */}
             <SectionBlock title="Front Page (Cover Page Details)">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-200">
-                  Training Organization / Company Name
-                  <input 
-                    value={form.trainingOrganization} 
-                    onChange={(e) => updateField('trainingOrganization', e.target.value)} 
-                    className={fieldClass} 
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Training Location (City, Province, Country)
-                  <input 
-                    value={form.trainingLocation} 
-                    onChange={(e) => updateField('trainingLocation', e.target.value)} 
-                    className={fieldClass} 
-                  />
-                </label>
-              </div>
+              <div className="space-y-5">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Training Organization / Company Name
+                    <input 
+                      value={form.trainingOrganization} 
+                      onChange={(e) => updateField('trainingOrganization', e.target.value)} 
+                      className={fieldClass} 
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Training Location (City, Province, Country)
+                    <input 
+                      value={form.trainingLocation} 
+                      onChange={(e) => updateField('trainingLocation', e.target.value)} 
+                      className={fieldClass} 
+                    />
+                  </label>
+                </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-200">
-                  College / Faculty Name
-                  <input 
-                    value={form.collegeFaculty} 
-                    onChange={(e) => updateField('collegeFaculty', e.target.value)} 
-                    className={fieldClass} 
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Degree Program
-                  <input 
-                    value={form.degreeProgram} 
-                    onChange={(e) => updateField('degreeProgram', e.target.value)} 
-                    className={fieldClass} 
-                  />
-                </label>
-              </div>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    College / Faculty Name
+                    <input 
+                      value={form.collegeFaculty} 
+                      onChange={(e) => updateField('collegeFaculty', e.target.value)} 
+                      className={fieldClass} 
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Degree Program
+                    <input 
+                      value={form.degreeProgram} 
+                      onChange={(e) => updateField('degreeProgram', e.target.value)} 
+                      className={fieldClass} 
+                    />
+                  </label>
+                </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                <label className="block text-sm font-medium text-slate-200">
-                  Student Name
-                  <input 
-                    value={form.studentName} 
-                    onChange={(e) => updateField('studentName', e.target.value)} 
-                    className={fieldClass} 
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Submitted To (Adviser Name)
-                  <input 
-                    value={form.submittedToName} 
-                    onChange={(e) => updateField('submittedToName', e.target.value)} 
-                    className={fieldClass} 
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Submitted To Title / Position
-                  <input 
-                    value={form.submittedToTitle} 
-                    onChange={(e) => updateField('submittedToTitle', e.target.value)} 
-                    className={fieldClass} 
-                  />
-                </label>
+                <div className="grid gap-5 md:grid-cols-3">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Student Name
+                    <input 
+                      value={form.studentName} 
+                      onChange={(e) => updateField('studentName', e.target.value)} 
+                      className={fieldClass} 
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Submitted To (Adviser Name)
+                    <input 
+                      value={form.submittedToName} 
+                      onChange={(e) => updateField('submittedToName', e.target.value)} 
+                      className={fieldClass} 
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Submitted To Title / Position
+                    <input 
+                      value={form.submittedToTitle} 
+                      onChange={(e) => updateField('submittedToTitle', e.target.value)} 
+                      className={fieldClass} 
+                    />
+                  </label>
+                </div>
               </div>
             </SectionBlock>
 
             <SectionBlock title="1. Acknowledgement">
-              <label className="block text-sm font-medium text-slate-200">
-                Student Name
-                <input value={form.studentName} onChange={(e) => updateField('studentName', e.target.value)} className={fieldClass} />
-              </label>
-              <label className="mt-4 block text-sm font-medium text-slate-200">
-                Degree Program
-                <input value={form.degreeProgram} onChange={(e) => updateField('degreeProgram', e.target.value)} className={fieldClass} />
-              </label>
-              <label className="mt-4 block text-sm font-medium text-slate-200">
-                Acknowledgement Paragraph
-                <textarea value={form.acknowledgement} onChange={(e) => updateField('acknowledgement', e.target.value)} rows={4} className={fieldClass} />
-              </label>
+              <div className="space-y-5">
+                <label className="block text-sm font-medium text-slate-200">
+                  Student Name
+                  <input value={form.studentName} onChange={(e) => updateField('studentName', e.target.value)} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Degree Program
+                  <input value={form.degreeProgram} onChange={(e) => updateField('degreeProgram', e.target.value)} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Acknowledgement Paragraph
+                  <textarea value={form.acknowledgement} onChange={(e) => updateField('acknowledgement', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+              </div>
             </SectionBlock>
 
             <SectionBlock title="2. Introduction">
-              <label className="block text-sm font-medium text-slate-200">
-                Background of Organization
-                <textarea value={form.background} onChange={(e) => updateField('background', e.target.value)} rows={4} className={fieldClass} />
-              </label>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="space-y-5">
                 <label className="block text-sm font-medium text-slate-200">
-                  Vision
-                  <input value={form.vision} onChange={(e) => updateField('vision', e.target.value)} className={fieldClass} />
+                  Background of Organization
+                  <textarea value={form.background} onChange={(e) => updateField('background', e.target.value)} rows={4} className={fieldClass} />
                 </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Mission
-                  <input value={form.mission} onChange={(e) => updateField('mission', e.target.value)} className={fieldClass} />
-                </label>
-              </div>
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                <label className="block text-sm font-medium text-slate-200">
-                  Objectives
-                  <textarea value={form.objectives} onChange={(e) => updateField('objectives', e.target.value)} rows={3} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Core Values
-                  <textarea value={form.coreValues} onChange={(e) => updateField('coreValues', e.target.value)} rows={3} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Services Offered
-                  <textarea value={form.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
-                </label>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Vision
+                    <input value={form.vision} onChange={(e) => updateField('vision', e.target.value)} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Mission
+                    <input value={form.mission} onChange={(e) => updateField('mission', e.target.value)} className={fieldClass} />
+                  </label>
+                </div>
+                <div className="grid gap-5 md:grid-cols-3">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Objectives
+                    <textarea value={form.objectives} onChange={(e) => updateField('objectives', e.target.value)} rows={3} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Core Values
+                    <textarea value={form.coreValues} onChange={(e) => updateField('coreValues', e.target.value)} rows={3} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Services Offered
+                    <textarea value={form.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
+                  </label>
+                </div>
               </div>
             </SectionBlock>
 
             <SectionBlock title="3. Organization Analysis">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-5">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Strengths
+                    <textarea value={form.strengths} onChange={(e) => updateField('strengths', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Weaknesses
+                    <textarea value={form.weaknesses} onChange={(e) => updateField('weaknesses', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Opportunities
+                    <textarea value={form.opportunities} onChange={(e) => updateField('opportunities', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Threats
+                    <textarea value={form.threats} onChange={(e) => updateField('threats', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                </div>
                 <label className="block text-sm font-medium text-slate-200">
-                  Strengths
-                  <textarea value={form.strengths} onChange={(e) => updateField('strengths', e.target.value)} rows={4} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Weaknesses
-                  <textarea value={form.weaknesses} onChange={(e) => updateField('weaknesses', e.target.value)} rows={4} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Opportunities
-                  <textarea value={form.opportunities} onChange={(e) => updateField('opportunities', e.target.value)} rows={4} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Threats
-                  <textarea value={form.threats} onChange={(e) => updateField('threats', e.target.value)} rows={4} className={fieldClass} />
+                  Recommendations
+                  <textarea value={form.recommendations} onChange={(e) => updateField('recommendations', e.target.value)} rows={4} className={fieldClass} />
                 </label>
               </div>
-              <label className="mt-4 block text-sm font-medium text-slate-200">
-                Recommendations
-                <textarea value={form.recommendations} onChange={(e) => updateField('recommendations', e.target.value)} rows={4} className={fieldClass} />
-              </label>
             </SectionBlock>
 
             <SectionBlock title="4. Tasks and Duties">
-              <label className="block text-sm font-medium text-slate-200">
-                Assigned Tasks
-                <textarea value={form.tasks} onChange={(e) => updateField('tasks', e.target.value)} rows={4} className={fieldClass} />
-              </label>
-              <label className="mt-4 block text-sm font-medium text-slate-200">
-                Procedures Conformed
-                <textarea value={form.procedures} onChange={(e) => updateField('procedures', e.target.value)} rows={4} className={fieldClass} />
-              </label>
+              <div className="space-y-5">
+                <label className="block text-sm font-medium text-slate-200">
+                  Assigned Tasks
+                  <textarea value={form.tasks} onChange={(e) => updateField('tasks', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Procedures Conformed
+                  <textarea value={form.procedures} onChange={(e) => updateField('procedures', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+              </div>
             </SectionBlock>
 
             <SectionBlock title="5. Case Analysis">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-5">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Problem 1
+                    <textarea value={form.issue1} onChange={(e) => updateField('issue1', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Solution/Action 1
+                    <textarea value={form.issue1Action} onChange={(e) => updateField('issue1Action', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Problem 2
+                    <textarea value={form.issue2} onChange={(e) => updateField('issue2', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Solution/Action 2
+                    <textarea value={form.issue2Action} onChange={(e) => updateField('issue2Action', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+                </div>
                 <label className="block text-sm font-medium text-slate-200">
-                  Problem 1
-                  <textarea value={form.issue1} onChange={(e) => updateField('issue1', e.target.value)} rows={4} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Solution/Action 1
-                  <textarea value={form.issue1Action} onChange={(e) => updateField('issue1Action', e.target.value)} rows={4} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Problem 2
-                  <textarea value={form.issue2} onChange={(e) => updateField('issue2', e.target.value)} rows={4} className={fieldClass} />
-                </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Solution/Action 2
-                  <textarea value={form.issue2Action} onChange={(e) => updateField('issue2Action', e.target.value)} rows={4} className={fieldClass} />
+                  Lessons Learned
+                  <textarea value={form.lessons} onChange={(e) => updateField('lessons', e.target.value)} rows={4} className={fieldClass} />
                 </label>
               </div>
-              <label className="mt-4 block text-sm font-medium text-slate-200">
-                Lessons Learned
-                <textarea value={form.lessons} onChange={(e) => updateField('lessons', e.target.value)} rows={4} className={fieldClass} />
-              </label>
             </SectionBlock>
 
             <SectionBlock title="6. Reflections">
-              <label className="block text-sm font-medium text-slate-200">
-                Self-Evaluation
-                <textarea value={form.selfEvaluation} onChange={(e) => updateField('selfEvaluation', e.target.value)} rows={4} className={fieldClass} />
-              </label>
-              <label className="mt-4 block text-sm font-medium text-slate-200">
-                Relevancy to Course and Goals
-                <textarea value={form.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
-              </label>
+              <div className="space-y-5">
+                <label className="block text-sm font-medium text-slate-200">
+                  Self-Evaluation
+                  <textarea value={form.selfEvaluation} onChange={(e) => updateField('selfEvaluation', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Relevancy to Course and Goals
+                  <textarea value={form.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
+                </label>
+              </div>
             </SectionBlock>
 
             <SectionBlock title="7. Appendices">
               <div className="space-y-8">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
                     <button
                       type="button"
                       onClick={addWeek}
-                      className="rounded-xl bg-cyan-500/20 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30"
+                      className="rounded-xl bg-cyan-500/20 px-3.5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30"
                     >
                       + Add Week
                     </button>
                   </div>
 
                   {form.appendices.dailyJournal.map((week, weekIdx) => (
-                    <div key={weekIdx} className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-4">
+                    <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-white">WEEK {week.weekNumber} (Total Hours: {week.totalHours})</span>
                         {form.appendices.dailyJournal.length > 1 && (
@@ -538,39 +550,39 @@ export default function Home() {
                       <div className="space-y-3">
                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Activities</p>
                         {week.activities.map((act, dayIdx) => (
-                          <div key={dayIdx} className="grid gap-2 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-center bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                          <div key={dayIdx} className="grid gap-2.5 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                             <input
                               type="text"
                               placeholder="Day"
                               value={act.day}
                               onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                             />
                             <input
                               type="text"
                               placeholder="Date"
                               value={act.date}
                               onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                             />
                             <input
                               type="text"
                               placeholder="Daily Accomplishment"
                               value={act.accomplishment}
                               onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                             />
                             <input
                               type="number"
                               placeholder="Hrs"
                               value={act.hours}
                               onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                             />
                             <button
                               type="button"
                               onClick={() => removeDay(weekIdx, dayIdx)}
-                              className="text-rose-400 text-xs px-2 hover:text-rose-300"
+                              className="text-rose-400 text-xs px-2 py-1 hover:text-rose-300"
                             >
                               ✕
                             </button>
@@ -586,7 +598,7 @@ export default function Home() {
                         </button>
                       </div>
 
-                      <label className="block text-sm font-medium text-slate-200">
+                      <label className="block text-sm font-medium text-slate-200 pt-2">
                         Weekly Narrative Report
                         <textarea
                           value={week.narrative}
@@ -600,16 +612,16 @@ export default function Home() {
                         />
                       </label>
 
-                      <div>
+                      <div className="pt-2">
                         <label className="block text-sm font-medium text-slate-200">
                           Upload Pictures for Week {week.weekNumber} (Max 3)
                           <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
                         </label>
                         
                         {week.images && week.images.length > 0 && (
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-3 space-y-2.5">
                             {week.images.map((img, imgIdx) => (
-                              <div key={imgIdx} className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                              <div key={imgIdx} className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                                 <img src={img.base64} alt="Preview" className="h-10 w-10 object-cover rounded-lg" />
                                 <input
                                   type="text"
@@ -620,7 +632,7 @@ export default function Home() {
                                     newJournal[weekIdx].images[imgIdx].detail = e.target.value;
                                     setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
                                   }}
-                                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                                 />
                                 <button
                                   type="button"
@@ -629,7 +641,7 @@ export default function Home() {
                                     newJournal[weekIdx].images = newJournal[weekIdx].images.filter((_, idx) => idx !== imgIdx);
                                     setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
                                   }}
-                                  className="text-xs text-rose-400 px-2"
+                                  className="text-xs text-rose-400 px-2 py-1"
                                 >
                                   ✕
                                 </button>
@@ -647,7 +659,7 @@ export default function Home() {
                   <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={3} className={fieldClass} />
                 </label>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-5 md:grid-cols-2 pt-2">
                   <FileUpload label="Certificate of Participation (PRIME)" onChange={(e) => handleFileUpload(e, 'certParticipation')} />
                   <FileUpload label="Resume and Application Letter" onChange={(e) => handleFileUpload(e, 'resume')} />
                   <FileUpload label="Evaluation of Grades & Validated Enrolment" onChange={(e) => handleFileUpload(e, 'grades')} />
@@ -662,25 +674,25 @@ export default function Home() {
 
           </form>
 
-          <aside className="flex flex-col gap-4 rounded-[24px] border border-slate-800 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-violet-500/10 p-4 sm:rounded-[28px] sm:p-6">
+          <aside className="flex flex-col gap-5 rounded-[24px] border border-slate-800 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-violet-500/10 p-6 sm:rounded-[32px] sm:p-8">
             <h3 className="text-lg font-bold text-white sm:text-xl">Report Preview</h3>
 
-            <div className="space-y-3 text-sm text-slate-300 sm:space-y-4">
+            <div className="space-y-4 text-sm text-slate-300">
               <Box label="Student" value={form.studentName} />
               <Box label="Program" value={form.degreeProgram} />
               <Box label="Organization" value={form.trainingOrganization} />
               <Box label="Status" value={status} />
             </div>
 
-            <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-3 sm:p-4">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">Current flow</p>
-              <div className="mt-4 space-y-2.5 sm:space-y-3">
+            <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-4 sm:p-5">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">Current flow</p>
+              <div className="mt-4 space-y-3 sm:space-y-3.5">
                 {sectionOrder.map((section, index) => (
-                  <div key={section} className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/15 text-[10px] font-bold text-cyan-300 sm:h-7 sm:w-7 sm:text-xs">
+                  <div key={section} className="flex items-center gap-3.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/15 text-xs font-bold text-cyan-300">
                       {index + 1}
                     </span>
-                    <span className="text-sm text-slate-200 sm:text-base">{section}</span>
+                    <span className="text-sm text-slate-200 sm:text-base font-medium">{section}</span>
                   </div>
                 ))}
               </div>
@@ -690,7 +702,7 @@ export default function Home() {
               type="button"
               onClick={handleGenerate}
               disabled={loading}
-              className="mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-3 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 sm:mt-4"
+              className="mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-3.5 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Generating...' : 'Generate Report'}
             </button>
@@ -703,8 +715,8 @@ export default function Home() {
 
 function SectionBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:rounded-3xl sm:p-5">
-      <h2 className="mb-4 text-lg font-bold text-white sm:text-xl">{title}</h2>
+    <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 sm:rounded-3xl sm:p-6 space-y-5">
+      <h2 className="text-lg font-bold text-white sm:text-xl">{title}</h2>
       {children}
     </section>
   );
@@ -712,7 +724,7 @@ function SectionBlock({ title, children }: { title: string; children: React.Reac
 
 function FileUpload({ label, onChange }: { label: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   return (
-    <label className="block text-sm font-medium text-slate-200">
+    <label className="block text-sm font-medium text-slate-200 space-y-1.5">
       {label}
       <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={onChange} className={fileInputClass} />
     </label>
@@ -727,18 +739,18 @@ function Card({ label, value, color }: { label: string; value: string; color: 'c
   }[color];
 
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-4 sm:p-5">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-sm">{label}</p>
-      <p className={`mt-3 text-2xl font-bold sm:mt-4 sm:text-4xl ${tone}`}>{value}</p>
+    <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-5 sm:p-6 space-y-2">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">{label}</p>
+      <p className={`text-2xl font-bold sm:text-4xl ${tone}`}>{value}</p>
     </div>
   );
 }
 
 function Box({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-3 sm:p-4">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-white sm:text-base">{value}</p>
+    <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 space-y-1.5">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">{label}</p>
+      <p className="text-sm font-semibold text-white sm:text-base">{value}</p>
     </div>
   );
 }
