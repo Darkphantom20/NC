@@ -184,13 +184,14 @@ function buildCoverPage(data: any): Paragraph[] {
   const faculty = data.collegeFaculty || 'College of Computing Studies';
   const degree = data.degreeProgram || 'Bachelor of Science in Computer Science';
   const student = data.studentName || 'Emerald Mae Charity G. Alamat';
+  const studentDegree = data.studentDegree || 'BS Computer Science';
   const adviserName = data.submittedToName || 'Mr. Erson A. Rodriguez';
   const adviserTitle = data.submittedToTitle || 'Associate Dean of the College of Computing Studies';
 
   return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 360, after: 120 },
+      spacing: { before: 240, after: 120 },
       children: [new TextRun({ text: 'A Narrative Report on the', size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
@@ -205,57 +206,57 @@ function buildCoverPage(data: any): Paragraph[] {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 360 },
+      spacing: { after: 280 },
       children: [new TextRun({ text: location, size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 120, after: 60 },
+      spacing: { before: 60, after: 60 },
       children: [new TextRun({ text: 'Presented to the faculty of', size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 360 },
-      children: [new TextRun({ text: faculty, size: 24, font: 'Times New Roman' })],
+      spacing: { after: 280 },
+      children: [new TextRun({ text: faculty, size: 24, font: 'Times New Roman', bold: true })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 120, after: 60 },
+      spacing: { before: 60, after: 60 },
       children: [new TextRun({ text: 'In partial fulfillment of the requirements for the degree of', size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 360 },
-      children: [new TextRun({ text: degree, size: 24, font: 'Times New Roman' })],
+      spacing: { after: 280 },
+      children: [new TextRun({ text: degree, size: 24, font: 'Times New Roman', bold: true })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 120, after: 60 },
+      spacing: { before: 60, after: 60 },
       children: [new TextRun({ text: 'Submitted by:', size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 60 },
-      children: [new TextRun({ text: student, size: 24, font: 'Times New Roman' })],
+      children: [new TextRun({ text: student, size: 24, font: 'Times New Roman', bold: true })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 360 },
-      children: [new TextRun({ text: degree, size: 24, font: 'Times New Roman' })],
+      spacing: { after: 280 },
+      children: [new TextRun({ text: studentDegree, size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 120, after: 60 },
+      spacing: { before: 60, after: 60 },
       children: [new TextRun({ text: 'Submitted to:', size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 60 },
-      children: [new TextRun({ text: adviserName, size: 24, font: 'Times New Roman' })],
+      children: [new TextRun({ text: adviserName, size: 24, font: 'Times New Roman', bold: true })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
+      spacing: { after: 0 },
       children: [new TextRun({ text: adviserTitle, size: 24, font: 'Times New Roman' })],
     }),
   ];
