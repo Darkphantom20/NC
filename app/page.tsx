@@ -76,7 +76,7 @@ const tourSteps: Step[] = [
   {
     target: '.tour-title',
     content: 'Welcome to the Narrative Report Generator. This tour will guide you through the main sections of the page.',
-    disableBeacon: true,
+    skipBeacon: true,
   },
   {
     target: '.tour-status',
@@ -154,7 +154,7 @@ export default function Home() {
     {
       target: '.tour-start-btn',
       content: 'Welcome to the JRMSU Narrative Report Generator! Replace the sample values with your own data as you go through each section.',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '.tour-form',
