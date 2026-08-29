@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, LineRuleType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header } from 'docx';
 
 export const runtime = 'nodejs';
 
@@ -28,10 +28,15 @@ const hasSupabaseConfig = Boolean(supabaseUrl && supabaseKey);
 function ensureArray(val: any): string[] {
   if (Array.isArray(val)) return val.map(v => String(v).trim()).filter(Boolean);
   if (typeof val === 'string' && val.trim().length > 0) {
-    // If it's a newline-separated string or comma-separated, handle gracefully or return as single item array
     return val.split('\n').map(v => v.trim()).filter(Boolean);
   }
   return [];
+}
+
+interface SectionData {
+  title: string;
+  content: any;
+  isBullet?: boolean;
 }
 
 export async function POST(request: Request) {
@@ -87,12 +92,24 @@ export async function POST(request: Request) {
           properties: {
             page: {
               margin: { 
-                top: 576,    // 0.4 inches
-                bottom: 1440, // 1.0 inch
-                left: 1152,  // 0.8 inches
-                right: 1152  // 0.8 inches
+                top: 1440,    // 1.0 inch for standard balanced margins
+                bottom: 1440, 
+                left: 1440,  
+                right: 1440,
+                header: 720,  // 0.5 inch margin for the header
               },
             },
+          },
+          // Embed the header at the document section level
+          headers: {
+            default: new Header({
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: buildHeaderImage(),
+                }),
+              ],
+            }),
           },
           children: [
             // Section 1: Acknowledgement
@@ -101,50 +118,46 @@ export async function POST(request: Request) {
             // Section 2: Introduction
             new Paragraph({ pageBreakBefore: true }),
             ...buildSectionPage('2. INTRODUCTION', [
-              ['Background of the Organization', ensureArray(data.background).length ? ensureArray(data.background) : [data.background || 'The Management Information Systems Office (MISO) serves as the core technological backbone...']],
-              ['Vision', ensureArray(data.vision).length ? ensureArray(data.vision) : [data.vision || 'To be a premier provider of innovative, reliable, and secure technological solutions...']],
-              ['Mission', ensureArray(data.mission).length ? ensureArray(data.mission) : [data.mission || 'To empower the organization through efficient IT infrastructure...']],
-              ['Objectives', ensureArray(data.objectives).length ? ensureArray(data.objectives) : ['To streamline administrative processes and ensure system reliability.']],
-              ['Core Values', ensureArray(data.coreValues).length ? ensureArray(data.coreValues) : ['Integrity, Excellence, and Commitment to Public Service.']],
-              ['Products and Services Offered', ensureArray(data.services).length ? ensureArray(data.services) : ['Provide reliable technical support and ICT services.']],
-            ], true),
+              { title: 'Background of the Organization', content: data.background || 'The Management Information Systems Office (MISO) serves as the core technological backbone...' },
+              { title: 'Vision', content: data.vision || 'A technologically advanced and efficient Provincial Government...' },
+              { title: 'Mission', content: data.mission || 'To provide reliable information systems...' },
+              { title: 'Objectives', content: data.objectives, isBullet: true },
+              { title: 'Core Values', content: data.coreValues, isBullet: true },
+              { title: 'Products and Services Offered', content: data.services || 'Provide reliable technical support and ICT services.' },
+            ]),
 
             // Section 3: Company Analysis
             new Paragraph({ pageBreakBefore: true }),
             ...buildSectionPage('3. ORGANIZATION / COMPANY ANALYSIS', [
-              ['Strengths of the Organization (Internal factors)', ensureArray(data.strengths).length ? ensureArray(data.strengths) : ['The organization possesses highly skilled and dedicated technical personnel...']],
-              ['Weaknesses of the Organization (Internal factors)', ensureArray(data.weaknesses).length ? ensureArray(data.weaknesses) : ['Internal operations occasionally face limitations due to aging hardware...']],
-              ['Opportunities of the Organization (External factors)', ensureArray(data.opportunities).length ? ensureArray(data.opportunities) : ['There are significant external prospects for adopting advanced cloud solutions...']],
-              ['Threats of the Organization (External factors)', ensureArray(data.threats).length ? ensureArray(data.threats) : ['External risks such as evolving cybersecurity vulnerabilities remain constant challenges.']],
-              ['Recommendations for Improvement', ensureArray(data.recommendations).length ? ensureArray(data.recommendations) : ['It is highly recommended to upgrade legacy infrastructure and conduct continuous staff training.']],
+              { title: 'Strengths of the Organization (Internal factors)', content: data.strengths, isBullet: true },
+              { title: 'Weaknesses of the Organization (Internal factors)', content: data.weaknesses, isBullet: true },
+              { title: 'Opportunities of the Organization (External factors)', content: data.opportunities, isBullet: true },
+              { title: 'Threats of the Organization (External factors)', content: data.threats, isBullet: true },
+              { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
             ]),
 
             // Section 4: Tasks and Duties
             new Paragraph({ pageBreakBefore: true }),
             ...buildSectionPage('4. TASKS AND DUTIES', [
-              ['Assigned Tasks and Responsibilities', ensureArray(data.tasks).length ? ensureArray(data.tasks) : ['Assigned tasks included troubleshooting office hardware issues and maintaining network cables.']],
-              ['Duties and Procedures Conformed', ensureArray(data.procedures).length ? ensureArray(data.procedures) : ['Followed strict IT ticketing protocols and observed safety compliance guidelines.']],
+              { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
+              { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
             ]),
 
             // Section 5: Case Analysis
             new Paragraph({ pageBreakBefore: true }),
             ...buildSectionPage('5. CASE ANALYSIS', [
-              ['Issue / Problem 1', [
-                `Description: ${data.issue1 || 'Encountered unexpected network downtime during a critical system update.'}`,
-                `Strategy/Action Undertaken: ${data.issue1Action || 'Conducted a line check, isolated the faulty switch port, and switched routing to backup.'}`
-              ]],
-              ['Issue / Problem 2', [
-                `Description: ${data.issue2 || 'Faced compatibility errors when deploying a legacy database script.'}`,
-                `Strategy/Action Undertaken: ${data.issue2Action || 'Debugged SQL syntax constraints and updated driver packages.'}`
-              ]],
-              ['Lessons Learned from the Situations', ensureArray(data.lessons).length ? ensureArray(data.lessons) : ['These situations taught the vital importance of systematic troubleshooting and backups.']],
+              { title: 'Issue / Problem 1', content: data.issue1 || 'No issue provided.' },
+              { title: 'Strategy/Action Undertaken for Problem 1', content: data.issue1Action || 'No action provided.' },
+              { title: 'Issue / Problem 2', content: data.issue2 || 'No issue provided.' },
+              { title: 'Strategy/Action Undertaken for Problem 2', content: data.issue2Action || 'No action provided.' },
+              { title: 'Lessons Learned from the Situations', content: data.lessons },
             ]),
 
             // Section 6: Reflections
             new Paragraph({ pageBreakBefore: true }),
             ...buildSectionPage('6. REFLECTIONS', [
-              ['Self-Evaluation from the Learning Process Experienced', ensureArray(data.selfEvaluation).length ? ensureArray(data.selfEvaluation) : ['The OJT journey served as a transformative learning process bridging theory and execution.']],
-              ['Relevancy of the Organization with Your Programme of Study and Expected Goals', ensureArray(data.relevancy).length ? ensureArray(data.relevancy) : ['The host organization directly aligns with my degree program goals of mastering enterprise administration.']],
+              { title: 'Self-Evaluation from the Learning Process Experienced', content: data.selfEvaluation },
+              { title: 'Relevancy of the Organization with Your Programme of Study and Expected Goals', content: data.relevancy },
             ]),
           ],
         },
@@ -170,21 +183,17 @@ export async function POST(request: Request) {
 }
 
 function buildAcknowledgementPage(studentName: string, degreeProgram: string, acknowledgement: any) {
-  const name = `${studentName || 'IAN P. PADILLA'}`.toUpperCase();
+  const name = `${studentName || 'HAYNA G. DAUD'}`.toUpperCase();
   const program = degreeProgram || 'Bachelor of Science in Information System';
+  
   const ackParas = ensureArray(acknowledgement).length ? ensureArray(acknowledgement) : [
-    typeof acknowledgement === 'string' && acknowledgement.trim() ? acknowledgement : 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT.'
+    'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.'
   ];
 
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 20, after: 120 },
-      children: buildHeaderImage(),
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 259, after: 172 }, // Pt(18) before, Pt(12) after approx
+      spacing: { before: 120, after: 360 }, 
       children: [
         new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 28, font: 'Times New Roman' }),
       ],
@@ -194,24 +203,33 @@ function buildAcknowledgementPage(studentName: string, degreeProgram: string, ac
   for (const text of ackParas) {
     children.push(
       new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        spacing: { line: 276, lineRule: LineRuleType.AUTO, after: 86 }, // 1.15 line spacing, 6pt after
+        alignment: AlignmentType.JUSTIFY,
+        spacing: { after: 200 }, 
         children: [
-          new TextRun({ text, size: 22, font: 'Times New Roman' }),
+          new TextRun({ text, size: 24, font: 'Times New Roman' }), 
         ],
       })
     );
   }
 
   children.push(
-    new Paragraph({ spacing: { after: 144 } }), // empty space
+    new Paragraph({ spacing: { before: 480 } }), 
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { line: 276, lineRule: LineRuleType.AUTO },
       children: [
-        new TextRun({ text: `${name}\n`, bold: true, size: 22, font: 'Times New Roman' }),
-        new TextRun({ text: `${program}\n`, size: 22, font: 'Times New Roman' }),
-        new TextRun({ text: 'Jose Rizal Memorial State University', size: 22, font: 'Times New Roman' }),
+        new TextRun({ text: name, bold: true, size: 24, font: 'Times New Roman' }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      children: [
+        new TextRun({ text: program, size: 24, font: 'Times New Roman' }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      children: [
+        new TextRun({ text: 'Jose Rizal Memorial State University', size: 24, font: 'Times New Roman' }),
       ],
     })
   );
@@ -219,42 +237,42 @@ function buildAcknowledgementPage(studentName: string, degreeProgram: string, ac
   return children;
 }
 
-function buildSectionPage(sectionTitle: string, sections: Array<[string, string[]]>, isBulletListCategory = false) {
+function buildSectionPage(sectionTitle: string, sections: SectionData[]) {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 20, after: 120 },
-      children: buildHeaderImage(),
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 259, after: 201 }, // Pt(18) before, Pt(14) after approx
+      spacing: { before: 120, after: 240 },
       children: [
         new TextRun({ text: sectionTitle, bold: true, size: 28, font: 'Times New Roman' }),
       ],
     }),
   ];
 
-  for (const [subtitle, lines] of sections) {
+  for (const section of sections) {
     children.push(
       new Paragraph({
-        spacing: { before: 144, after: 57 }, // Pt(10) before, Pt(4) after
+        spacing: { before: 240, after: 120 }, 
         children: [
-          new TextRun({ text: subtitle, bold: true, size: 24, font: 'Times New Roman' }),
+          new TextRun({ text: section.title, bold: true, size: 24, font: 'Times New Roman' }),
         ],
       })
     );
 
-    const useBullets = isBulletListCategory && ['Objectives', 'Core Values', 'Products and Services Offered'].includes(subtitle) && lines.length > 1;
+    const lines = ensureArray(section.content);
+    if (lines.length === 0) {
+      lines.push('No information provided.');
+    }
 
     for (const line of lines) {
+      const cleanLine = line.replace(/^[\*\-\•]\s*/, ''); 
+      
       children.push(
         new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          bullet: useBullets ? { level: 0 } : undefined,
-          spacing: { line: 276, lineRule: LineRuleType.AUTO, after: 57 },
+          alignment: section.isBullet ? AlignmentType.LEFT : AlignmentType.JUSTIFY,
+          bullet: section.isBullet ? { level: 0 } : undefined,
+          spacing: { after: 120 },
           children: [
-            new TextRun({ text: line, size: 22, font: 'Times New Roman' }),
+            new TextRun({ text: cleanLine, size: 24, font: 'Times New Roman' }), 
           ],
         })
       );
