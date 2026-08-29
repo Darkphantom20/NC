@@ -28,7 +28,8 @@ const hasSupabaseConfig = Boolean(supabaseUrl && supabaseKey);
 function ensureArray(val: any): string[] {
   if (Array.isArray(val)) return val.map(v => String(v).trim()).filter(Boolean);
   if (typeof val === 'string' && val.trim().length > 0) {
-    return val.split('\n').map(v => v.trim()).filter(Boolean);
+    // Split by any newline character to accurately capture multiple paragraphs
+    return val.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
   }
   return [];
 }
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
                 bottom: 1440, 
                 left: 1440,   
                 right: 1440,  
-                header: 0,    // Changed to 0 to anchor the header image flush to the top edge
+                header: 0,    // Anchor header image flush to the top edge
               },
             },
           },
@@ -244,7 +245,7 @@ function buildSectionPage(sectionTitle: string, sections: SectionData[]) {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 120, after: 240 },
+      spacing: { before: 120, after: 360 }, // Slightly larger spacing below the main section title
       children: [
         new TextRun({ text: sectionTitle, bold: true, size: 28, font: 'Times New Roman' }),
       ],
@@ -255,6 +256,7 @@ function buildSectionPage(sectionTitle: string, sections: SectionData[]) {
     children.push(
       new Paragraph({
         spacing: { before: 240, after: 120 }, 
+        keepNext: true, // Prevents the sub-title from being isolated at the bottom of a page
         children: [
           new TextRun({ text: section.title, bold: true, size: 24, font: 'Times New Roman' }),
         ],
@@ -273,7 +275,7 @@ function buildSectionPage(sectionTitle: string, sections: SectionData[]) {
         new Paragraph({
           alignment: section.isBullet ? AlignmentType.LEFT : AlignmentType.JUSTIFIED,
           bullet: section.isBullet ? { level: 0 } : undefined,
-          spacing: { after: 120 },
+          spacing: { after: 120 }, // Consistent spacing between generated paragraphs
           children: [
             new TextRun({ text: cleanLine, size: 24, font: 'Times New Roman' }), 
           ],
