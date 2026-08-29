@@ -38,7 +38,7 @@ const defaultForm = {
 };
 
 const fieldClass =
-  'mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30';
+  'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-base';
 
 export default function Home() {
   const [form, setForm] = useState(defaultForm);
@@ -84,35 +84,35 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-10 overflow-hidden rounded-[28px] border border-cyan-500/20 bg-slate-900/80 p-8 shadow-glow backdrop-blur-xl">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <header className="mb-6 overflow-hidden rounded-[24px] border border-cyan-500/20 bg-slate-900/80 p-5 shadow-glow backdrop-blur-xl sm:mb-10 sm:rounded-[28px] sm:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.35em] text-cyan-300">JRMSU</p>
-              <h1 className="mt-3 text-4xl font-black tracking-tight text-white md:text-6xl">
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300 sm:text-sm">JRMSU</p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl md:text-6xl">
                 Narrative Report Generator
               </h1>
             </div>
-            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-right">
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-200">Status</p>
-              <p className="text-xl font-bold text-cyan-300">{status}</p>
+            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2.5 text-left sm:px-4 sm:py-3 md:text-right">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-200 sm:text-xs">Status</p>
+              <p className="mt-1 text-lg font-bold text-cyan-300 sm:text-xl">{status}</p>
             </div>
           </div>
 
-          <p className="mt-6 max-w-3xl text-lg text-slate-300">
+          <p className="mt-5 max-w-3xl text-sm text-slate-300 sm:mt-6 sm:text-lg">
             A realistic internship report builder designed to turn your OJT experiences into a polished narrative report with chapter-based guidance and professional Word export.
           </p>
         </header>
 
-        <section className="mb-10 grid gap-6 md:grid-cols-3">
+        <section className="mb-6 grid gap-4 sm:mb-10 sm:grid-cols-3 sm:gap-6">
           <Card label="Sections" value="6" color="cyan" />
           <Card label="Format" value="DOCX" color="violet" />
           <Card label="Mode" value="Web" color="emerald" />
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
-          <form className="space-y-8 rounded-[28px] border border-slate-800 bg-slate-900/80 p-6">
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
+          <form className="space-y-6 rounded-[24px] border border-slate-800 bg-slate-900/80 p-4 sm:space-y-8 sm:rounded-[28px] sm:p-6">
             <SectionBlock title="1. Acknowledgement">
               <label className="block text-sm font-medium text-slate-200">
                 Student Name
@@ -232,25 +232,25 @@ export default function Home() {
             </SectionBlock>
           </form>
 
-          <aside className="flex flex-col gap-4 rounded-[28px] border border-slate-800 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-violet-500/10 p-6">
-            <h3 className="text-xl font-bold text-white">Report Preview</h3>
+          <aside className="flex flex-col gap-4 rounded-[24px] border border-slate-800 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-violet-500/10 p-4 sm:rounded-[28px] sm:p-6">
+            <h3 className="text-lg font-bold text-white sm:text-xl">Report Preview</h3>
 
-            <div className="space-y-4 text-sm text-slate-300">
+            <div className="space-y-3 text-sm text-slate-300 sm:space-y-4">
               <Box label="Student" value={form.studentName} />
               <Box label="Program" value={form.degreeProgram} />
               <Box label="Organization" value={form.background.slice(0, 90) + (form.background.length > 90 ? '...' : '')} />
               <Box label="Status" value={status} />
             </div>
 
-            <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Current flow</p>
-              <div className="mt-4 space-y-3">
+            <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-3 sm:p-4">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">Current flow</p>
+              <div className="mt-4 space-y-2.5 sm:space-y-3">
                 {sectionOrder.map((section, index) => (
                   <div key={section} className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/15 text-xs font-bold text-cyan-300">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/15 text-[10px] font-bold text-cyan-300 sm:h-7 sm:w-7 sm:text-xs">
                       {index + 1}
                     </span>
-                    <span className="text-slate-200">{section}</span>
+                    <span className="text-sm text-slate-200 sm:text-base">{section}</span>
                   </div>
                 ))}
               </div>
@@ -260,7 +260,7 @@ export default function Home() {
               type="button"
               onClick={handleGenerate}
               disabled={loading}
-              className="mt-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-3 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-3 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 sm:mt-4"
             >
               {loading ? 'Generating...' : 'Generate Report'}
             </button>
@@ -273,8 +273,8 @@ export default function Home() {
 
 function SectionBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
-      <h2 className="mb-4 text-xl font-bold text-white">{title}</h2>
+    <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:rounded-3xl sm:p-5">
+      <h2 className="mb-4 text-lg font-bold text-white sm:text-xl">{title}</h2>
       {children}
     </section>
   );
@@ -288,18 +288,18 @@ function Card({ label, value, color }: { label: string; value: string; color: 'c
   }[color];
 
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-5">
-      <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{label}</p>
-      <p className={`mt-4 text-4xl font-bold ${tone}`}>{value}</p>
+    <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-4 sm:p-5">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-sm">{label}</p>
+      <p className={`mt-3 text-2xl font-bold sm:mt-4 sm:text-4xl ${tone}`}>{value}</p>
     </div>
   );
 }
 
 function Box({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</p>
-      <p className="mt-2 text-base font-semibold text-white">{value}</p>
+    <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-3 sm:p-4">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-white sm:text-base">{value}</p>
     </div>
   );
 }
