@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
+import { HelpCircle } from 'lucide-react';
 
 const sectionOrder = [
   'Cover Page',
@@ -14,7 +16,6 @@ const sectionOrder = [
 ];
 
 const defaultForm = {
-  // Front Page / Cover Page Fields (Updated to match the target example format)
   trainingOrganization: 'Zamboanga del Norte Provincial Capitol',
   trainingLocation: 'Dipolog City',
   collegeFaculty: 'College of Computing Studies',
@@ -22,8 +23,6 @@ const defaultForm = {
   studentName: 'Ian P. Padilla',
   submittedToName: 'Mr. Erson A. Rodriguez',
   submittedToTitle: 'Associate Dean of the College of Computing Studies',
-
-  // Report Sections
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
   background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
   vision: 'To be a premier provider of innovative, reliable, and secure technological solutions and digital services.',
@@ -45,7 +44,6 @@ const defaultForm = {
   lessons: 'These situations taught the vital importance of systematic troubleshooting, maintaining proper system backups, and remaining calm under pressure.',
   selfEvaluation: 'The OJT journey served as a transformative learning process, pushing me to transition from theoretical classroom knowledge to practical, fast-paced technical execution.',
   relevancy: 'The host organization directly aligns with my degree program, allowing me to fulfill my expected professional goals of mastering enterprise systems administration and IT support workflows.',
-  
   appendices: {
     dailyJournal: [
       {
@@ -73,6 +71,26 @@ const defaultForm = {
     certCompletion: ''
   }
 };
+
+const tourSteps: Step[] = [
+  {
+    target: '.tour-title',
+    content: 'Welcome to the Narrative Report Generator. This tour will guide you through the main sections of the page.',
+    disableBeacon: true,
+  },
+  {
+    target: '.tour-status',
+    content: 'This status panel updates as you work and shows the current generation state.',
+  },
+  {
+    target: '.tour-form',
+    content: 'Use this form to fill in all required narrative report details, including cover page, analysis, and appendices.',
+  },
+  {
+    target: '.tour-generate',
+    content: 'When everything is ready, click Generate Report to download your DOCX file.',
+  },
+];
 
 const fieldClass =
   'mt-2.5 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:rounded-2xl sm:px-4 sm:py-3.5 sm:text-base';
@@ -110,11 +128,7 @@ async function compressImageDataUrl(file: File, maxWidth = 1400, quality = 0.75)
 
 async function readErrorMessage(response: Response): Promise<string> {
   const text = await response.text();
-
-  if (!text) {
-    return 'Failed to generate the report';
-  }
-
+  if (!text) return 'Failed to generate the report';
   try {
     const parsed = JSON.parse(text);
     return parsed?.error || text || 'Failed to generate the report';
@@ -127,6 +141,88 @@ export default function Home() {
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('Draft ready');
+  
+  // Tour State
+  const [runTour, setRunTour] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const tourSteps: Step[] = [
+    {
+      target: '.tour-start-btn',
+      content: 'Welcome to the JRMSU Narrative Report Generator! Replace the sample values with your own data as you go through each section.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tour-form',
+      content: 'This is the main form area. Replace the sample text with your real OJT details, from the cover page down to the appendices.',
+    },
+    {
+      target: '.tour-front-page',
+      content: 'Start with the Front Page section. Replace the current sample information with your training organization, location, student name, and school details.',
+    },
+    {
+      target: '.tour-acknowledgement',
+      content: 'In the Acknowledgement section, replace the example message with your own gratitude and appreciation to the people who helped you.',
+    },
+    {
+      target: '.tour-introduction',
+      content: 'Use the Introduction section to replace the sample background with your actual host organization details, including the vision, mission, values, and services.',
+    },
+    {
+      target: '.tour-organization-analysis',
+      content: 'The Organization Analysis section should reflect your real evaluation of the company. Replace the sample strengths, weaknesses, opportunities, threats, and recommendations with your own.',
+    },
+    {
+      target: '.tour-tasks-duties',
+      content: 'In Tasks and Duties, replace the sample tasks with your actual assigned duties and the procedures you followed during training.',
+    },
+    {
+      target: '.tour-case-analysis',
+      content: 'The Case Analysis section should describe your real challenges, actions taken, and lessons learned. Replace all sample entries with your actual experience.',
+    },
+    {
+      target: '.tour-reflections',
+      content: 'Use the Reflections section to replace the sample reflection with your honest evaluation and your real connection to your course and goals.',
+    },
+    {
+      target: '.tour-appendices',
+      content: 'Finally, update the appendices by replacing the sample journal details, photos, and supporting documents with your actual records.',
+    },
+    {
+      target: '.tour-generate-btn',
+      content: 'When all sample content has been replaced with your real information, click Generate Report to create your final DOCX file.',
+    }
+  ];
+
+  const speakText = (text: string | React.ReactNode) => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); 
+      const textToSpeak = typeof text === 'string' ? text : text?.toString() || '';
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.rate = 0.95; 
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleJoyrideCallback = (data: CallBackProps) => {
+    const { status, type, step } = data;
+    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+
+    if (type === 'tooltip:update' || type === 'step:after') {
+      speakText(step.content);
+    }
+
+    if (finishedStatuses.includes(status)) {
+      setRunTour(false);
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+  };
 
   const updateField = (key: keyof typeof defaultForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -179,12 +275,7 @@ export default function Home() {
       const journal = [...prev.appendices.dailyJournal];
       const week = journal[weekIndex];
       const totalDaysOverall = journal.reduce((acc, w) => acc + w.activities.length, 0);
-      week.activities.push({
-        day: `Day ${totalDaysOverall + 1}`,
-        date: '',
-        accomplishment: '',
-        hours: 8
-      });
+      week.activities.push({ day: `Day ${totalDaysOverall + 1}`, date: '', accomplishment: '', hours: 8 });
       week.totalHours = week.activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
       return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
     });
@@ -213,12 +304,10 @@ export default function Home() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, appendixKey: keyof typeof defaultForm.appendices) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith('image/')) {
       alert('Please upload an image file (PNG, JPG).');
       return;
     }
-
     try {
       const compressed = await compressImageDataUrl(file);
       setForm((prev) => ({
@@ -234,12 +323,10 @@ export default function Home() {
   const handleJournalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith('image/')) {
       alert('Please upload an image file (PNG, JPG).');
       return;
     }
-
     try {
       const compressed = await compressImageDataUrl(file, 1200, 0.7);
       setForm((prev) => {
@@ -260,7 +347,6 @@ export default function Home() {
   const handleGenerate = async () => {
     setLoading(true);
     setStatus('Generating DOCX...');
-
     try {
       const response = await fetch('/api/report', {
         method: 'POST',
@@ -282,7 +368,6 @@ export default function Home() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-
       setStatus('Download started');
     } catch (error: any) {
       setStatus('Error generating file');
@@ -295,6 +380,25 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 sm:py-12 lg:px-8">
+      {isMounted && (
+        <Joyride
+          steps={tourSteps}
+          run={runTour}
+          continuous={true}
+          showProgress={true}
+          showSkipButton={true}
+          callback={handleJoyrideCallback}
+          styles={{
+            options: {
+              primaryColor: '#06b6d4', // Matches cyan-500
+              backgroundColor: '#1e293b', // Matches slate-800
+              textColor: '#f1f5f9', // Matches slate-100
+              arrowColor: '#1e293b',
+            },
+          }}
+        />
+      )}
+
       <div className="mx-auto max-w-7xl space-y-8 sm:space-y-12">
         <header className="overflow-hidden rounded-[24px] border border-cyan-500/20 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl sm:rounded-[32px] sm:p-10">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -303,10 +407,29 @@ export default function Home() {
               <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
                 Narrative Report Generator
               </h1>
+              <p className="text-sm text-slate-300">
+                Replace the sample details below with your actual OJT information before generating the report.
+              </p>
             </div>
-            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-left sm:px-5 sm:py-3.5 md:text-right">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-200 sm:text-xs font-semibold">Status</p>
-              <p className="mt-1.5 text-lg font-bold text-cyan-300 sm:text-xl">{status}</p>
+            
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              {/* Voice Tour Start Button */}
+              <button
+                onClick={() => {
+                  setRunTour(true);
+                  speakText(tourSteps[0].content);
+                }}
+                className="tour-start-btn flex items-center gap-2 rounded-2xl bg-cyan-500/20 px-5 py-3.5 text-sm font-bold text-cyan-300 hover:bg-cyan-500/30 transition-colors border border-cyan-500/30"
+                type="button"
+              >
+                <HelpCircle size={20} />
+                Audio Guide
+              </button>
+
+              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-left sm:px-5 sm:py-3.5 md:text-right">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-200 sm:text-xs font-semibold">Status</p>
+                <p className="mt-1.5 text-lg font-bold text-cyan-300 sm:text-xl">{status}</p>
+              </div>
             </div>
           </div>
         </header>
@@ -318,79 +441,49 @@ export default function Home() {
         </section>
 
         <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
-          <form className="space-y-8 rounded-[24px] border border-slate-800 bg-slate-900/80 p-6 sm:rounded-[32px] sm:p-8">
+          <form className="tour-form space-y-8 rounded-[24px] border border-slate-800 bg-slate-900/80 p-6 sm:rounded-[32px] sm:p-8">
             
-            {/* Front Page / Cover Page Section */}
-            <SectionBlock title="Front Page (Cover Page Details)">
+            {/* Added tour-front-page class via modified SectionBlock */}
+            <SectionBlock title="Front Page (Cover Page Details)" className="tour-front-page">
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <label className="block text-sm font-medium text-slate-200">
                     Training Organization / Company Name
-                    <input 
-                      value={form.trainingOrganization} 
-                      onChange={(e) => updateField('trainingOrganization', e.target.value)} 
-                      className={fieldClass} 
-                    />
+                    <input value={form.trainingOrganization} onChange={(e) => updateField('trainingOrganization', e.target.value)} className={fieldClass} />
                   </label>
                   <label className="block text-sm font-medium text-slate-200">
                     Training Location (City, Province, Country)
-                    <input 
-                      value={form.trainingLocation} 
-                      onChange={(e) => updateField('trainingLocation', e.target.value)} 
-                      className={fieldClass} 
-                    />
+                    <input value={form.trainingLocation} onChange={(e) => updateField('trainingLocation', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
-
                 <div className="grid gap-5 md:grid-cols-2">
                   <label className="block text-sm font-medium text-slate-200">
                     College / Faculty Name
-                    <input 
-                      value={form.collegeFaculty} 
-                      onChange={(e) => updateField('collegeFaculty', e.target.value)} 
-                      className={fieldClass} 
-                    />
+                    <input value={form.collegeFaculty} onChange={(e) => updateField('collegeFaculty', e.target.value)} className={fieldClass} />
                   </label>
                   <label className="block text-sm font-medium text-slate-200">
                     Degree Program
-                    <input 
-                      value={form.degreeProgram} 
-                      onChange={(e) => updateField('degreeProgram', e.target.value)} 
-                      className={fieldClass} 
-                    />
+                    <input value={form.degreeProgram} onChange={(e) => updateField('degreeProgram', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
-
                 <div className="grid gap-5 md:grid-cols-3">
                   <label className="block text-sm font-medium text-slate-200">
                     Student Name
-                    <input 
-                      value={form.studentName} 
-                      onChange={(e) => updateField('studentName', e.target.value)} 
-                      className={fieldClass} 
-                    />
+                    <input value={form.studentName} onChange={(e) => updateField('studentName', e.target.value)} className={fieldClass} />
                   </label>
                   <label className="block text-sm font-medium text-slate-200">
                     Submitted To (Adviser Name)
-                    <input 
-                      value={form.submittedToName} 
-                      onChange={(e) => updateField('submittedToName', e.target.value)} 
-                      className={fieldClass} 
-                    />
+                    <input value={form.submittedToName} onChange={(e) => updateField('submittedToName', e.target.value)} className={fieldClass} />
                   </label>
                   <label className="block text-sm font-medium text-slate-200">
                     Submitted To Title / Position
-                    <input 
-                      value={form.submittedToTitle} 
-                      onChange={(e) => updateField('submittedToTitle', e.target.value)} 
-                      className={fieldClass} 
-                    />
+                    <input value={form.submittedToTitle} onChange={(e) => updateField('submittedToTitle', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
               </div>
             </SectionBlock>
 
-            <SectionBlock title="1. Acknowledgement">
+            <SectionBlock title="1. Acknowledgement" className="tour-acknowledgement">
               <div className="space-y-5">
                 <label className="block text-sm font-medium text-slate-200">
                   Student Name
@@ -407,7 +500,7 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="2. Introduction">
+            <SectionBlock title="2. Introduction" className="tour-introduction">
               <div className="space-y-5">
                 <label className="block text-sm font-medium text-slate-200">
                   Background of Organization
@@ -440,7 +533,7 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="3. Organization Analysis">
+            <SectionBlock title="3. Organization Analysis" className="tour-organization-analysis">
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <label className="block text-sm font-medium text-slate-200">
@@ -467,7 +560,7 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="4. Tasks and Duties">
+            <SectionBlock title="4. Tasks and Duties" className="tour-tasks-duties">
               <div className="space-y-5">
                 <label className="block text-sm font-medium text-slate-200">
                   Assigned Tasks
@@ -480,7 +573,7 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="5. Case Analysis">
+            <SectionBlock title="5. Case Analysis" className="tour-case-analysis">
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <label className="block text-sm font-medium text-slate-200">
@@ -507,7 +600,7 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="6. Reflections">
+            <SectionBlock title="6. Reflections" className="tour-reflections">
               <div className="space-y-5">
                 <label className="block text-sm font-medium text-slate-200">
                   Self-Evaluation
@@ -520,133 +613,68 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="7. Appendices">
+            <SectionBlock title="7. Appendices" className="tour-appendices">
               <div className="space-y-8">
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
-                    <button
-                      type="button"
-                      onClick={addWeek}
-                      className="rounded-xl bg-cyan-500/20 px-3.5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30"
-                    >
+                    <button type="button" onClick={addWeek} className="rounded-xl bg-cyan-500/20 px-3.5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30">
                       + Add Week
                     </button>
                   </div>
-
                   {form.appendices.dailyJournal.map((week, weekIdx) => (
                     <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-white">WEEK {week.weekNumber} (Total Hours: {week.totalHours})</span>
                         {form.appendices.dailyJournal.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeWeek(weekIdx)}
-                            className="text-xs text-rose-400 hover:underline"
-                          >
+                          <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:underline">
                             Remove Week
                           </button>
                         )}
                       </div>
-
                       <div className="space-y-3">
                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Activities</p>
                         {week.activities.map((act, dayIdx) => (
                           <div key={dayIdx} className="grid gap-2.5 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                            <input
-                              type="text"
-                              placeholder="Day"
-                              value={act.day}
-                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Date"
-                              value={act.date}
-                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Daily Accomplishment"
-                              value={act.accomplishment}
-                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                            />
-                            <input
-                              type="number"
-                              placeholder="Hrs"
-                              value={act.hours}
-                              onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)}
-                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeDay(weekIdx, dayIdx)}
-                              className="text-rose-400 text-xs px-2 py-1 hover:text-rose-300"
-                            >
-                              ✕
-                            </button>
+                            <input type="text" placeholder="Day" value={act.day} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
+                            <input type="text" placeholder="Date" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
+                            <input type="text" placeholder="Daily Accomplishment" value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
+                            <input type="number" placeholder="Hrs" value={act.hours} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
+                            <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="text-rose-400 text-xs px-2 py-1 hover:text-rose-300">✕</button>
                           </div>
                         ))}
-
-                        <button
-                          type="button"
-                          onClick={() => addDay(weekIdx)}
-                          className="mt-2 text-xs font-semibold text-cyan-400 hover:underline"
-                        >
+                        <button type="button" onClick={() => addDay(weekIdx)} className="mt-2 text-xs font-semibold text-cyan-400 hover:underline">
                           + Add Day
                         </button>
                       </div>
-
                       <label className="block text-sm font-medium text-slate-200 pt-2">
                         Weekly Narrative Report
-                        <textarea
-                          value={week.narrative}
-                          onChange={(e) => {
+                        <textarea value={week.narrative} onChange={(e) => {
                             const newJournal = [...form.appendices.dailyJournal];
                             newJournal[weekIdx].narrative = e.target.value;
                             setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                          }}
-                          rows={2}
-                          className={fieldClass}
-                        />
+                          }} rows={2} className={fieldClass} />
                       </label>
-
                       <div className="pt-2">
                         <label className="block text-sm font-medium text-slate-200">
                           Upload Pictures for Week {week.weekNumber} (Max 3)
                           <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
                         </label>
-                        
                         {week.images && week.images.length > 0 && (
                           <div className="mt-3 space-y-2.5">
                             {week.images.map((img, imgIdx) => (
                               <div key={imgIdx} className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                                 <img src={img.base64} alt="Preview" className="h-10 w-10 object-cover rounded-lg" />
-                                <input
-                                  type="text"
-                                  placeholder="Caption / Picture Detail"
-                                  value={img.detail}
-                                  onChange={(e) => {
+                                <input type="text" placeholder="Caption / Picture Detail" value={img.detail} onChange={(e) => {
                                     const newJournal = [...form.appendices.dailyJournal];
                                     newJournal[weekIdx].images[imgIdx].detail = e.target.value;
                                     setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                                  }}
-                                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
+                                  }} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
+                                <button type="button" onClick={() => {
                                     const newJournal = [...form.appendices.dailyJournal];
                                     newJournal[weekIdx].images = newJournal[weekIdx].images.filter((_, idx) => idx !== imgIdx);
                                     setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                                  }}
-                                  className="text-xs text-rose-400 px-2 py-1"
-                                >
-                                  ✕
-                                </button>
+                                  }} className="text-xs text-rose-400 px-2 py-1">✕</button>
                               </div>
                             ))}
                           </div>
@@ -655,12 +683,10 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-
                 <label className="block text-sm font-medium text-slate-200">
                   One Page Narrative Report of PRIME
                   <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={3} className={fieldClass} />
                 </label>
-
                 <div className="grid gap-5 md:grid-cols-2 pt-2">
                   <FileUpload label="Certificate of Participation (PRIME)" onChange={(e) => handleFileUpload(e, 'certParticipation')} />
                   <FileUpload label="Resume and Application Letter" onChange={(e) => handleFileUpload(e, 'resume')} />
@@ -673,38 +699,32 @@ export default function Home() {
                 </div>
               </div>
             </SectionBlock>
-
           </form>
 
           <aside className="flex flex-col gap-5 rounded-[24px] border border-slate-800 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-violet-500/10 p-6 sm:rounded-[32px] sm:p-8">
             <h3 className="text-lg font-bold text-white sm:text-xl">Report Preview</h3>
-
             <div className="space-y-4 text-sm text-slate-300">
               <Box label="Student" value={form.studentName} />
               <Box label="Program" value={form.degreeProgram} />
               <Box label="Organization" value={form.trainingOrganization} />
               <Box label="Status" value={status} />
             </div>
-
             <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-4 sm:p-5">
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">Current flow</p>
               <div className="mt-4 space-y-3 sm:space-y-3.5">
                 {sectionOrder.map((section, index) => (
                   <div key={section} className="flex items-center gap-3.5">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/15 text-xs font-bold text-cyan-300">
-                      {index + 1}
-                    </span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/15 text-xs font-bold text-cyan-300">{index + 1}</span>
                     <span className="text-sm text-slate-200 sm:text-base font-medium">{section}</span>
                   </div>
                 ))}
               </div>
             </div>
-
             <button
               type="button"
               onClick={handleGenerate}
               disabled={loading}
-              className="mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-3.5 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="tour-generate-btn mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-3.5 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Generating...' : 'Generate Report'}
             </button>
@@ -712,12 +732,7 @@ export default function Home() {
         </div>
 
         <footer className="flex justify-center pb-2">
-          <a
-            href="https://ianpadilla-opal.vercel.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-slate-400 transition hover:text-cyan-300"
-          >
+          <a href="https://ianpadilla-opal.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-400 transition hover:text-cyan-300">
             Developed by <span className="font-semibold text-cyan-300">Ian P. Padilla</span>
           </a>
         </footer>
@@ -726,9 +741,10 @@ export default function Home() {
   );
 }
 
-function SectionBlock({ title, children }: { title: string; children: React.ReactNode }) {
+// Updated to accept className for the tour targeting
+function SectionBlock({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 sm:rounded-3xl sm:p-6 space-y-5">
+    <section className={`rounded-2xl border border-slate-800 bg-slate-950/60 p-5 sm:rounded-3xl sm:p-6 space-y-5 ${className}`}>
       <h2 className="text-lg font-bold text-white sm:text-xl">{title}</h2>
       {children}
     </section>
@@ -745,12 +761,7 @@ function FileUpload({ label, onChange }: { label: string; onChange: (e: React.Ch
 }
 
 function Card({ label, value, color }: { label: string; value: string; color: 'cyan' | 'violet' | 'emerald' }) {
-  const tone = {
-    cyan: 'text-cyan-300',
-    violet: 'text-violet-300',
-    emerald: 'text-emerald-300',
-  }[color];
-
+  const tone = { cyan: 'text-cyan-300', violet: 'text-violet-300', emerald: 'text-emerald-300' }[color];
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-5 sm:p-6 space-y-2">
       <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">{label}</p>
