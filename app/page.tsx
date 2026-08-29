@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 const sectionOrder = [
+  'Cover Page',
   'Acknowledgement',
   'Introduction',
   'Organization Analysis',
@@ -13,8 +14,16 @@ const sectionOrder = [
 ];
 
 const defaultForm = {
-  studentName: 'Ian P. Padilla',
-  degreeProgram: 'Bachelor of Science in Information System',
+  // Front Page / Cover Page Fields
+  trainingOrganization: 'Zamboanga del Norte Medical Center Dialysis Clinic',
+  trainingLocation: 'Sicayab, Dipolog City, Philippines',
+  collegeFaculty: 'College of Computing Studies',
+  degreeProgram: 'Bachelor of Science in Computer Science',
+  studentName: 'Emerald Mae Charity G. Alamat',
+  submittedToName: 'Mr. Erson A. Rodriguez',
+  submittedToTitle: 'Associate Dean of the College of Computing Studies',
+
+  // Report Sections
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
   background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
   vision: 'To be a premier provider of innovative, reliable, and secure technological solutions and digital services.',
@@ -130,7 +139,6 @@ export default function Home() {
     }));
   };
 
-  // Add / Remove Weeks dynamically
   const addWeek = () => {
     setForm((prev) => {
       const nextWeekNum = prev.appendices.dailyJournal.length + 1;
@@ -166,7 +174,6 @@ export default function Home() {
     });
   };
 
-  // Add / Remove Days
   const addDay = (weekIndex: number) => {
     setForm((prev) => {
       const journal = [...prev.appendices.dailyJournal];
@@ -203,13 +210,12 @@ export default function Home() {
     });
   };
 
-  // Handle standard appendix documents (Strictly Images Only)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, appendixKey: keyof typeof defaultForm.appendices) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file (PNG, JPG). PDFs are not supported for image rendering.');
+      alert('Please upload an image file (PNG, JPG).');
       return;
     }
 
@@ -221,11 +227,10 @@ export default function Home() {
       }));
     } catch (error) {
       console.error(error);
-      alert('The selected image could not be processed. Please try another file.');
+      alert('The selected image could not be processed.');
     }
   };
 
-  // Base64 image uploader for Daily Journal
   const handleJournalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -248,7 +253,7 @@ export default function Home() {
       });
     } catch (error) {
       console.error(error);
-      alert('The selected journal image could not be processed. Please try another file.');
+      alert('The selected journal image could not be processed.');
     }
   };
 
@@ -307,7 +312,7 @@ export default function Home() {
         </header>
 
         <section className="mb-6 grid gap-4 sm:mb-10 sm:grid-cols-3 sm:gap-6">
-          <Card label="Sections" value="7" color="cyan" />
+          <Card label="Sections" value="8" color="cyan" />
           <Card label="Format" value="DOCX" color="violet" />
           <Card label="Mode" value="Web" color="emerald" />
         </section>
@@ -315,6 +320,74 @@ export default function Home() {
         <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
           <form className="space-y-6 rounded-[24px] border border-slate-800 bg-slate-900/80 p-4 sm:space-y-8 sm:rounded-[28px] sm:p-6">
             
+            {/* Front Page / Cover Page Section */}
+            <SectionBlock title="Front Page (Cover Page Details)">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block text-sm font-medium text-slate-200">
+                  Training Organization / Company Name
+                  <input 
+                    value={form.trainingOrganization} 
+                    onChange={(e) => updateField('trainingOrganization', e.target.value)} 
+                    className={fieldClass} 
+                  />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Training Location (City, Province, Country)
+                  <input 
+                    value={form.trainingLocation} 
+                    onChange={(e) => updateField('trainingLocation', e.target.value)} 
+                    className={fieldClass} 
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <label className="block text-sm font-medium text-slate-200">
+                  College / Faculty Name
+                  <input 
+                    value={form.collegeFaculty} 
+                    onChange={(e) => updateField('collegeFaculty', e.target.value)} 
+                    className={fieldClass} 
+                  />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Degree Program
+                  <input 
+                    value={form.degreeProgram} 
+                    onChange={(e) => updateField('degreeProgram', e.target.value)} 
+                    className={fieldClass} 
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <label className="block text-sm font-medium text-slate-200">
+                  Student Name
+                  <input 
+                    value={form.studentName} 
+                    onChange={(e) => updateField('studentName', e.target.value)} 
+                    className={fieldClass} 
+                  />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Submitted To (Adviser Name)
+                  <input 
+                    value={form.submittedToName} 
+                    onChange={(e) => updateField('submittedToName', e.target.value)} 
+                    className={fieldClass} 
+                  />
+                </label>
+                <label className="block text-sm font-medium text-slate-200">
+                  Submitted To Title / Position
+                  <input 
+                    value={form.submittedToTitle} 
+                    onChange={(e) => updateField('submittedToTitle', e.target.value)} 
+                    className={fieldClass} 
+                  />
+                </label>
+              </div>
+            </SectionBlock>
+
             <SectionBlock title="1. Acknowledgement">
               <label className="block text-sm font-medium text-slate-200">
                 Student Name
@@ -435,11 +508,9 @@ export default function Home() {
 
             <SectionBlock title="7. Appendices">
               <div className="space-y-8">
-                
-                {/* Dynamic Daily Journal Section */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-cyan-300">Daily Journal (Day 1 to Last Day)</h3>
+                    <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
                     <button
                       type="button"
                       onClick={addWeek}
@@ -464,14 +535,13 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* Day 1 ... Day N Entries */}
                       <div className="space-y-3">
                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Activities</p>
                         {week.activities.map((act, dayIdx) => (
                           <div key={dayIdx} className="grid gap-2 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-center bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                             <input
                               type="text"
-                              placeholder="Day (e.g. Day 1)"
+                              placeholder="Day"
                               value={act.day}
                               onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)}
                               className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
@@ -512,11 +582,10 @@ export default function Home() {
                           onClick={() => addDay(weekIdx)}
                           className="mt-2 text-xs font-semibold text-cyan-400 hover:underline"
                         >
-                          + Add Day to Week {week.weekNumber}
+                          + Add Day
                         </button>
                       </div>
 
-                      {/* Weekly Narrative */}
                       <label className="block text-sm font-medium text-slate-200">
                         Weekly Narrative Report
                         <textarea
@@ -531,7 +600,6 @@ export default function Home() {
                         />
                       </label>
 
-                      {/* 1-3 Pictures Uploader */}
                       <div>
                         <label className="block text-sm font-medium text-slate-200">
                           Upload Pictures for Week {week.weekNumber} (Max 3)
@@ -574,13 +642,11 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* PRIME Narrative */}
                 <label className="block text-sm font-medium text-slate-200">
                   One Page Narrative Report of PRIME
                   <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={3} className={fieldClass} />
                 </label>
 
-                {/* Standard Document Uploads */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <FileUpload label="Certificate of Participation (PRIME)" onChange={(e) => handleFileUpload(e, 'certParticipation')} />
                   <FileUpload label="Resume and Application Letter" onChange={(e) => handleFileUpload(e, 'resume')} />
@@ -602,7 +668,7 @@ export default function Home() {
             <div className="space-y-3 text-sm text-slate-300 sm:space-y-4">
               <Box label="Student" value={form.studentName} />
               <Box label="Program" value={form.degreeProgram} />
-              <Box label="Organization" value={form.background.slice(0, 90) + (form.background.length > 90 ? '...' : '')} />
+              <Box label="Organization" value={form.trainingOrganization} />
               <Box label="Status" value={status} />
             </div>
 
