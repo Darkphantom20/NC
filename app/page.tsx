@@ -91,7 +91,7 @@ export default function Home() {
   const addWeek = () => {
     setForm((prev) => {
       const nextWeekNum = prev.appendices.dailyJournal.length + 1;
-      const startDayNum = (nextWeekNum - 1) * 5 + 1;
+      const startDayNum = prev.appendices.dailyJournal.reduce((acc, w) => acc + w.activities.length, 0) + 1;
       return {
         ...prev,
         appendices: {
@@ -123,7 +123,7 @@ export default function Home() {
     });
   };
 
-  // Add / Remove Days within a week (e.g. Day 1 to Last Day)
+  // Add / Remove Days
   const addDay = (weekIndex: number) => {
     setForm((prev) => {
       const journal = [...prev.appendices.dailyJournal];
@@ -135,7 +135,6 @@ export default function Home() {
         accomplishment: '',
         hours: 8
       });
-      // Recalculate total hours
       week.totalHours = week.activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
       return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
     });
@@ -147,7 +146,6 @@ export default function Home() {
       const activities = [...journal[weekIndex].activities];
       activities[dayIndex] = { ...activities[dayIndex], [key]: value };
       journal[weekIndex].activities = activities;
-      // Recalculate total hours
       journal[weekIndex].totalHours = activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
       return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
     });
@@ -162,10 +160,15 @@ export default function Home() {
     });
   };
 
-  // Base64 file uploader for standard appendix documents
+  // Handle standard appendix documents (Strictly Images Only)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, appendixKey: keyof typeof defaultForm.appendices) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG). PDFs are not supported for image rendering.');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -178,10 +181,15 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  // Base64 image uploader for Daily Journal (Max 3 pictures per week block)
+  // Base64 image uploader for Daily Journal
   const handleJournalImageUpload = (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG).');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -211,7 +219,8 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate the report');
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to generate the report');
       }
 
       const blob = await response.blob();
@@ -225,8 +234,9 @@ export default function Home() {
       URL.revokeObjectURL(url);
 
       setStatus('Download started');
-    } catch (error) {
-      setStatus('Something went wrong');
+    } catch (error: any) {
+      setStatus('Error generating file');
+      alert(error.message);
       console.error(error);
     } finally {
       setLoading(false);
@@ -423,7 +433,7 @@ export default function Home() {
                             />
                             <input
                               type="text"
-                              placeholder="Date (e.g. Oct 2)"
+                              placeholder="Date"
                               value={act.date}
                               onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)}
                               className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
@@ -437,7 +447,7 @@ export default function Home() {
                             />
                             <input
                               type="number"
-                              placeholder="Hours"
+                              placeholder="Hrs"
                               value={act.hours}
                               onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)}
                               className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
@@ -480,10 +490,10 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium text-slate-200">
                           Upload Pictures for Week {week.weekNumber} (Max 3)
-                          <input type="file" accept="image/*" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
+                          <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
                         </label>
                         
-                        {week.images.length > 0 && (
+                        {week.images && week.images.length > 0 && (
                           <div className="mt-3 space-y-2">
                             {week.images.map((img, imgIdx) => (
                               <div key={imgIdx} className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
@@ -593,7 +603,7 @@ function FileUpload({ label, onChange }: { label: string; onChange: (e: React.Ch
   return (
     <label className="block text-sm font-medium text-slate-200">
       {label}
-      <input type="file" accept="image/*,application/pdf" onChange={onChange} className={fileInputClass} />
+      <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={onChange} className={fileInputClass} />
     </label>
   );
 }

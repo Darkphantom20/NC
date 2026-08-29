@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Table, TableRow, TableCell, WidthType, PageBreak } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Table, TableRow, TableCell, WidthType } from 'docx';
 
 export const runtime = 'nodejs';
 
-const OUTPUT_FILE_NAME = process.env.OUTPUT_FILE_NAME || 'JRMSU_Exact_Template.docx';
+const OUTPUT_FILE_NAME = process.env.OUTPUT_FILE_NAME || 'JRMSU_Narrative_Report.docx';
 const HEADER_IMAGE_PATH = path.join(process.cwd(), 'public', 'Picture1.png');
 const HEADER_IMAGE = fs.existsSync(HEADER_IMAGE_PATH) ? fs.readFileSync(HEADER_IMAGE_PATH) : null;
 
@@ -15,7 +15,7 @@ interface AppendixImage {
 }
 
 interface DailyActivity {
-  day: string; // e.g., "Day 1", "Day 2", "Monday"
+  day: string;
   date: string;
   accomplishment: string;
   hours: number | string;
@@ -71,8 +71,18 @@ function ensureArray(val: any): string[] {
   return [];
 }
 
-function parseBase64Image(base64String: string): Buffer {
-  return Buffer.from(base64String.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+// SAFE IMAGE PARSER: Prevents DOCX from crashing on PDFs or corrupted Base64 strings
+function parseBase64Image(base64String: string): Buffer | null {
+  if (!base64String || typeof base64String !== 'string') return null;
+  if (!base64String.startsWith('data:image/')) return null;
+
+  try {
+    const cleanBase64 = base64String.replace(/^data:image\/\w+;base64,/, "");
+    return Buffer.from(cleanBase64, 'base64');
+  } catch (err) {
+    console.error("Failed to parse image", err);
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -80,10 +90,7 @@ export async function POST(request: Request) {
     const data = await request.json();
 
     if (!data || typeof data !== 'object') {
-      return new Response(JSON.stringify({ error: 'Invalid payload' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 });
     }
 
     if (hasSupabaseConfig) {
@@ -92,9 +99,7 @@ export async function POST(request: Request) {
         student_name: data.studentName || null,
         appendices: JSON.stringify(data.appendices) || null,
       };
-
-      const { error } = await supabase.from('reports').insert([payload]);
-      if (error) console.error('Supabase insert error:', error);
+      await supabase.from('reports').insert([payload]);
     }
 
     const doc = new Document({
@@ -168,9 +173,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: 'Something went wrong while generating the report.' }), {
-      status: 500,
-    });
+    return new Response(JSON.stringify({ error: 'Something went wrong while generating the report.' }), { status: 500 });
   }
 }
 
@@ -208,12 +211,7 @@ function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
   ];
 
   sections.forEach((section) => {
-    const text = typeof section.content === 'string'
-      ? section.content
-      : Array.isArray(section.content)
-        ? section.content.join('\n')
-        : String(section.content ?? '');
-
+    const text = typeof section.content === 'string' ? section.content : Array.isArray(section.content) ? section.content.join('\n') : String(section.content ?? '');
     const contentLines = ensureArray(text);
 
     if (section.title) {
@@ -256,15 +254,13 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 120, after: 360 },
-      children: [
-        new TextRun({ text: '7. APPENDICES', bold: true, size: 28, font: 'Times New Roman' }),
-      ],
+      children: [new TextRun({ text: '7. APPENDICES', bold: true, size: 28, font: 'Times New Roman' })],
     }),
   ];
 
   if (!appendicesData) return children;
 
-  // 1. Daily Journal (Supports all days from Day 1 to Last Day across weeks)
+  // 1. Daily Journal
   if (appendicesData.dailyJournal && Array.isArray(appendicesData.dailyJournal)) {
     children.push(
       new Paragraph({
@@ -294,14 +290,15 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
         })
       );
 
-      // Attach 1-3 Images with optional captions
+      // Attach Images Safely
       if (weekData.images && Array.isArray(weekData.images)) {
         weekData.images.slice(0, 3).forEach((imgData) => {
           const isObject = typeof imgData === 'object' && imgData !== null;
           const base64 = isObject ? (imgData as AppendixImage).base64 : (imgData as string);
           const detail = isObject ? (imgData as AppendixImage).detail : '';
 
-          if (base64) {
+          const imgBuffer = parseBase64Image(base64);
+          if (imgBuffer) {
             children.push(
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -309,7 +306,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
                 children: [
                   new ImageRun({
                     type: 'png',
-                    data: parseBase64Image(base64),
+                    data: imgBuffer,
                     transformation: { width: 400, height: 300 },
                   }),
                 ],
@@ -364,18 +361,28 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
           })
         );
       } else {
-        children.push(
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new ImageRun({
-                type: 'png',
-                data: parseBase64Image(data),
-                transformation: { width: 550, height: 750 },
-              }),
-            ],
-          })
-        );
+        const imgBuffer = parseBase64Image(data);
+        if (imgBuffer) {
+          children.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new ImageRun({
+                  type: 'png',
+                  data: imgBuffer,
+                  transformation: { width: 550, height: 750 },
+                }),
+              ],
+            })
+          );
+        } else {
+          children.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: '[Invalid format uploaded - please ensure this is an image file]', italics: true, size: 20, font: 'Times New Roman', color: 'FF0000' })],
+            })
+          );
+        }
       }
     } else {
       children.push(
@@ -403,19 +410,14 @@ function buildWeeklyTable(activities: DailyActivity[], totalHours: number | stri
   ];
 
   const days = activities && activities.length > 0 ? activities : [
-    { day: 'Day 1', date: '', accomplishment: '', hours: '' },
-    { day: 'Day 2', date: '', accomplishment: '', hours: '' },
-    { day: 'Day 3', date: '', accomplishment: '', hours: '' },
-    { day: 'Day 4', date: '', accomplishment: '', hours: '' },
-    { day: 'Day 5', date: '', accomplishment: '', hours: '' },
+    { day: 'Day 1', date: '', accomplishment: '', hours: '' }
   ];
 
-  days.forEach((act, index) => {
-    const dayName = act.day || `Day ${index + 1}`;
+  days.forEach((act) => {
     tableRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: dayName, size: 22 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.day || '', size: 22 })] })] }),
           new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || '', size: 22 })] })] }),
           new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.accomplishment || '', size: 22 })] })] }),
           new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(act.hours || ''), size: 22 })] })] }),
@@ -438,8 +440,5 @@ function buildWeeklyTable(activities: DailyActivity[], totalHours: number | stri
     })
   );
 
-  return new Table({
-    rows: tableRows,
-    width: { size: 100, type: WidthType.PERCENTAGE },
-  });
+  return new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } });
 }
