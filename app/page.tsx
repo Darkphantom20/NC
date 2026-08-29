@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { AlignmentType, Document, PageBreak, Paragraph, Packer, TextRun } from 'docx';
 
 const initialState = {
   studentName: 'Ian P. Padilla',
   degreeProgram: 'Bachelor of Science in Information System',
-  acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT. ',
+  acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT.',
   organizationBackground: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
   vision: 'To be a premier provider of innovative, reliable, and secure technological solutions and digital services.',
   mission: 'To empower the organization through efficient IT infrastructure, responsive technical support, and robust systems development.',
@@ -54,6 +55,139 @@ const fields = [
   ['relevancy', 'Relevancy'],
 ] as const;
 
+const normalizeParagraphs = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) {
+    return value.filter((item) => item && item.trim().length > 0);
+  }
+
+  return value && value.trim().length > 0 ? [value] : [];
+};
+
+const createParagraph = (text: string, options: { bold?: boolean; before?: number; bullet?: boolean; indent?: number } = {}) => {
+  const para = new Paragraph({
+    alignment: AlignmentType.JUSTIFY,
+    spacing: { after: 120, before: options.before ?? 0, line: 360 },
+    indent: options.indent ? { left: options.indent } : undefined,
+    bullet: options.bullet ? { level: 0 } : undefined,
+  });
+
+  para.addChildElement(
+    new TextRun({
+      text,
+      font: 'Times New Roman',
+      size: 22,
+      bold: options.bold ?? false,
+    }),
+  );
+
+  return para;
+};
+
+const buildReportDocument = (data: typeof initialState) => {
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: {
+              top: 400,
+              bottom: 1000,
+              left: 800,
+              right: 800,
+            },
+          },
+        },
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 180, after: 120 },
+            children: [new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 28, font: 'Times New Roman' })],
+          }),
+          ...normalizeParagraphs(data.acknowledgement).map((item) => createParagraph(item)),
+          new Paragraph({
+            spacing: { before: 120 },
+            children: [
+              new TextRun({ text: `${String(data.studentName || 'Student Name').toUpperCase()}\n`, bold: true, font: 'Times New Roman', size: 22 }),
+              new TextRun({ text: `${data.degreeProgram || 'Degree Program'}\n`, font: 'Times New Roman', size: 22 }),
+              new TextRun({ text: 'Jose Rizal Memorial State University', font: 'Times New Roman', size: 22 }),
+            ],
+          }),
+          new Paragraph({ children: [new PageBreak()] }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 180, after: 120 },
+            children: [new TextRun({ text: '2. INTRODUCTION', bold: true, size: 28, font: 'Times New Roman' })],
+          }),
+          createParagraph('Background of the Organization', { bold: true, before: 100 }),
+          createParagraph(data.organizationBackground || 'No background provided.'),
+          createParagraph('Vision', { bold: true, before: 100 }),
+          createParagraph(data.vision || 'No vision provided.'),
+          createParagraph('Mission', { bold: true, before: 100 }),
+          createParagraph(data.mission || 'No mission provided.'),
+          createParagraph('Objectives', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.objectives).map((item) => createParagraph(item, { bullet: true, indent: 720 })),
+          createParagraph('Core Values', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.coreValues).map((item) => createParagraph(item, { bullet: true, indent: 720 })),
+          createParagraph('Products and Services Offered', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.services).map((item) => createParagraph(item, { bullet: true, indent: 720 })),
+          new Paragraph({ children: [new PageBreak()] }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 180, after: 120 },
+            children: [new TextRun({ text: '3. ORGANIZATION / COMPANY ANALYSIS', bold: true, size: 28, font: 'Times New Roman' })],
+          }),
+          createParagraph('Strengths of the Organization (Internal factors)', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.strengths).map((item) => createParagraph(item)),
+          createParagraph('Weaknesses of the Organization (Internal factors)', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.weaknesses).map((item) => createParagraph(item)),
+          createParagraph('Opportunities of the Organization (External factors)', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.opportunities).map((item) => createParagraph(item)),
+          createParagraph('Threats of the Organization (External factors)', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.threats).map((item) => createParagraph(item)),
+          createParagraph('Recommendations for Improvement', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.recommendations).map((item) => createParagraph(item)),
+          new Paragraph({ children: [new PageBreak()] }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 180, after: 120 },
+            children: [new TextRun({ text: '4. TASKS AND DUTIES', bold: true, size: 28, font: 'Times New Roman' })],
+          }),
+          createParagraph('Assigned Tasks and Responsibilities', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.tasks).map((item) => createParagraph(item)),
+          createParagraph('Duties and Procedures Conformed', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.procedures).map((item) => createParagraph(item)),
+          new Paragraph({ children: [new PageBreak()] }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 180, after: 120 },
+            children: [new TextRun({ text: '5. CASE ANALYSIS', bold: true, size: 28, font: 'Times New Roman' })],
+          }),
+          createParagraph('Issue / Problem 1', { bold: true, before: 100 }),
+          createParagraph(`Description: ${data.issue1Description || 'No issue description provided.'}`),
+          createParagraph(`Strategy/Action Undertaken: ${data.issue1Strategy || 'No strategy provided.'}`),
+          createParagraph('Issue / Problem 2', { bold: true, before: 100 }),
+          createParagraph(`Description: ${data.issue2Description || 'No issue description provided.'}`),
+          createParagraph(`Strategy/Action Undertaken: ${data.issue2Strategy || 'No strategy provided.'}`),
+          createParagraph('Lessons Learned from the Situations', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.lessons).map((item) => createParagraph(item)),
+          new Paragraph({ children: [new PageBreak()] }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 180, after: 120 },
+            children: [new TextRun({ text: '6. REFLECTIONS', bold: true, size: 28, font: 'Times New Roman' })],
+          }),
+          createParagraph('Self-Evaluation from the Learning Process Experienced', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.selfEvaluation).map((item) => createParagraph(item)),
+          createParagraph('Relevancy of the Organization with Your Programme of Study and Expected Goals', { bold: true, before: 100 }),
+          ...normalizeParagraphs(data.relevancy).map((item) => createParagraph(item)),
+        ],
+      },
+    ],
+  });
+
+  return doc;
+};
+
 export default function Page() {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
@@ -69,17 +203,8 @@ export default function Page() {
     setStatus('Generating report...');
 
     try {
-      const response = await fetch('/api/generate-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate document');
-      }
-
-      const blob = await response.blob();
+      const doc = buildReportDocument(form);
+      const blob = await Packer.toBlob(doc);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
