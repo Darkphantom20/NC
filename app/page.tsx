@@ -122,44 +122,44 @@ function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
   return (
     <div
       {...tooltipProps}
-      className="w-max flex flex-col animate-fade-in"
+      className="w-full sm:w-max flex flex-col animate-fade-in max-w-[calc(100vw-2rem)] sm:max-w-none"
     >
-      {/* Compact Layout: Image + Thought Bubble Side-by-Side Effect */}
-      <div className="flex gap-3 items-start">
+      {/* Compact Layout: Image + Thought Bubble Side-by-Side on Desktop, Stacked on Mobile */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start">
         {/* Guide Character Image - Minimized */}
-        <div className="relative overflow-hidden rounded-[16px] ring-1 ring-cyan-500/20 flex-shrink-0">
+        <div className="relative overflow-hidden rounded-[16px] ring-1 ring-cyan-500/20 flex-shrink-0 mx-auto sm:mx-0">
           <img
             src={guideScene.src}
             alt="Guide illustration"
-            className="h-32 w-32 object-cover brightness-105 contrast-110"
+            className="h-28 w-28 sm:h-32 sm:w-32 object-cover brightness-105 contrast-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
         </div>
 
         {/* Thought Bubble Card - Compact & Adjacent */}
-        <div className="relative rounded-[18px] border-2 border-cyan-500/50 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-800/80 p-4 shadow-[0_12px_36px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/60 hover:shadow-[0_16px_48px_rgba(34,211,238,0.28)] w-[260px]">
+        <div className="relative rounded-[18px] border-2 border-cyan-500/50 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-800/80 p-3 sm:p-4 shadow-[0_12px_36px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/60 hover:shadow-[0_16px_48px_rgba(34,211,238,0.28)] w-full sm:w-[260px]">
           {/* Decorative cloud shapes */}
           <div className="absolute -top-2 -left-2 w-6 h-6 bg-slate-900/40 rounded-full blur-md" />
           <div className="absolute -top-1 left-2 w-4 h-4 bg-slate-900/30 rounded-full blur-md" />
           <div className="absolute -top-2 -right-2 w-5 h-5 bg-slate-900/40 rounded-full blur-md" />
 
-          {/* Bubble pointer tail - pointing to image */}
-          <div className="absolute -left-3 top-6 h-0 w-0 border-l-0 border-r-6 border-t-5 border-b-5 border-r-cyan-500/50 border-t-transparent border-b-transparent" />
+          {/* Bubble pointer tail - pointing to image (hidden on mobile) */}
+          <div className="hidden sm:block absolute -left-3 top-6 h-0 w-0 border-l-0 border-r-6 border-t-5 border-b-5 border-r-cyan-500/50 border-t-transparent border-b-transparent" />
 
-          <div className="space-y-2.5 relative z-10">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-300/90">Guide</span>
-              <span className="rounded-full border border-cyan-500/40 bg-cyan-500/15 px-2 py-0.5 text-[9px] font-semibold text-cyan-200/90 backdrop-blur-sm">
+          <div className="space-y-2 sm:space-y-2.5 relative z-10">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-300/90">Guide</span>
+              <span className="rounded-full border border-cyan-500/40 bg-cyan-500/15 px-2 py-0.5 text-[8px] sm:text-[9px] font-semibold text-cyan-200/90 backdrop-blur-sm">
                 {step.target?.replace('.', '') || 'Tip'}
               </span>
             </div>
 
-            <p className="text-xs leading-5 text-slate-200/95 font-medium">{step.content}</p>
+            <p className="text-xs sm:text-xs leading-5 text-slate-200/95 font-medium">{step.content}</p>
 
-            <div className="flex items-center justify-between pt-1 gap-2">
+            <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
               <button
                 type="button"
-                className="text-xs font-semibold text-slate-400 hover:text-slate-300 transition-colors duration-200 px-2 py-1"
+                className="text-xs font-semibold text-slate-400 hover:text-slate-300 transition-colors duration-200 px-2 py-1.5 rounded hover:bg-slate-800/40"
                 {...tooltipProps.closeProps}
               >
                 Skip
@@ -417,7 +417,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 sm:py-12 lg:px-8">
+    <main className="min-h-screen bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
       {isMounted && (
         <Joyride
           steps={tourSteps}
@@ -487,11 +487,11 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button
                 onClick={() => setRunTour(true)}
-                className="tour-start-btn flex items-center gap-2 rounded-2xl bg-cyan-500/20 px-5 py-3.5 text-sm font-bold text-cyan-300 hover:bg-cyan-500/30 transition-colors border border-cyan-500/30"
+                className="tour-start-btn flex items-center gap-2 rounded-2xl bg-cyan-500/20 px-4 sm:px-5 py-2.5 sm:py-3.5 text-xs sm:text-sm font-bold text-cyan-300 hover:bg-cyan-500/30 transition-colors border border-cyan-500/30 active:scale-95 touch-auto"
                 type="button"
               >
-                <HelpCircle size={20} />
-                Show Me How
+                <HelpCircle size={18} className="sm:w-5 sm:h-5" />
+                <span>Show Me How</span>
               </button>
 
               <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-left sm:px-5 sm:py-3.5 md:text-right">
@@ -684,9 +684,9 @@ export default function Home() {
             <SectionBlock title="7. Appendices" className="tour-appendices">
               <div className="space-y-8">
                 <div className="space-y-5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
-                    <button type="button" onClick={addWeek} className="rounded-xl bg-cyan-500/20 px-3.5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30">
+                    <button type="button" onClick={addWeek} className="rounded-xl bg-cyan-500/20 px-3 sm:px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 transition active:scale-95 whitespace-nowrap">
                       + Add Week
                     </button>
                   </div>
@@ -695,7 +695,7 @@ export default function Home() {
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-white">WEEK {week.weekNumber} (Total Hours: {week.totalHours})</span>
                         {form.appendices.dailyJournal.length > 1 && (
-                          <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:underline">
+                          <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-900/20 transition active:scale-95">
                             Remove Week
                           </button>
                         )}
@@ -703,15 +703,27 @@ export default function Home() {
                       <div className="space-y-3">
                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Activities</p>
                         {week.activities.map((act, dayIdx) => (
-                          <div key={dayIdx} className="grid gap-2.5 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                            <input type="text" placeholder="Day" value={act.day} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
-                            <input type="text" placeholder="Date" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
-                            <input type="text" placeholder="Daily Accomplishment" value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
-                            <input type="number" placeholder="Hrs" value={act.hours} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
-                            <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="text-rose-400 text-xs px-2 py-1 hover:text-rose-300">✕</button>
+                          <div key={dayIdx} className="grid gap-2 sm:gap-2.5 grid-cols-2 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-end bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                            <div className="col-span-1">
+                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Day</label>
+                              <input type="text" placeholder="Day" value={act.day} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                            </div>
+                            <div className="col-span-1">
+                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Date</label>
+                              <input type="text" placeholder="Date" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                            </div>
+                            <div className="col-span-2 sm:col-span-1">
+                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Accomplishment</label>
+                              <input type="text" placeholder="Accomplishment" value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                            </div>
+                            <div className="col-span-1">
+                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Hrs</label>
+                              <input type="number" placeholder="Hrs" value={act.hours} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                            </div>
+                            <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="col-span-1 text-rose-400 text-xs px-2 py-1.5 hover:text-rose-300 rounded hover:bg-rose-900/20">✕</button>
                           </div>
                         ))}
-                        <button type="button" onClick={() => addDay(weekIdx)} className="mt-2 text-xs font-semibold text-cyan-400 hover:underline">
+                        <button type="button" onClick={() => addDay(weekIdx)} className="mt-2 text-xs font-semibold text-cyan-400 hover:text-cyan-300 px-3 py-1.5 rounded hover:bg-cyan-900/20 transition active:scale-95">
                           + Add Day
                         </button>
                       </div>
@@ -792,7 +804,7 @@ export default function Home() {
               type="button"
               onClick={handleGenerate}
               disabled={loading}
-              className="tour-generate-btn mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-3.5 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="tour-generate-btn mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-3.5 sm:py-4 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
             >
               {loading ? 'Generating...' : 'Generate Report'}
             </button>
