@@ -945,14 +945,14 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { after: 40 }, bullet: { level: 0 }, children: [new TextRun({ text: 'No accomplishment added.', size: 18, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { after: 40 }, bullet: { level: 0 }, children: [new TextRun({ text: 'No accomplishment added.', size: 20, font: 'Times New Roman' })] })];
               }
               return lines.map((line, idx) =>
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { after: idx === lines.length - 1 ? 40 : 20 },
                   bullet: { level: 0 },
-                  children: [new TextRun({ text: line.trim(), size: 18, font: 'Times New Roman' })]
+                  children: [new TextRun({ text: line.trim(), size: 20, font: 'Times New Roman' })]
                 })
               );
             })()
