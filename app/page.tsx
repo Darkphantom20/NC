@@ -211,10 +211,27 @@ export default function Home() {
   const [runTour, setRunTour] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Load form data from localStorage on mount
   useEffect(() => {
     setIsMounted(true);
+    const savedForm = localStorage.getItem('narrativeReportForm');
+    if (savedForm) {
+      try {
+        setForm(JSON.parse(savedForm));
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+        setForm(defaultForm);
+      }
+    }
     setRunTour(true);
   }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('narrativeReportForm', JSON.stringify(form));
+    }
+  }, [form, isMounted]);
 
   const tourSteps: Step[] = [
     {
