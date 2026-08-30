@@ -715,7 +715,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
 
   const layout = appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
 
-  const activityTitle = layout === 'report' ? 'DAILY WORK ACTIVITIES' : 'WEEKLY WORK ACTIVITIES';
+  const activityTitle = layout === 'report' ? 'WEEKLY ACCOMPLISHMENT REPORT' : 'WEEKLY WORK ACTIVITIES';
 
   children.push(
     new Paragraph({
@@ -738,11 +738,6 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       children.push(
         weekParagraph,
         buildDailyReportTable(weekData.activities, reportImages),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 120, after: 240 },
-          children: [new TextRun({ text: `WEEKLY ACCOMPLISHMENT REPORT`, bold: true, size: 24, font: 'Times New Roman' })],
-        })
       );
 
       return;
