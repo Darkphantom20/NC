@@ -52,7 +52,7 @@ const defaultForm = {
       preparedByName: '',
       checkedByLabel: 'Checked By:',
       checkedByName: '',
-      checkedByRole: '',
+      checkedByRole: 'Supervising\nStatistical Specialist',
       officeInCharge: '',
       dateLabel: 'Date:',
       dateValue: ''
