@@ -49,13 +49,13 @@ const defaultForm = {
     dailyJournalLayout: 'current',
     reportFooter: {
       preparedByLabel: 'Prepared By:',
-      preparedByName: 'HAYNA G. DAUD',
+      preparedByName: '',
       checkedByLabel: 'Checked By:',
-      checkedByName: 'ANDRES\nS. TAPALES JR.',
-      checkedByRole: 'Supervising\nStatistical Specialist',
-      officeInCharge: 'Office-in-Charge',
+      checkedByName: '',
+      checkedByRole: '',
+      officeInCharge: '',
       dateLabel: 'Date:',
-      dateValue: 'August 15, 2026'
+      dateValue: ''
     },
     dailyJournal: [
       {
