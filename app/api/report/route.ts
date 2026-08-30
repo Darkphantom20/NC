@@ -29,8 +29,20 @@ interface DailyJournalWeek {
   images?: (string | AppendixImage)[];
 }
 
+interface ReportFooterData {
+  preparedByLabel?: string;
+  preparedByName?: string;
+  checkedByLabel?: string;
+  checkedByName?: string;
+  checkedByRole?: string;
+  officeInCharge?: string;
+  dateLabel?: string;
+  dateValue?: string;
+}
+
 interface AppendicesData {
   dailyJournalLayout?: 'current' | 'report';
+  reportFooter?: ReportFooterData;
   dailyJournal?: DailyJournalWeek[];
   certParticipation?: string;
   primeNarrative?: string;
@@ -165,8 +177,9 @@ export async function POST(request: Request) {
     });
 
     const buffer = await Packer.toBuffer(doc);
+    const docBuffer = Buffer.from(buffer);
 
-    return new Response(buffer, {
+    return new Response(docBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -499,6 +512,35 @@ function buildFeaturedImageLayout(imgData: string | AppendixImage) {
   return children;
 }
 
+function buildReportFooterBlock(footer?: ReportFooterData): Paragraph[] {
+  const preparedByLabel = footer?.preparedByLabel?.trim() || 'Prepared By:';
+  const preparedByName = footer?.preparedByName?.trim() || 'HAYNA G. DAUD';
+  const checkedByLabel = footer?.checkedByLabel?.trim() || 'Checked By:';
+  const checkedByName = footer?.checkedByName?.trim() || 'ANDRES S. TAPALES JR.';
+  const checkedByRole = footer?.checkedByRole?.trim() || 'Supervising Statistical Specialist';
+  const dateLabel = footer?.dateLabel?.trim() || 'Date:';
+  const dateValue = footer?.dateValue?.trim() || 'August 15, 2026';
+  const officeInCharge = footer?.officeInCharge?.trim() || 'Office-in-Charge';
+
+  return [
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      spacing: { before: 240, after: 40 },
+      children: [new TextRun({ text: `${preparedByLabel} ${preparedByName}                ${checkedByLabel} ${checkedByName}`, size: 20, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      spacing: { after: 40 },
+      children: [new TextRun({ text: checkedByRole, size: 18, font: 'Times New Roman' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      spacing: { after: 40 },
+      children: [new TextRun({ text: `${dateLabel} ${dateValue}                ${officeInCharge}`, size: 20, font: 'Times New Roman' })],
+    }),
+  ];
+}
+
 function buildAppendicesPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
@@ -540,6 +582,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
           })
         );
 
+        children.push(...buildReportFooterBlock(appendicesData.reportFooter));
         return;
       }
 
@@ -549,7 +592,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
           spacing: { after: 120 },
           children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
         }),
-        buildWeeklyTable(weekData.activities, weekData.totalHours),
+        buildCurrentWeeklyTable(weekData.activities, weekData.totalHours),
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { before: 60, after: 120 },
@@ -615,7 +658,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
   return children;
 }
 
-function buildWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
+function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
   const tableRows = [
     new TableRow({
       children: [

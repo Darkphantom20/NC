@@ -47,6 +47,16 @@ const defaultForm = {
   relevancy: 'The host organization directly aligns with my degree program, allowing me to fulfill my expected professional goals of mastering enterprise systems administration and IT support workflows.',
   appendices: {
     dailyJournalLayout: 'current',
+    reportFooter: {
+      preparedByLabel: 'Prepared By:',
+      preparedByName: 'HAYNA G. DAUD',
+      checkedByLabel: 'Checked By:',
+      checkedByName: 'ANDRES\nS. TAPALES JR.',
+      checkedByRole: 'Supervising\nStatistical Specialist',
+      officeInCharge: 'Office-in-Charge',
+      dateLabel: 'Date:',
+      dateValue: 'August 15, 2026'
+    },
     dailyJournal: [
       {
         weekNumber: 1,
@@ -271,6 +281,19 @@ export default function Home() {
     setForm((prev) => ({
       ...prev,
       appendices: { ...prev.appendices, [key]: value }
+    }));
+  };
+
+  const updateReportFooter = (field: keyof NonNullable<typeof defaultForm.appendices.reportFooter>, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      appendices: {
+        ...prev.appendices,
+        reportFooter: {
+          ...prev.appendices.reportFooter,
+          [field]: value
+        }
+      }
     }));
   };
 
@@ -792,6 +815,44 @@ export default function Home() {
                           </label>
                         </div>
                       ))}
+
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Report Footer</p>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Prepared By Label</span>
+                            <input type="text" value={form.appendices.reportFooter.preparedByLabel} onChange={(e) => updateReportFooter('preparedByLabel', e.target.value)} className={fieldClass} />
+                          </label>
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Checked By Label</span>
+                            <input type="text" value={form.appendices.reportFooter.checkedByLabel} onChange={(e) => updateReportFooter('checkedByLabel', e.target.value)} className={fieldClass} />
+                          </label>
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Prepared By Name</span>
+                            <input type="text" value={form.appendices.reportFooter.preparedByName} onChange={(e) => updateReportFooter('preparedByName', e.target.value)} className={fieldClass} />
+                          </label>
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Checked By Name</span>
+                            <input type="text" value={form.appendices.reportFooter.checkedByName} onChange={(e) => updateReportFooter('checkedByName', e.target.value)} className={fieldClass} />
+                          </label>
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200 md:col-span-2">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Checked By Role</span>
+                            <input type="text" value={form.appendices.reportFooter.checkedByRole} onChange={(e) => updateReportFooter('checkedByRole', e.target.value)} className={fieldClass} />
+                          </label>
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Date Label</span>
+                            <input type="text" value={form.appendices.reportFooter.dateLabel} onChange={(e) => updateReportFooter('dateLabel', e.target.value)} className={fieldClass} />
+                          </label>
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Date Value</span>
+                            <input type="text" value={form.appendices.reportFooter.dateValue} onChange={(e) => updateReportFooter('dateValue', e.target.value)} className={fieldClass} />
+                          </label>
+                          <label className="block text-xs sm:text-sm font-medium text-slate-200 md:col-span-2">
+                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Office-in-Charge</span>
+                            <input type="text" value={form.appendices.reportFooter.officeInCharge} onChange={(e) => updateReportFooter('officeInCharge', e.target.value)} className={fieldClass} />
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
