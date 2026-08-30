@@ -521,7 +521,7 @@ function buildFeaturedImageLayout(imgData: string | AppendixImage) {
   return children;
 }
 
-function buildReportFooterBlock(footer?: ReportFooterData): Paragraph[] {
+function buildReportFooterBlock(footer?: ReportFooterData): any[] {
   const preparedByLabel = footer?.preparedByLabel?.trim() || 'Prepared By:';
   const preparedByName = footer?.preparedByName?.trim() || 'HAYNA G. DAUD';
   const checkedByLabel = footer?.checkedByLabel?.trim() || 'Checked By:';
@@ -532,20 +532,117 @@ function buildReportFooterBlock(footer?: ReportFooterData): Paragraph[] {
   const officeInCharge = footer?.officeInCharge?.trim() || 'Office-in-Charge';
 
   return [
-    new Paragraph({
-      alignment: AlignmentType.LEFT,
-      spacing: { before: 240, after: 40 },
-      children: [new TextRun({ text: `${preparedByLabel} ${preparedByName}                ${checkedByLabel} ${checkedByName}`, size: 20, font: 'Times New Roman' })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.LEFT,
-      spacing: { after: 40 },
-      children: [new TextRun({ text: checkedByRole, size: 18, font: 'Times New Roman' })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.LEFT,
-      spacing: { after: 40 },
-      children: [new TextRun({ text: `${dateLabel} ${dateValue}                ${officeInCharge}`, size: 20, font: 'Times New Roman' })],
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: {
+        top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { after: 0 },
+                  children: [new TextRun({ text: preparedByLabel, bold: true, size: 11, font: 'Times New Roman' })],
+                })
+              ],
+            }),
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { after: 0 },
+                  children: [new TextRun({ text: checkedByLabel, bold: true, size: 11, font: 'Times New Roman' })],
+                })
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 0, after: 0 },
+                  children: [new TextRun({ text: preparedByName, bold: true, size: 11, font: 'Times New Roman' })],
+                })
+              ],
+            }),
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 0, after: 0 },
+                  children: [new TextRun({ text: checkedByName, bold: true, size: 11, font: 'Times New Roman' })],
+                })
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 0, after: 0 },
+                  children: [new TextRun({ text: '', size: 11, font: 'Times New Roman' })],
+                })
+              ],
+            }),
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 0, after: 0 },
+                  children: [new TextRun({ text: checkedByRole, size: 11, font: 'Times New Roman' })],
+                })
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 0, after: 0 },
+                  children: [
+                    new TextRun({ text: `${dateLabel} `, bold: true, size: 11, font: 'Times New Roman' }),
+                    new TextRun({ text: dateValue, bold: true, size: 11, font: 'Times New Roman' }),
+                  ],
+                })
+              ],
+            }),
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 0, after: 0 },
+                  children: [new TextRun({ text: officeInCharge, size: 11, font: 'Times New Roman' })],
+                })
+              ],
+            }),
+          ],
+        }),
+      ],
     }),
   ];
 }
