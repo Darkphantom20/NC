@@ -769,8 +769,8 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       })
     );
 
-    if (currentImages && currentImages.length > 0) {
-      children.push(buildImageGridTable(currentImages));
+    if (weekData.images && weekData.images.length > 0) {
+      children.push(buildImageGridTable(weekData.images));
     }
   });
 
