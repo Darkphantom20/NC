@@ -741,14 +741,6 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
         })
       );
 
-      children.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { before: 120, after: 240 },
-          children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 22, font: 'Times New Roman' })],
-        })
-      );
-
       return;
     }
 
