@@ -832,9 +832,10 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
   const tableRows = [
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 22, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 58, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'HOURS', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DAY', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 46, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'NO. OF WORKING HOURS', bold: true, size: 18, font: 'Times New Roman' })] })], width: { size: 16, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -845,7 +846,8 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
     tableRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || act.day || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.day || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({ 
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
@@ -876,8 +878,8 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
     new TableRow({
       children: [
         new TableCell({ 
-          columnSpan: 2, 
-          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: 'TOTAL HOURS', bold: true, size: 20, font: 'Times New Roman' })] })] 
+          columnSpan: 3, 
+          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: 'TOTAL NUMBER OF HOURS', bold: true, size: 20, font: 'Times New Roman' })] })] 
         }),
         new TableCell({ 
           children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(totalHours), bold: true, size: 20, font: 'Times New Roman' })] })] 
@@ -893,9 +895,10 @@ function buildWeeklyReportTable(activities: DailyActivity[], images: (string | A
   const tableRows = [
     new TableRow({
       children: [
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DAY', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
         new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 55, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'HOURS', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 25, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 46, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'NO. OF WORKING HOURS', bold: true, size: 18, font: 'Times New Roman' })] })], width: { size: 16, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -906,7 +909,8 @@ function buildWeeklyReportTable(activities: DailyActivity[], images: (string | A
     tableRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || act.day || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.day || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({ 
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
@@ -939,8 +943,8 @@ function buildWeeklyReportTable(activities: DailyActivity[], images: (string | A
     new TableRow({
       children: [
         new TableCell({
-          columnSpan: 2,
-          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: 'TOTAL HOURS', bold: true, size: 20, font: 'Times New Roman' })] })],
+          columnSpan: 3,
+          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: 'TOTAL NUMBER OF HOURS', bold: true, size: 20, font: 'Times New Roman' })] })],
         }),
         new TableCell({
           children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(totalCellValue), bold: true, size: 20, font: 'Times New Roman' })] })],
