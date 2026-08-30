@@ -324,7 +324,6 @@ export default function Home() {
   const addWeek = () => {
     setForm((prev) => {
       const nextWeekNum = prev.appendices.dailyJournal.length + 1;
-      const startDayNum = prev.appendices.dailyJournal.reduce((acc, w) => acc + w.activities.length, 0) + 1;
       return {
         ...prev,
         appendices: {
@@ -336,7 +335,7 @@ export default function Home() {
               totalHours: 40,
               narrative: '',
               activities: Array.from({ length: 5 }, (_, i) => ({
-                day: `Day ${startDayNum + i}`,
+                day: `Day ${i + 1}`,
                 date: '',
                 accomplishment: '',
                 hours: 8
@@ -360,9 +359,12 @@ export default function Home() {
     setForm((prev) => {
       const journal = [...prev.appendices.dailyJournal];
       const week = journal[weekIndex];
-      const totalDaysOverall = journal.reduce((acc, w) => acc + w.activities.length, 0);
-      week.activities.push({ day: `Day ${totalDaysOverall + 1}`, date: '', accomplishment: '', hours: 8 });
+      week.activities.push({ day: `Day ${week.activities.length + 1}`, date: '', accomplishment: '', hours: 8 });
       week.totalHours = week.activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
+      journal[weekIndex].activities = week.activities.map((activity, idx) => ({
+        ...activity,
+        day: activity.day && activity.day.startsWith('Day ') ? `Day ${idx + 1}` : activity.day
+      }));
       return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
     });
   };
@@ -381,7 +383,12 @@ export default function Home() {
   const removeDay = (weekIndex: number, dayIndex: number) => {
     setForm((prev) => {
       const journal = [...prev.appendices.dailyJournal];
-      journal[weekIndex].activities = journal[weekIndex].activities.filter((_, idx) => idx !== dayIndex);
+      journal[weekIndex].activities = journal[weekIndex].activities
+        .filter((_, idx) => idx !== dayIndex)
+        .map((activity, idx) => ({
+          ...activity,
+          day: activity.day && activity.day.startsWith('Day ') ? `Day ${idx + 1}` : activity.day
+        }));
       journal[weekIndex].totalHours = journal[weekIndex].activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
       return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
     });
