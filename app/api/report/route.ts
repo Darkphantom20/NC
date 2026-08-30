@@ -26,7 +26,9 @@ interface DailyJournalWeek {
   activities: DailyActivity[];
   totalHours: number | string;
   narrative?: string;
-  images?: (string | AppendixImage)[];
+  images?: (string | AppendixImage)[]; // For backwards compatibility
+  reportLayoutImages?: (string | AppendixImage)[]; // Report layout only
+  currentLayoutImages?: (string | AppendixImage)[]; // Current layout only
 }
 
 interface ReportFooterData {
@@ -718,13 +720,15 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
 
   appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek) => {
     if (layout === 'report') {
+      // Use report layout images, fall back to shared images for backwards compatibility
+      const reportImages = weekData.reportLayoutImages || weekData.images || [];
       children.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 120 },
           children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
         }),
-        buildWeeklyReportTable(weekData.activities, weekData.images || [])
+        buildWeeklyReportTable(weekData.activities, reportImages)
       );
 
       children.push(
@@ -738,13 +742,15 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       return;
     }
 
+    // Use current layout images, fall back to shared images for backwards compatibility
+    const currentImages = weekData.currentLayoutImages || weekData.images || [];
     children.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 120 },
         children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
       }),
-      buildCurrentWeeklyTable(weekData.activities, weekData.totalHours),
+      buildCurrentWeeklyTable(weekData.activities, weekData.totalHours, currentImages),
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { before: 60, after: 120 },
@@ -816,7 +822,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
   ];
 }
 
-function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
+function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string, images: (string | AppendixImage)[] = []) {
   const tableRows = [
     new TableRow({
       children: [
