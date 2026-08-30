@@ -715,11 +715,13 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
 
   const layout = appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
 
+  const activityTitle = layout === 'report' ? 'DAILY WORK ACTIVITIES' : 'WEEKLY WORK ACTIVITIES';
+
   children.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 240, after: 120 },
-      children: [new TextRun({ text: 'DAILY WORK ACTIVITIES', bold: true, size: 24, font: 'Times New Roman' })],
+      children: [new TextRun({ text: activityTitle, bold: true, size: 24, font: 'Times New Roman' })],
     })
   );
 
@@ -943,12 +945,13 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { after: 40 }, children: [new TextRun({ text: 'No accomplishment added.', size: 18, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { after: 40 }, bullet: { level: 0 }, children: [new TextRun({ text: 'No accomplishment added.', size: 18, font: 'Times New Roman' })] })];
               }
               return lines.map((line, idx) =>
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { after: idx === lines.length - 1 ? 40 : 20 },
+                  bullet: { level: 0 },
                   children: [new TextRun({ text: line.trim(), size: 18, font: 'Times New Roman' })]
                 })
               );
@@ -959,20 +962,6 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
       })
     );
   });
-
-  tableRows.push(
-    new TableRow({
-      children: [
-        new TableCell({
-          columnSpan: 2,
-          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: 'TOTAL HOURS', bold: true, size: 20, font: 'Times New Roman' })] })],
-        }),
-        new TableCell({
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(rows.reduce((sum, row) => sum + Number(row.hours || 0), 0)), bold: true, size: 20, font: 'Times New Roman' })] })],
-        }),
-      ],
-    })
-  );
 
   return new Table({
     rows: tableRows,
