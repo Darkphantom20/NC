@@ -756,7 +756,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     });
     children.push(
       currentWeekParagraph,
-      buildCurrentWeeklyTable(weekData.activities, weekData.totalHours),
+      buildCurrentWeeklyTable(weekData.activities, weekData.totalHours, currentImages),
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { before: 60, after: 120 },
@@ -828,7 +828,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
   ];
 }
 
-function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
+function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string, images: (string | AppendixImage)[] = []) {
   const tableRows = [
     new TableRow({
       children: [
