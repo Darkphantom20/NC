@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
 import { HelpCircle } from 'lucide-react';
+import guideScene from '../494356892_23964838003120045_2210637575151932928_n.jpg';
 
 const sectionOrder = [
   'Cover Page',
@@ -72,26 +73,6 @@ const defaultForm = {
   }
 };
 
-const tourSteps: Step[] = [
-  {
-    target: '.tour-title',
-    content: 'Welcome to the Narrative Report Generator. This tour will guide you through the main sections of the page.',
-    skipBeacon: true,
-  },
-  {
-    target: '.tour-status',
-    content: 'This status panel updates as you work and shows the current generation state.',
-  },
-  {
-    target: '.tour-form',
-    content: 'Use this form to fill in all required narrative report details, including cover page, analysis, and appendices.',
-  },
-  {
-    target: '.tour-generate',
-    content: 'When everything is ready, click Generate Report to download your DOCX file.',
-  },
-];
-
 const fieldClass =
   'mt-2.5 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:rounded-2xl sm:px-4 sm:py-3.5 sm:text-base';
 
@@ -135,6 +116,53 @@ async function readErrorMessage(response: Response): Promise<string> {
   } catch {
     return text || 'Failed to generate the report';
   }
+}
+
+function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
+  return (
+    <div
+      {...tooltipProps}
+      className="w-[340px] overflow-hidden rounded-[22px] border border-cyan-500/30 bg-slate-900/95 shadow-[0_18px_50px_rgba(34,211,238,0.18)] backdrop-blur-md"
+    >
+      <div className="relative overflow-hidden">
+        <img
+          src={guideScene.src}
+          alt="Guide illustration"
+          className="h-36 w-full object-cover brightness-110 contrast-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
+      </div>
+
+      <div className="space-y-3 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-300">Guide</span>
+          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold text-cyan-200">
+            {step.target?.replace('.', '') || 'Tip'}
+          </span>
+        </div>
+
+        <p className="text-sm leading-6 text-slate-100">{step.content}</p>
+
+        <div className="flex items-center justify-between pt-1">
+          <button
+            type="button"
+            className="text-xs font-semibold text-slate-400 hover:text-slate-200"
+            {...tooltipProps.closeProps}
+          >
+            Skip
+          </button>
+
+          <button
+            type="button"
+            {...primaryProps}
+            className="rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 transition hover:brightness-110"
+          >
+            {primaryProps.title}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Home() {
@@ -370,12 +398,49 @@ export default function Home() {
           run={runTour}
           continuous={true}
           onEvent={handleJoyrideCallback}
+          tooltipComponent={GuideTooltip}
           options={{
             primaryColor: '#06b6d4',
-            backgroundColor: '#1e293b',
+            backgroundColor: '#0f172a',
             textColor: '#f1f5f9',
-            arrowColor: '#1e293b',
-            showProgress: true,
+            zIndex: 1000,
+            overlayColor: 'rgba(15, 23, 42, 0.48)',
+            beaconSize: 42,
+            arrowColor: '#0f172a',
+          }}
+          styles={{
+            arrow: {
+              color: '#0f172a',
+            },
+            floater: {
+              filter: 'drop-shadow(0 18px 40px rgba(34, 211, 238, 0.15))',
+            },
+            tooltip: {
+              borderRadius: 22,
+              padding: 0,
+              backgroundColor: 'transparent',
+              boxShadow: 'none',
+            },
+            buttonPrimary: {
+              backgroundColor: '#06b6d4',
+              borderRadius: 999,
+              fontWeight: 700,
+              color: '#ffffff',
+              padding: '0.7rem 1rem',
+            },
+            buttonBack: {
+              color: '#cbd5e1',
+            },
+            buttonSkip: {
+              color: '#cbd5e1',
+            },
+          }}
+          locale={{
+            back: 'Back',
+            close: 'Close',
+            last: 'Finish',
+            next: 'Next',
+            skip: 'Skip',
           }}
         />
       )}
