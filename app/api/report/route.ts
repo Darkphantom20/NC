@@ -741,7 +741,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { before: 120, after: 240 },
-          children: [new TextRun({ text: `WEEKLY ACCOMPLISHMENT REPORT`, bold: true, size: 24, font: 'Times New Roman' })],
+          children: [new TextRun({ text: `DAILY WORK ACTIVITIES`, bold: true, size: 24, font: 'Times New Roman' })],
         })
       );
 
