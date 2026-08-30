@@ -586,7 +586,6 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
         children: [
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -597,7 +596,6 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -612,7 +610,6 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
         children: [
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -623,7 +620,6 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -638,12 +634,10 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
         children: [
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: '', size: 22, font: 'Times New Roman' })] })],
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -658,7 +652,6 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
         children: [
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -672,7 +665,6 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
