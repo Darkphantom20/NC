@@ -514,37 +514,37 @@ export default function Home() {
             {/* Added tour-front-page class via modified SectionBlock */}
             <SectionBlock title="Front Page (Cover Page Details)" className="tour-front-page">
               <div className="space-y-5">
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-200">
-                    Training Organization / Company Name
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Organization</span>
                     <input value={form.trainingOrganization} onChange={(e) => updateField('trainingOrganization', e.target.value)} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Training Location (City, Province, Country)
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Location</span>
                     <input value={form.trainingLocation} onChange={(e) => updateField('trainingLocation', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-200">
-                    College / Faculty Name
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">College/Faculty</span>
                     <input value={form.collegeFaculty} onChange={(e) => updateField('collegeFaculty', e.target.value)} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Degree Program
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Degree Program</span>
                     <input value={form.degreeProgram} onChange={(e) => updateField('degreeProgram', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
-                <div className="grid gap-5 md:grid-cols-3">
-                  <label className="block text-sm font-medium text-slate-200">
-                    Student Name
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Student Name</span>
                     <input value={form.studentName} onChange={(e) => updateField('studentName', e.target.value)} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Submitted To (Adviser Name)
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Adviser Name</span>
                     <input value={form.submittedToName} onChange={(e) => updateField('submittedToName', e.target.value)} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Submitted To Title / Position
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Title/Position</span>
                     <input value={form.submittedToTitle} onChange={(e) => updateField('submittedToTitle', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
@@ -552,49 +552,49 @@ export default function Home() {
             </SectionBlock>
 
             <SectionBlock title="1. Acknowledgement" className="tour-acknowledgement">
-              <div className="space-y-5">
-                <label className="block text-sm font-medium text-slate-200">
-                  Student Name
+              <div className="space-y-4 sm:space-y-5">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Student Name</span>
                   <input value={form.studentName} onChange={(e) => updateField('studentName', e.target.value)} className={fieldClass} />
                 </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Degree Program
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Degree Program</span>
                   <input value={form.degreeProgram} onChange={(e) => updateField('degreeProgram', e.target.value)} className={fieldClass} />
                 </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Acknowledgement Paragraph
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Acknowledgement</span>
                   <textarea value={form.acknowledgement} onChange={(e) => updateField('acknowledgement', e.target.value)} rows={4} className={fieldClass} />
                 </label>
               </div>
             </SectionBlock>
 
             <SectionBlock title="2. Introduction" className="tour-introduction">
-              <div className="space-y-5">
-                <label className="block text-sm font-medium text-slate-200">
-                  Background of Organization
+              <div className="space-y-4 sm:space-y-5">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Background</span>
                   <textarea value={form.background} onChange={(e) => updateField('background', e.target.value)} rows={4} className={fieldClass} />
                 </label>
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-200">
-                    Vision
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Vision</span>
                     <input value={form.vision} onChange={(e) => updateField('vision', e.target.value)} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Mission
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Mission</span>
                     <input value={form.mission} onChange={(e) => updateField('mission', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
-                <div className="grid gap-5 md:grid-cols-3">
-                  <label className="block text-sm font-medium text-slate-200">
-                    Objectives
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Objectives</span>
                     <textarea value={form.objectives} onChange={(e) => updateField('objectives', e.target.value)} rows={3} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Core Values
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Core Values</span>
                     <textarea value={form.coreValues} onChange={(e) => updateField('coreValues', e.target.value)} rows={3} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Services Offered
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">Services</span>
                     <textarea value={form.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
                   </label>
                 </div>
@@ -603,39 +603,39 @@ export default function Home() {
 
             <SectionBlock title="3. Organization Analysis" className="tour-organization-analysis">
               <div className="space-y-5">
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-200">
-                    Strengths
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">✓ Strengths</span>
                     <textarea value={form.strengths} onChange={(e) => updateField('strengths', e.target.value)} rows={4} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Weaknesses
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">✗ Weaknesses</span>
                     <textarea value={form.weaknesses} onChange={(e) => updateField('weaknesses', e.target.value)} rows={4} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Opportunities
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">◆ Opportunities</span>
                     <textarea value={form.opportunities} onChange={(e) => updateField('opportunities', e.target.value)} rows={4} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Threats
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">⚠ Threats</span>
                     <textarea value={form.threats} onChange={(e) => updateField('threats', e.target.value)} rows={4} className={fieldClass} />
                   </label>
                 </div>
-                <label className="block text-sm font-medium text-slate-200">
-                  Recommendations
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Recommendations</span>
                   <textarea value={form.recommendations} onChange={(e) => updateField('recommendations', e.target.value)} rows={4} className={fieldClass} />
                 </label>
               </div>
             </SectionBlock>
 
             <SectionBlock title="4. Tasks and Duties" className="tour-tasks-duties">
-              <div className="space-y-5">
-                <label className="block text-sm font-medium text-slate-200">
-                  Assigned Tasks
+              <div className="space-y-4 sm:space-y-5">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Assigned Tasks</span>
                   <textarea value={form.tasks} onChange={(e) => updateField('tasks', e.target.value)} rows={4} className={fieldClass} />
                 </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Procedures Conformed
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Procedures Conformed</span>
                   <textarea value={form.procedures} onChange={(e) => updateField('procedures', e.target.value)} rows={4} className={fieldClass} />
                 </label>
               </div>
@@ -643,46 +643,46 @@ export default function Home() {
 
             <SectionBlock title="5. Case Analysis" className="tour-case-analysis">
               <div className="space-y-5">
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-200">
-                    Problem 1
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">Problem 1</span>
                     <textarea value={form.issue1} onChange={(e) => updateField('issue1', e.target.value)} rows={4} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Solution/Action 1
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Solution 1</span>
                     <textarea value={form.issue1Action} onChange={(e) => updateField('issue1Action', e.target.value)} rows={4} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Problem 2
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">Problem 2</span>
                     <textarea value={form.issue2} onChange={(e) => updateField('issue2', e.target.value)} rows={4} className={fieldClass} />
                   </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    Solution/Action 2
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Solution 2</span>
                     <textarea value={form.issue2Action} onChange={(e) => updateField('issue2Action', e.target.value)} rows={4} className={fieldClass} />
                   </label>
                 </div>
-                <label className="block text-sm font-medium text-slate-200">
-                  Lessons Learned
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">Lessons Learned</span>
                   <textarea value={form.lessons} onChange={(e) => updateField('lessons', e.target.value)} rows={4} className={fieldClass} />
                 </label>
               </div>
             </SectionBlock>
 
             <SectionBlock title="6. Reflections" className="tour-reflections">
-              <div className="space-y-5">
-                <label className="block text-sm font-medium text-slate-200">
-                  Self-Evaluation
+              <div className="space-y-4 sm:space-y-5">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Self-Evaluation</span>
                   <textarea value={form.selfEvaluation} onChange={(e) => updateField('selfEvaluation', e.target.value)} rows={4} className={fieldClass} />
                 </label>
-                <label className="block text-sm font-medium text-slate-200">
-                  Relevancy to Course and Goals
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Relevancy to Course & Goals</span>
                   <textarea value={form.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
                 </label>
               </div>
             </SectionBlock>
 
             <SectionBlock title="7. Appendices" className="tour-appendices">
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div className="space-y-5">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
@@ -743,18 +743,18 @@ export default function Home() {
                         {week.images && week.images.length > 0 && (
                           <div className="mt-3 space-y-2.5">
                             {week.images.map((img, imgIdx) => (
-                              <div key={imgIdx} className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                                <img src={img.base64} alt="Preview" className="h-10 w-10 object-cover rounded-lg" />
+                              <div key={imgIdx} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 bg-slate-950 p-3 sm:p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                                <img src={img.base64} alt="Preview" className="h-12 w-12 sm:h-10 sm:w-10 object-cover rounded-lg flex-shrink-0" />
                                 <input type="text" placeholder="Caption / Picture Detail" value={img.detail} onChange={(e) => {
                                     const newJournal = [...form.appendices.dailyJournal];
                                     newJournal[weekIdx].images[imgIdx].detail = e.target.value;
                                     setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                                  }} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100" />
+                                  }} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" />
                                 <button type="button" onClick={() => {
                                     const newJournal = [...form.appendices.dailyJournal];
                                     newJournal[weekIdx].images = newJournal[weekIdx].images.filter((_, idx) => idx !== imgIdx);
                                     setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                                  }} className="text-xs text-rose-400 px-2 py-1">✕</button>
+                                  }} className="text-xs text-rose-400 px-3 py-2 rounded hover:bg-rose-900/20 transition flex-shrink-0">✕ Remove</button>
                               </div>
                             ))}
                           </div>
@@ -763,11 +763,11 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <label className="block text-sm font-medium text-slate-200">
-                  One Page Narrative Report of PRIME
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">PRIME Report</span>
                   <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={3} className={fieldClass} />
                 </label>
-                <div className="grid gap-5 md:grid-cols-2 pt-2">
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-2 pt-2">
                   <FileUpload label="Certificate of Participation (PRIME)" onChange={(e) => handleFileUpload(e, 'certParticipation')} />
                   <FileUpload label="Resume and Application Letter" onChange={(e) => handleFileUpload(e, 'resume')} />
                   <FileUpload label="Evaluation of Grades & Validated Enrolment" onChange={(e) => handleFileUpload(e, 'grades')} />
