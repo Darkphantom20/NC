@@ -589,7 +589,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             margins: { top: 50, bottom: 50, left: 25, right: 25 },
             children: [
               new Paragraph({
-                alignment: AlignmentType.CENTER,
+                alignment: AlignmentType.LEFT,
                 spacing: { after: 50, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: preparedByLabel, bold: true, size: 22, font: 'Times New Roman' })],
               })
@@ -600,7 +600,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             margins: { top: 50, bottom: 50, left: 25, right: 25 },
             children: [
               new Paragraph({
-                alignment: AlignmentType.CENTER,
+                alignment: AlignmentType.LEFT,
                 spacing: { after: 50, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: checkedByLabel, bold: true, size: 22, font: 'Times New Roman' })],
               })
