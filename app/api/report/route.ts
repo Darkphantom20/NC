@@ -727,14 +727,12 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     if (layout === 'report') {
       // Use report layout images, fall back to shared images for backwards compatibility
       const reportImages = weekData.reportLayoutImages || weekData.images || [];
-      const weekParagraph = new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 120 },
-        pageBreakBefore: index > 0, // Add page break before each week except the first one
-        children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
-      });
       children.push(
-        weekParagraph,
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 120 },
+          children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+        }),
         buildWeeklyReportTable(weekData.activities, reportImages),
         new Paragraph({
           alignment: AlignmentType.CENTER,
