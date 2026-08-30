@@ -756,7 +756,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     });
     children.push(
       currentWeekParagraph,
-      buildCurrentWeeklyTable(weekData.activities, weekData.totalHours, currentImages),
+      buildCurrentWeeklyTable(weekData.activities, weekData.totalHours),
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { before: 60, after: 120 },
@@ -769,8 +769,8 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       })
     );
 
-    if (weekData.images && weekData.images.length > 0) {
-      children.push(buildImageGridTable(weekData.images));
+    if (currentImages.length > 0) {
+      children.push(buildImageGridTable(currentImages));
     }
   });
 
@@ -828,50 +828,19 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
   ];
 }
 
-function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string, images: (string | AppendixImage)[] = []) {
+function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
   const tableRows = [
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 15, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 45, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 40, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 25, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 75, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
 
   const rows = activities && activities.length > 0 ? activities : [{ day: 'Day 1', date: '', accomplishment: '', hours: '' }];
 
-  rows.forEach((act, index) => {
-    const imageData = images[index] || null;
-    const imageCellChildren: any[] = [];
-
-    if (imageData) {
-      const isObj = typeof imageData === 'object' && imageData !== null;
-      const base64 = isObj ? (imageData as AppendixImage).base64 : (imageData as string);
-      const detail = isObj ? (imageData as AppendixImage).detail : '';
-      const buf = parseBase64Image(base64);
-
-      if (buf) {
-        imageCellChildren.push(
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
-            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 120, height: 90 } })],
-          })
-        );
-
-        if (detail) {
-          imageCellChildren.push(
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 20 },
-              children: [new TextRun({ text: detail, size: 14, font: 'Times New Roman' })],
-            })
-          );
-        }
-      }
-    }
-
+  rows.forEach((act) => {
     tableRows.push(
       new TableRow({
         children: [
@@ -893,7 +862,6 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
               );
             })()
           }),
-          new TableCell({ children: imageCellChildren.length > 0 ? imageCellChildren : [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '', size: 18, font: 'Times New Roman' })] })] }),
         ],
       })
     );
@@ -904,10 +872,7 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
       children: [
         new TableCell({ 
           columnSpan: 2, 
-          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: 'TOTAL HOURS', bold: true, size: 20, font: 'Times New Roman' })] })] 
-        }),
-        new TableCell({ 
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(totalHours), bold: true, size: 20, font: 'Times New Roman' })] })] 
+          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: `TOTAL HOURS: ${String(totalHours)}`, bold: true, size: 20, font: 'Times New Roman' })] })] 
         }),
       ],
     })
