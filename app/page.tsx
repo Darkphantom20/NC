@@ -122,87 +122,57 @@ function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
   return (
     <div
       {...tooltipProps}
-      className="w-[380px] flex flex-col animate-fade-in"
+      className="w-max flex flex-col animate-fade-in"
     >
-      {/* Guide Character Image - Fully Visible */}
-      <div className="relative overflow-hidden rounded-[20px] ring-1 ring-cyan-500/20">
-        <img
-          src={guideScene.src}
-          alt="Guide illustration"
-          className="h-48 w-full object-cover brightness-105 contrast-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-      </div>
-
-      {/* Dashed Arrow Connector - Enhanced */}
-      <div className="flex justify-center py-2 relative z-10">
-        <svg width="50" height="28" viewBox="0 0 50 28" className="filter drop-shadow-[0_2px_8px_rgba(34,211,238,0.4)]">
-          {/* Main dashed line */}
-          <line
-            x1="25"
-            y1="0"
-            x2="25"
-            y2="20"
-            stroke="url(#dashGradient)"
-            strokeWidth="3"
-            strokeDasharray="5,5"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
+      {/* Compact Layout: Image + Thought Bubble Side-by-Side Effect */}
+      <div className="flex gap-3 items-start">
+        {/* Guide Character Image - Minimized */}
+        <div className="relative overflow-hidden rounded-[16px] ring-1 ring-cyan-500/20 flex-shrink-0">
+          <img
+            src={guideScene.src}
+            alt="Guide illustration"
+            className="h-32 w-32 object-cover brightness-105 contrast-110"
           />
-          {/* Arrow triangle */}
-          <polygon
-            points="25,24 22,18 28,18"
-            fill="url(#dashGradient)"
-            opacity="0.9"
-          />
-          <defs>
-            <linearGradient id="dashGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="rgb(34, 211, 238)" stopOpacity="1" />
-              <stop offset="100%" stopColor="rgb(139, 92, 246)" stopOpacity="0.9" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+        </div>
 
-      {/* Thought Bubble Card - Enhanced */}
-      <div className="relative mx-2 mb-2 rounded-[20px] border-2 border-cyan-500/50 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-800/80 p-5 shadow-[0_16px_48px_rgba(34,211,238,0.2),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/60 hover:shadow-[0_20px_60px_rgba(34,211,238,0.3)]">
-        {/* Decorative cloud shapes - top left */}
-        <div className="absolute -top-2 -left-2 w-8 h-8 bg-slate-900/40 rounded-full blur-md" />
-        <div className="absolute -top-1 left-3 w-6 h-6 bg-slate-900/30 rounded-full blur-md" />
-        
-        {/* Decorative cloud shapes - top right */}
-        <div className="absolute -top-2 -right-2 w-7 h-7 bg-slate-900/40 rounded-full blur-md" />
-        <div className="absolute top-0 right-2 w-5 h-5 bg-slate-900/30 rounded-full blur-md" />
+        {/* Thought Bubble Card - Compact & Adjacent */}
+        <div className="relative rounded-[18px] border-2 border-cyan-500/50 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-800/80 p-4 shadow-[0_12px_36px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/60 hover:shadow-[0_16px_48px_rgba(34,211,238,0.28)] w-[260px]">
+          {/* Decorative cloud shapes */}
+          <div className="absolute -top-2 -left-2 w-6 h-6 bg-slate-900/40 rounded-full blur-md" />
+          <div className="absolute -top-1 left-2 w-4 h-4 bg-slate-900/30 rounded-full blur-md" />
+          <div className="absolute -top-2 -right-2 w-5 h-5 bg-slate-900/40 rounded-full blur-md" />
 
-        {/* Bubble pointer tail */}
-        <div className="absolute -top-4 left-10 h-0 w-0 border-l-6 border-r-6 border-b-6 border-l-transparent border-r-transparent border-b-cyan-500/50" />
+          {/* Bubble pointer tail - pointing to image */}
+          <div className="absolute -left-3 top-6 h-0 w-0 border-l-0 border-r-6 border-t-5 border-b-5 border-r-cyan-500/50 border-t-transparent border-b-transparent" />
 
-        <div className="space-y-4 relative z-10">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[11px] font-bold uppercase tracking-[0.35em] text-cyan-300/90">Guide</span>
-            <span className="rounded-full border border-cyan-500/40 bg-cyan-500/15 px-3 py-1 text-[10px] font-semibold text-cyan-200/90 backdrop-blur-sm">
-              {step.target?.replace('.', '') || 'Tip'}
-            </span>
-          </div>
+          <div className="space-y-2.5 relative z-10">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-300/90">Guide</span>
+              <span className="rounded-full border border-cyan-500/40 bg-cyan-500/15 px-2 py-0.5 text-[9px] font-semibold text-cyan-200/90 backdrop-blur-sm">
+                {step.target?.replace('.', '') || 'Tip'}
+              </span>
+            </div>
 
-          <p className="text-sm leading-7 text-slate-200/95 font-medium">{step.content}</p>
+            <p className="text-xs leading-5 text-slate-200/95 font-medium">{step.content}</p>
 
-          <div className="flex items-center justify-between pt-2 gap-3">
-            <button
-              type="button"
-              className="text-xs font-semibold text-slate-400 hover:text-slate-300 transition-colors duration-200 px-2 py-1"
-              {...tooltipProps.closeProps}
-            >
-              Skip
-            </button>
+            <div className="flex items-center justify-between pt-1 gap-2">
+              <button
+                type="button"
+                className="text-xs font-semibold text-slate-400 hover:text-slate-300 transition-colors duration-200 px-2 py-1"
+                {...tooltipProps.closeProps}
+              >
+                Skip
+              </button>
 
-            <button
-              type="button"
-              {...primaryProps}
-              className="rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-2.5 text-xs font-bold text-white shadow-[0_8px_24px_rgba(34,211,238,0.4)] transition-all duration-200 hover:shadow-[0_12px_32px_rgba(34,211,238,0.5)] hover:brightness-110 active:scale-95"
-            >
-              {primaryProps.title}
-            </button>
+              <button
+                type="button"
+                {...primaryProps}
+                className="rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:shadow-[0_8px_24px_rgba(34,211,238,0.4)] hover:brightness-110 active:scale-95 whitespace-nowrap"
+              >
+                {primaryProps.title}
+              </button>
+            </div>
           </div>
         </div>
       </div>
