@@ -939,7 +939,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
     tableRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || act.day || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || act.day || '', size: 20, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
