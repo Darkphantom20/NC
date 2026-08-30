@@ -528,37 +528,17 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
             alignment: AlignmentType.CENTER,
             spacing: { after: 120 },
             children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
-          })
+          }),
+          buildWeeklyReportTable(weekData.activities, weekData.images || [])
         );
-
-        const activities = weekData.activities && weekData.activities.length > 0 ? weekData.activities : [{ day: 'Day 1', date: '', accomplishment: '', hours: '' }];
-
-        activities.forEach((activity) => {
-          children.push(
-            new Paragraph({
-              alignment: AlignmentType.JUSTIFIED,
-              spacing: { before: 60, after: 40 },
-              children: [new TextRun({ text: `Date: ${activity.date || 'N/A'} | Day: ${activity.day || 'N/A'} | Hours: ${activity.hours || '0'}`, bold: true, size: 22, font: 'Times New Roman' })],
-            }),
-            new Paragraph({
-              alignment: AlignmentType.JUSTIFIED,
-              spacing: { after: 40 },
-              children: [new TextRun({ text: `Accomplishment: ${activity.accomplishment || 'No accomplishment added.'}`, size: 22, font: 'Times New Roman' })],
-            })
-          );
-        });
 
         children.push(
           new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
             spacing: { before: 120, after: 240 },
-            children: [new TextRun({ text: `Narrative: ${weekData.narrative || 'No narrative provided.'}`, size: 22, font: 'Times New Roman' })],
+            children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 22, font: 'Times New Roman' })],
           })
         );
-
-        if (weekData.images && weekData.images.length > 0) {
-          children.push(buildImageGridTable(weekData.images));
-        }
 
         return;
       }
@@ -679,4 +659,73 @@ function buildWeeklyTable(activities: DailyActivity[], totalHours: number | stri
   );
 
   return new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } });
+}
+
+function buildWeeklyReportTable(activities: DailyActivity[], images: (string | AppendixImage)[] = []) {
+  const tableRows = [
+    new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 45, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 35, type: WidthType.PERCENTAGE } }),
+      ],
+    }),
+  ];
+
+  const rows = activities && activities.length > 0 ? activities : [{ day: 'Day 1', date: '', accomplishment: '', hours: '' }];
+
+  rows.forEach((act, index) => {
+    const imageData = images[index] || null;
+    const imageCellChildren: any[] = [];
+
+    if (imageData) {
+      const isObj = typeof imageData === 'object' && imageData !== null;
+      const base64 = isObj ? (imageData as AppendixImage).base64 : (imageData as string);
+      const detail = isObj ? (imageData as AppendixImage).detail : '';
+      const buf = parseBase64Image(base64);
+
+      if (buf) {
+        imageCellChildren.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 60 },
+            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 200, height: 135 } })],
+          })
+        );
+
+        if (detail) {
+          imageCellChildren.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 20 },
+              children: [new TextRun({ text: detail, size: 16, font: 'Times New Roman' })],
+            })
+          );
+        }
+      }
+    }
+
+    tableRows.push(
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || act.day || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { after: 40 }, children: [new TextRun({ text: act.accomplishment || 'No accomplishment added.', size: 18, font: 'Times New Roman' })] })] }),
+          new TableCell({ children: imageCellChildren.length > 0 ? imageCellChildren : [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '', size: 18, font: 'Times New Roman' })] })] }),
+        ],
+      })
+    );
+  });
+
+  return new Table({
+    rows: tableRows,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+    },
+  });
 }
