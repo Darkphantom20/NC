@@ -590,7 +590,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
+                spacing: { after: 100, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: preparedByLabel, bold: true, size: 22, font: 'Times New Roman' })],
               })
             ],
@@ -601,7 +601,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
+                spacing: { after: 100, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: checkedByLabel, bold: true, size: 22, font: 'Times New Roman' })],
               })
             ],
@@ -616,7 +616,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 50, after: 100 },
+                spacing: { before: 50, after: 100, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: preparedByName, bold: true, size: 22, font: 'Times New Roman' })],
               })
             ],
@@ -627,7 +627,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 50, after: 100 },
+                spacing: { before: 50, after: 100, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: checkedByName, bold: true, size: 22, font: 'Times New Roman' })],
               })
             ],
@@ -639,7 +639,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
             margins: { top: 50, bottom: 100, left: 50, right: 50 },
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 50, after: 100 }, children: [new TextRun({ text: '', size: 22, font: 'Times New Roman' })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 50, after: 100, line: 276, lineRule: 'auto' }, children: [new TextRun({ text: '', size: 22, font: 'Times New Roman' })] })],
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
@@ -647,7 +647,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 50, after: 100 },
+                spacing: { before: 50, after: 100, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: checkedByRole, size: 22, font: 'Times New Roman' })],
               })
             ],
@@ -662,7 +662,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 50, after: 100 },
+                spacing: { before: 50, after: 100, line: 276, lineRule: 'auto' },
                 children: [
                   new TextRun({ text: `${dateLabel} `, bold: true, size: 22, font: 'Times New Roman' }),
                   new TextRun({ text: dateValue, bold: true, size: 22, font: 'Times New Roman' }),
@@ -676,7 +676,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 50, after: 100 },
+                spacing: { before: 50, after: 100, line: 276, lineRule: 'auto' },
                 children: [new TextRun({ text: officeInCharge, size: 22, font: 'Times New Roman' })],
               })
             ],
@@ -689,7 +689,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
   return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 0 },
+      spacing: { before: 0, after: 0, line: 276, lineRule: 'auto' },
       children: [footerTable],
     }),
   ];
