@@ -219,6 +219,11 @@ export async function POST(request: Request) {
             ],
           }),
         },
+        footers: {
+          default: new Footer({
+            children: [],
+          }),
+        },
         children: remainingAppendixContent,
       });
     }
