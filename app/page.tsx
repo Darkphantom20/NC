@@ -835,10 +835,10 @@ export default function Home() {
                             <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Date Value</span>
                             <input type="text" value={form.appendices.reportFooter.dateValue} onChange={(e) => updateReportFooter('dateValue', e.target.value)} className={fieldClass} />
                           </label>
-                          <label className="block text-xs sm:text-sm font-medium text-slate-200 md:col-span-2">
+                          <div className="block text-xs sm:text-sm font-medium text-slate-200 md:col-span-2">
                             <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Office-in-Charge</span>
-                            <input type="text" value={form.appendices.reportFooter.officeInCharge} onChange={(e) => updateReportFooter('officeInCharge', e.target.value)} className={fieldClass} />
-                          </label>
+                            <div className="px-4 py-2 rounded border border-slate-700 bg-slate-800/50 text-slate-300">Office-in-Charge</div>
+                          </div>
                         </div>
                       </div>
                     </div>
