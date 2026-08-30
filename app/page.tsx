@@ -61,7 +61,7 @@ const defaultForm = {
       {
         weekNumber: 1,
         totalHours: 40,
-        narrative: 'This week focused on orientation and basic network troubleshooting.',
+        narrative: '',
         activities: [
           { day: 'Day 1', date: 'Oct 2', accomplishment: 'Orientation and facility tour', hours: 8 },
           { day: 'Day 2', date: 'Oct 3', accomplishment: 'Network cable termination and testing', hours: 8 },
