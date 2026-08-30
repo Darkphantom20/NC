@@ -324,6 +324,7 @@ export default function Home() {
   const addWeek = () => {
     setForm((prev) => {
       const nextWeekNum = prev.appendices.dailyJournal.length + 1;
+      const startDayNum = prev.appendices.dailyJournal.reduce((acc, w) => acc + w.activities.length, 0) + 1;
       return {
         ...prev,
         appendices: {
@@ -335,7 +336,7 @@ export default function Home() {
               totalHours: 40,
               narrative: '',
               activities: Array.from({ length: 5 }, (_, i) => ({
-                day: `Day ${i + 1}`,
+                day: `Day ${startDayNum + i}`,
                 date: '',
                 accomplishment: '',
                 hours: 8
@@ -358,14 +359,20 @@ export default function Home() {
   const addDay = (weekIndex: number) => {
     setForm((prev) => {
       const journal = [...prev.appendices.dailyJournal];
-      const week = journal[weekIndex];
-      week.activities.push({ day: `Day ${week.activities.length + 1}`, date: '', accomplishment: '', hours: 8 });
-      week.totalHours = week.activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
-      journal[weekIndex].activities = week.activities.map((activity, idx) => ({
-        ...activity,
-        day: activity.day && activity.day.startsWith('Day ') ? `Day ${idx + 1}` : activity.day
+      const nextDayNumber = journal.reduce((acc, week) => acc + week.activities.length, 0) + 1;
+      journal[weekIndex].activities.push({ day: `Day ${nextDayNumber}`, date: '', accomplishment: '', hours: 8 });
+      journal[weekIndex].totalHours = journal[weekIndex].activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
+
+      let dayCounter = 1;
+      const reindexedJournal = journal.map((week) => ({
+        ...week,
+        activities: week.activities.map((activity) => ({
+          ...activity,
+          day: `Day ${dayCounter++}`
+        }))
       }));
-      return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
+
+      return { ...prev, appendices: { ...prev.appendices, dailyJournal: reindexedJournal } };
     });
   };
 
@@ -383,14 +390,19 @@ export default function Home() {
   const removeDay = (weekIndex: number, dayIndex: number) => {
     setForm((prev) => {
       const journal = [...prev.appendices.dailyJournal];
-      journal[weekIndex].activities = journal[weekIndex].activities
-        .filter((_, idx) => idx !== dayIndex)
-        .map((activity, idx) => ({
-          ...activity,
-          day: activity.day && activity.day.startsWith('Day ') ? `Day ${idx + 1}` : activity.day
-        }));
+      journal[weekIndex].activities = journal[weekIndex].activities.filter((_, idx) => idx !== dayIndex);
       journal[weekIndex].totalHours = journal[weekIndex].activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
-      return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
+
+      let dayCounter = 1;
+      const reindexedJournal = journal.map((week) => ({
+        ...week,
+        activities: week.activities.map((activity) => ({
+          ...activity,
+          day: `Day ${dayCounter++}`
+        }))
+      }));
+
+      return { ...prev, appendices: { ...prev.appendices, dailyJournal: reindexedJournal } };
     });
   };
 
@@ -783,62 +795,63 @@ export default function Home() {
                             )}
                           </div>
 
-                          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
-                            <div className="grid grid-cols-1 gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300 sm:grid-cols-[0.9fr_1.8fr_2.2fr]">
-                              <div className="bg-slate-900/80 px-3 py-2">Date</div>
-                              <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
-                              <div className="bg-slate-900/80 px-3 py-2">Documentation</div>
-                            </div>
+                          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+                            <div className="min-w-[560px]">
+                              <div className="grid grid-cols-[0.9fr_1.8fr_2.2fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                                <div className="bg-slate-900/80 px-3 py-2">Date</div>
+                                <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
+                                <div className="bg-slate-900/80 px-3 py-2">Documentation</div>
+                              </div>
 
-                            {week.activities.map((act, dayIdx) => (
-                              <div key={dayIdx} className="grid grid-cols-1 gap-3 border-t border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-[0.9fr_1.8fr_2.2fr] sm:gap-0 sm:gap-x-3 sm:p-0">
-                                <div className="sm:border-r sm:border-slate-800 sm:p-3">
-                                  <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
-                                </div>
-                                <div className="sm:border-r sm:border-slate-800 sm:p-3">
-                                  <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Accomplishment" />
-                                </div>
-                                <div className="sm:p-3">
-                                  <div className="space-y-2">
-                                    <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => {
-                                      const targetIndex = dayIdx;
-                                      const file = e.target.files?.[0];
-                                      if (!file) return;
-                                      if (!file.type.startsWith('image/')) {
-                                        alert('Please upload an image file (PNG, JPG).');
-                                        return;
-                                      }
-                                      compressImageDataUrl(file, 1200, 0.7).then((compressed) => {
-                                        setForm((prev) => {
-                                          const newJournal = [...prev.appendices.dailyJournal];
-                                          const imageEntry = { base64: compressed, detail: `Documentation for ${act.day || 'Daily activity'}` };
-                                          const isReportLayout = prev.appendices.dailyJournalLayout === 'report';
-                                          
-                                          // Use layout-specific image storage
-                                          const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
-                                          const existingImages = [...((newJournal[weekIdx] as any)[imageKey] || [])];
-                                          const imageIndex = Math.min(targetIndex, existingImages.length);
-                                          existingImages[imageIndex] = imageEntry;
-                                          (newJournal[weekIdx] as any)[imageKey] = existingImages;
-                                          
-                                          return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
-                                        });
-                                      }).catch(() => alert('The selected journal image could not be processed.'));
-                                    }} className={fileInputClass} />
-                                    {(() => {
-                                      const isReportLayout = form.appendices.dailyJournalLayout === 'report';
-                                      const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
-                                      const layoutImages = (week as any)[imageKey];
-                                      return layoutImages && layoutImages[dayIdx] && (
-                                        <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-2">
-                                          <img src={layoutImages[dayIdx].base64} alt="Documentation" className="h-20 w-full rounded-md object-cover" />
-                                        </div>
-                                      );
-                                    })()}
+                              {week.activities.map((act, dayIdx) => (
+                                <div key={dayIdx} className="grid grid-cols-[0.9fr_1.8fr_2.2fr] gap-px border-t border-slate-800 bg-slate-950/40 sm:gap-0 sm:gap-x-3">
+                                  <div className="border-r border-slate-800 p-3">
+                                    <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
+                                  </div>
+                                  <div className="border-r border-slate-800 p-3">
+                                    <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Accomplishment" />
+                                  </div>
+                                  <div className="p-3">
+                                    <div className="space-y-2">
+                                      <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => {
+                                        const targetIndex = dayIdx;
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        if (!file.type.startsWith('image/')) {
+                                          alert('Please upload an image file (PNG, JPG).');
+                                          return;
+                                        }
+                                        compressImageDataUrl(file, 1200, 0.7).then((compressed) => {
+                                          setForm((prev) => {
+                                            const newJournal = [...prev.appendices.dailyJournal];
+                                            const imageEntry = { base64: compressed, detail: `Documentation for ${act.day || 'Daily activity'}` };
+                                            const isReportLayout = prev.appendices.dailyJournalLayout === 'report';
+                                            
+                                            const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
+                                            const existingImages = [...((newJournal[weekIdx] as any)[imageKey] || [])];
+                                            const imageIndex = Math.min(targetIndex, existingImages.length);
+                                            existingImages[imageIndex] = imageEntry;
+                                            (newJournal[weekIdx] as any)[imageKey] = existingImages;
+                                            
+                                            return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
+                                          });
+                                        }).catch(() => alert('The selected journal image could not be processed.'));
+                                      }} className={fileInputClass} />
+                                      {(() => {
+                                        const isReportLayout = form.appendices.dailyJournalLayout === 'report';
+                                        const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
+                                        const layoutImages = (week as any)[imageKey];
+                                        return layoutImages && layoutImages[dayIdx] && (
+                                          <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-2">
+                                            <img src={layoutImages[dayIdx].base64} alt="Documentation" className="h-20 w-full rounded-md object-cover" />
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
 
                           <div className="flex items-center justify-between gap-2">
