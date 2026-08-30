@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Footer, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 
 export const runtime = 'nodejs';
 
@@ -114,13 +114,17 @@ export async function POST(request: Request) {
       await supabase.from('reports').insert([payload]);
     }
 
+    const reportFooterChildren = data.appendices?.dailyJournalLayout === 'report'
+      ? buildReportFooterBlock(data.appendices?.reportFooter)
+      : [];
+
     const doc = new Document({
       sections: [
         {
           properties: {
             page: {
               size: { width: 12240, height: 20160 },
-              margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 0 },
+              margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 0, footer: 0 },
             },
           },
           headers: {
@@ -130,6 +134,11 @@ export async function POST(request: Request) {
               ],
             }),
           },
+          footers: reportFooterChildren.length > 0 ? {
+            default: new Footer({
+              children: reportFooterChildren,
+            }),
+          } : undefined,
           children: [
             ...buildCoverPage(data),
             new Paragraph({ pageBreakBefore: true }),
@@ -582,7 +591,6 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
           })
         );
 
-        children.push(...buildReportFooterBlock(appendicesData.reportFooter));
         return;
       }
 
