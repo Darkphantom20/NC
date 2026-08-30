@@ -728,7 +728,12 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
           spacing: { after: 120 },
           children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
         }),
-        buildWeeklyReportTable(weekData.activities, reportImages)
+        buildWeeklyReportTable(weekData.activities, reportImages),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 120, after: 240 },
+          children: [new TextRun({ text: `WEEKLY ACCOMPLISHMENT REPORT`, bold: true, size: 24, font: 'Times New Roman' })],
+        })
       );
 
       children.push(
