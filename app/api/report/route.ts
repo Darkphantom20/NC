@@ -715,15 +715,15 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
 
   const layout = appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
 
-  const activityTitle = layout === 'report' ? 'WEEKLY ACCOMPLISHMENT REPORT' : 'WEEKLY WORK ACTIVITIES';
-
-  children.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 240, after: 120 },
-      children: [new TextRun({ text: activityTitle, bold: true, size: 24, font: 'Times New Roman' })],
-    })
-  );
+  if (layout === 'current') {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 240, after: 120 },
+        children: [new TextRun({ text: 'WEEKLY WORK ACTIVITIES', bold: true, size: 24, font: 'Times New Roman' })],
+      })
+    );
+  }
 
   appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek, index: number) => {
     if (layout === 'report') {
@@ -737,6 +737,11 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       });
       children.push(
         weekParagraph,
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 60, after: 120 },
+          children: [new TextRun({ text: 'WEEKLY ACCOMPLISHMENT REPORT', bold: true, size: 24, font: 'Times New Roman' })],
+        }),
         buildDailyReportTable(weekData.activities, reportImages),
       );
 
