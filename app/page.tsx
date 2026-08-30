@@ -122,43 +122,71 @@ function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
   return (
     <div
       {...tooltipProps}
-      className="w-[340px] overflow-hidden rounded-[22px] border border-cyan-500/30 bg-slate-900/95 shadow-[0_18px_50px_rgba(34,211,238,0.18)] backdrop-blur-md"
+      className="w-[360px] flex flex-col"
     >
-      <div className="relative overflow-hidden">
+      {/* Guide Character Image - Fully Visible */}
+      <div className="relative overflow-hidden rounded-t-[22px]">
         <img
           src={guideScene.src}
           alt="Guide illustration"
-          className="h-36 w-full object-cover brightness-110 contrast-110"
+          className="h-44 w-full object-cover brightness-110 contrast-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
       </div>
 
-      <div className="space-y-3 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-300">Guide</span>
-          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold text-cyan-200">
-            {step.target?.replace('.', '') || 'Tip'}
-          </span>
-        </div>
+      {/* Dashed Line Connector */}
+      <div className="flex justify-center -mb-3 relative z-10">
+        <svg width="40" height="20" viewBox="0 0 40 20" className="drop-shadow-lg">
+          <line
+            x1="20"
+            y1="0"
+            x2="20"
+            y2="20"
+            stroke="url(#dashed)"
+            strokeWidth="2"
+            strokeDasharray="4,4"
+            vectorEffect="non-scaling-stroke"
+          />
+          <defs>
+            <linearGradient id="dashed" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="rgb(34, 211, 238)" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="rgb(139, 92, 246)" stopOpacity="0.8" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
 
-        <p className="text-sm leading-6 text-slate-100">{step.content}</p>
+      {/* Thought Bubble Card */}
+      <div className="relative mx-3 mb-3 rounded-[18px] border-2 border-cyan-500/40 bg-gradient-to-br from-slate-900/98 to-slate-800/95 p-4 shadow-[0_12px_40px_rgba(34,211,238,0.15)] backdrop-blur-sm">
+        {/* Bubble pointer */}
+        <div className="absolute -top-3 left-8 h-0 w-0 border-l-8 border-r-0 border-b-8 border-l-transparent border-b-slate-900/98" />
 
-        <div className="flex items-center justify-between pt-1">
-          <button
-            type="button"
-            className="text-xs font-semibold text-slate-400 hover:text-slate-200"
-            {...tooltipProps.closeProps}
-          >
-            Skip
-          </button>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-300">Guide</span>
+            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold text-cyan-200">
+              {step.target?.replace('.', '') || 'Tip'}
+            </span>
+          </div>
 
-          <button
-            type="button"
-            {...primaryProps}
-            className="rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 transition hover:brightness-110"
-          >
-            {primaryProps.title}
-          </button>
+          <p className="text-sm leading-6 text-slate-100">{step.content}</p>
+
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition"
+              {...tooltipProps.closeProps}
+            >
+              Skip
+            </button>
+
+            <button
+              type="button"
+              {...primaryProps}
+              className="rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 transition hover:brightness-110"
+            >
+              {primaryProps.title}
+            </button>
+          </div>
         </div>
       </div>
     </div>
