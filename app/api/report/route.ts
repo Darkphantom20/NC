@@ -138,7 +138,7 @@ export async function POST(request: Request) {
           new Paragraph({ pageBreakBefore: true }),
           ...buildAcknowledgementPage(data),
           new Paragraph({ pageBreakBefore: true }),
-          ...buildSectionPage('2. INTRODUCTION', [
+          ...buildSectionPage('INTRODUCTION', [
             { title: 'Background of the Organization', content: data.background },
             { title: 'Vision', content: data.vision },
             { title: 'Mission', content: data.mission },
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
             { title: 'Products and Services Offered', content: data.services },
           ]),
           new Paragraph({ pageBreakBefore: true }),
-          ...buildSectionPage('3. ORGANIZATION / COMPANY ANALYSIS', [
+          ...buildSectionPage('ORGANIZATION / COMPANY ANALYSIS', [
             { title: 'Strengths', content: data.strengths, isBullet: true },
             { title: 'Weaknesses', content: data.weaknesses, isBullet: true },
             { title: 'Opportunities', content: data.opportunities, isBullet: true },
@@ -155,12 +155,12 @@ export async function POST(request: Request) {
             { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
           ]),
           new Paragraph({ pageBreakBefore: true }),
-          ...buildSectionPage('4. TASKS AND DUTIES', [
+          ...buildSectionPage('TASKS AND DUTIES', [
             { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
             { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
           ]),
           new Paragraph({ pageBreakBefore: true }),
-          ...buildSectionPage('5. CASE ANALYSIS', [
+          ...buildSectionPage('CASE ANALYSIS', [
             { title: 'Issue / Problem 1', content: data.issue1 },
             { title: 'Strategy/Action Undertaken for Problem 1', content: data.issue1Action },
             { title: 'Issue / Problem 2', content: data.issue2 },
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
             { title: 'Lessons Learned from the Situations', content: data.lessons },
           ]),
           new Paragraph({ pageBreakBefore: true }),
-          ...buildSectionPage('6. REFLECTIONS', [
+          ...buildSectionPage('REFLECTIONS', [
             { title: 'Self-Evaluation', content: data.selfEvaluation },
             { title: 'Relevancy of the Organization', content: data.relevancy },
           ]),
@@ -700,7 +700,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 120, after: 360 },
-      children: [new TextRun({ text: '7. APPENDICES', bold: true, size: 28, font: 'Times New Roman' })],
+      children: [new TextRun({ text: 'APPENDICES', bold: true, size: 28, font: 'Times New Roman' })],
     }),
   ];
 
