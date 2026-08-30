@@ -834,10 +834,10 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
   const tableRows = [
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DAY', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 46, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'NO. OF WORKING HOURS', bold: true, size: 18, font: 'Times New Roman' })] })], width: { size: 16, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: 'DAY', bold: true, size: 24, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: 'DATE', bold: true, size: 24, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 24, font: 'Times New Roman' })] })], width: { size: 46, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: 'NO. OF WORKING HOURS', bold: true, size: 24, font: 'Times New Roman' })] })], width: { size: 16, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -848,26 +848,26 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
     tableRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.day || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || '', size: 18, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: act.day || '', size: 24, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: act.date || '', size: 24, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({ 
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 }, children: [new TextRun({ text: 'No accomplishment added.', size: 16, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: 'No accomplishment added.', size: 24, font: 'Times New Roman' })] })];
               }
               return lines.map((line, idx) => 
                 new Paragraph({ 
                   alignment: AlignmentType.CENTER, 
-                  spacing: { after: idx === lines.length - 1 ? 40 : 20 },
-                  children: [new TextRun({ text: line.trim(), size: 16, font: 'Times New Roman' })] 
+                  spacing: { before: 60, after: idx === lines.length - 1 ? 60 : 20 },
+                  children: [new TextRun({ text: line.trim(), size: 24, font: 'Times New Roman' })] 
                 })
               );
             })()
           }),
           new TableCell({
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(act.hours ?? ''), size: 18, font: 'Times New Roman' })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: String(act.hours ?? ''), size: 24, font: 'Times New Roman' })] })],
             verticalAlign: 'center',
           }),
         ],
@@ -880,10 +880,10 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
       children: [
         new TableCell({ 
           columnSpan: 3, 
-          children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: 'TOTAL NUMBER OF HOURS', bold: true, size: 20, font: 'Times New Roman' })] })] 
+          children: [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: 'TOTAL NUMBER OF HOURS', bold: true, size: 24, font: 'Times New Roman' })] })] 
         }),
         new TableCell({ 
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(totalHours), bold: true, size: 20, font: 'Times New Roman' })] })] 
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: String(totalHours), bold: true, size: 24, font: 'Times New Roman' })] })] 
         }),
       ],
     })
