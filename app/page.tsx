@@ -820,14 +820,6 @@ export default function Home() {
                         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Report Footer</p>
                         <div className="grid gap-3 md:grid-cols-2">
                           <label className="block text-xs sm:text-sm font-medium text-slate-200">
-                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Prepared By Label</span>
-                            <input type="text" value={form.appendices.reportFooter.preparedByLabel} onChange={(e) => updateReportFooter('preparedByLabel', e.target.value)} className={fieldClass} />
-                          </label>
-                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
-                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Checked By Label</span>
-                            <input type="text" value={form.appendices.reportFooter.checkedByLabel} onChange={(e) => updateReportFooter('checkedByLabel', e.target.value)} className={fieldClass} />
-                          </label>
-                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
                             <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Prepared By Name</span>
                             <input type="text" value={form.appendices.reportFooter.preparedByName} onChange={(e) => updateReportFooter('preparedByName', e.target.value)} className={fieldClass} />
                           </label>
@@ -838,10 +830,6 @@ export default function Home() {
                           <label className="block text-xs sm:text-sm font-medium text-slate-200 md:col-span-2">
                             <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Checked By Role</span>
                             <input type="text" value={form.appendices.reportFooter.checkedByRole} onChange={(e) => updateReportFooter('checkedByRole', e.target.value)} className={fieldClass} />
-                          </label>
-                          <label className="block text-xs sm:text-sm font-medium text-slate-200">
-                            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Date Label</span>
-                            <input type="text" value={form.appendices.reportFooter.dateLabel} onChange={(e) => updateReportFooter('dateLabel', e.target.value)} className={fieldClass} />
                           </label>
                           <label className="block text-xs sm:text-sm font-medium text-slate-200">
                             <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Date Value</span>
