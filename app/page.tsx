@@ -925,10 +925,11 @@ export default function Home() {
                               const isReportLayout = form.appendices.dailyJournalLayout === 'report';
                               const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
                               const layoutImages = (week as any)[imageKey];
+                              const imageCount = layoutImages?.length || 0;
                               return layoutImages && layoutImages.length > 0 && (
-                                <div className="mt-4 grid grid-cols-2 gap-4">
+                                <div className={`mt-4 ${imageCount === 3 ? 'flex flex-wrap justify-center gap-4' : 'grid grid-cols-2 gap-4'}`}>
                                   {layoutImages.map((img: any, imgIdx: number) => (
-                                    <div key={imgIdx} className="flex flex-col bg-slate-950 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                                    <div key={imgIdx} className={`flex flex-col bg-slate-950 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition ${imageCount === 3 && imgIdx === 2 ? 'w-full sm:w-1/2' : ''}`}>
                                       <div className="relative mb-2 overflow-hidden rounded-lg bg-slate-900 h-32 sm:h-40 flex items-center justify-center">
                                         <img src={img.base64} alt="Preview" className="w-full h-full object-cover" />
                                         <button type="button" onClick={() => {

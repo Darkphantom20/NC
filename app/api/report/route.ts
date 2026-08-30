@@ -748,12 +748,14 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
 
     // Use current layout images, fall back to shared images for backwards compatibility
     const currentImages = weekData.currentLayoutImages || weekData.images || [];
+    const currentWeekParagraph = new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      pageBreakBefore: index > 0, // Add page break before each week except the first one
+      children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+    });
     children.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 120 },
-        children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
-      }),
+      currentWeekParagraph,
       buildCurrentWeeklyTable(weekData.activities, weekData.totalHours, currentImages),
       new Paragraph({
         alignment: AlignmentType.CENTER,
