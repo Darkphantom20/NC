@@ -118,71 +118,111 @@ export async function POST(request: Request) {
       ? buildReportFooterBlock(data.appendices?.reportFooter)
       : [];
 
-    const doc = new Document({
-      sections: [
-        {
-          properties: {
-            page: {
-              size: { width: 12240, height: 20160 },
-              margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 0, footer: 0 },
-            },
+    const documentSections: any[] = [
+      {
+        properties: {
+          page: {
+            size: { width: 12240, height: 20160 },
+            margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 0, footer: 0 },
           },
-          headers: {
-            default: new Header({
-              children: [
-                new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() }),
-              ],
-            }),
-          },
-          footers: reportFooterChildren.length > 0 ? {
-            default: new Footer({
-              children: reportFooterChildren,
-            }),
-          } : undefined,
-          children: [
-            ...buildCoverPage(data),
-            new Paragraph({ pageBreakBefore: true }),
-            ...buildAcknowledgementPage(data),
-            new Paragraph({ pageBreakBefore: true }),
-            ...buildSectionPage('2. INTRODUCTION', [
-              { title: 'Background of the Organization', content: data.background },
-              { title: 'Vision', content: data.vision },
-              { title: 'Mission', content: data.mission },
-              { title: 'Objectives', content: data.objectives, isBullet: true },
-              { title: 'Core Values', content: data.coreValues, isBullet: true },
-              { title: 'Products and Services Offered', content: data.services },
-            ]),
-            new Paragraph({ pageBreakBefore: true }),
-            ...buildSectionPage('3. ORGANIZATION / COMPANY ANALYSIS', [
-              { title: 'Strengths', content: data.strengths, isBullet: true },
-              { title: 'Weaknesses', content: data.weaknesses, isBullet: true },
-              { title: 'Opportunities', content: data.opportunities, isBullet: true },
-              { title: 'Threats', content: data.threats, isBullet: true },
-              { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
-            ]),
-            new Paragraph({ pageBreakBefore: true }),
-            ...buildSectionPage('4. TASKS AND DUTIES', [
-              { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
-              { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
-            ]),
-            new Paragraph({ pageBreakBefore: true }),
-            ...buildSectionPage('5. CASE ANALYSIS', [
-              { title: 'Issue / Problem 1', content: data.issue1 },
-              { title: 'Strategy/Action Undertaken for Problem 1', content: data.issue1Action },
-              { title: 'Issue / Problem 2', content: data.issue2 },
-              { title: 'Strategy/Action Undertaken for Problem 2', content: data.issue2Action },
-              { title: 'Lessons Learned from the Situations', content: data.lessons },
-            ]),
-            new Paragraph({ pageBreakBefore: true }),
-            ...buildSectionPage('6. REFLECTIONS', [
-              { title: 'Self-Evaluation', content: data.selfEvaluation },
-              { title: 'Relevancy of the Organization', content: data.relevancy },
-            ]),
-            new Paragraph({ pageBreakBefore: true }),
-            ...buildAppendicesPage(data.appendices),
-          ],
         },
-      ],
+        headers: {
+          default: new Header({
+            children: [
+              new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() }),
+            ],
+          }),
+        },
+        children: [
+          ...buildCoverPage(data),
+          new Paragraph({ pageBreakBefore: true }),
+          ...buildAcknowledgementPage(data),
+          new Paragraph({ pageBreakBefore: true }),
+          ...buildSectionPage('2. INTRODUCTION', [
+            { title: 'Background of the Organization', content: data.background },
+            { title: 'Vision', content: data.vision },
+            { title: 'Mission', content: data.mission },
+            { title: 'Objectives', content: data.objectives, isBullet: true },
+            { title: 'Core Values', content: data.coreValues, isBullet: true },
+            { title: 'Products and Services Offered', content: data.services },
+          ]),
+          new Paragraph({ pageBreakBefore: true }),
+          ...buildSectionPage('3. ORGANIZATION / COMPANY ANALYSIS', [
+            { title: 'Strengths', content: data.strengths, isBullet: true },
+            { title: 'Weaknesses', content: data.weaknesses, isBullet: true },
+            { title: 'Opportunities', content: data.opportunities, isBullet: true },
+            { title: 'Threats', content: data.threats, isBullet: true },
+            { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
+          ]),
+          new Paragraph({ pageBreakBefore: true }),
+          ...buildSectionPage('4. TASKS AND DUTIES', [
+            { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
+            { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
+          ]),
+          new Paragraph({ pageBreakBefore: true }),
+          ...buildSectionPage('5. CASE ANALYSIS', [
+            { title: 'Issue / Problem 1', content: data.issue1 },
+            { title: 'Strategy/Action Undertaken for Problem 1', content: data.issue1Action },
+            { title: 'Issue / Problem 2', content: data.issue2 },
+            { title: 'Strategy/Action Undertaken for Problem 2', content: data.issue2Action },
+            { title: 'Lessons Learned from the Situations', content: data.lessons },
+          ]),
+          new Paragraph({ pageBreakBefore: true }),
+          ...buildSectionPage('6. REFLECTIONS', [
+            { title: 'Self-Evaluation', content: data.selfEvaluation },
+            { title: 'Relevancy of the Organization', content: data.relevancy },
+          ]),
+        ],
+      },
+    ];
+
+    const dailyJournalContent = buildDailyJournalAppendixPage(data.appendices);
+    if (dailyJournalContent.length > 0) {
+      documentSections.push({
+        properties: {
+          page: {
+            size: { width: 12240, height: 20160 },
+            margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 0, footer: 0 },
+          },
+        },
+        headers: {
+          default: new Header({
+            children: [
+              new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() }),
+            ],
+          }),
+        },
+        footers: reportFooterChildren.length > 0 ? {
+          default: new Footer({
+            children: reportFooterChildren,
+          }),
+        } : undefined,
+        children: dailyJournalContent,
+      });
+    }
+
+    const remainingAppendixContent = buildOtherAppendixPages(data.appendices);
+    if (remainingAppendixContent.length > 0) {
+      documentSections.push({
+        properties: {
+          page: {
+            size: { width: 12240, height: 20160 },
+            margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 0, footer: 0 },
+          },
+        },
+        headers: {
+          default: new Header({
+            children: [
+              new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() }),
+            ],
+          }),
+        },
+        children: remainingAppendixContent,
+      });
+    }
+
+    const doc = new Document({
+      sections: documentSections,
     });
 
     const buffer = await Packer.toBuffer(doc);
@@ -549,7 +589,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
+                alignment: AlignmentType.CENTER,
                 spacing: { after: 0 },
                 children: [new TextRun({ text: preparedByLabel, bold: true, size: 22, font: 'Times New Roman' })],
               })
@@ -560,7 +600,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
+                alignment: AlignmentType.CENTER,
                 spacing: { after: 0 },
                 children: [new TextRun({ text: checkedByLabel, bold: true, size: 22, font: 'Times New Roman' })],
               })
@@ -575,7 +615,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
+                alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
                 children: [new TextRun({ text: preparedByName, bold: true, size: 22, font: 'Times New Roman' })],
               })
@@ -586,7 +626,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
+                alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
                 children: [new TextRun({ text: checkedByName, bold: true, size: 22, font: 'Times New Roman' })],
               })
@@ -599,14 +639,14 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
             shading: { fill: 'D9D9D9' },
-            children: [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: '', size: 22, font: 'Times New Roman' })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: '', size: 22, font: 'Times New Roman' })] })],
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
             shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
+                alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
                 children: [new TextRun({ text: checkedByRole, size: 22, font: 'Times New Roman' })],
               })
@@ -621,7 +661,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
+                alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
                 children: [
                   new TextRun({ text: `${dateLabel} `, bold: true, size: 22, font: 'Times New Roman' }),
@@ -635,7 +675,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
             shading: { fill: 'D9D9D9' },
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
+                alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
                 children: [new TextRun({ text: officeInCharge, size: 22, font: 'Times New Roman' })],
               })
@@ -662,7 +702,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
   ];
 }
 
-function buildAppendicesPage(appendicesData: AppendicesData) {
+function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -671,65 +711,70 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
     }),
   ];
 
-  if (!appendicesData) return children;
+  if (!appendicesData || !appendicesData.dailyJournal || !Array.isArray(appendicesData.dailyJournal)) return children;
 
-  if (appendicesData.dailyJournal && Array.isArray(appendicesData.dailyJournal)) {
-    const layout = appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
+  const layout = appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
 
-    children.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 240, after: 120 },
-        children: [new TextRun({ text: 'DAILY WORK ACTIVITIES', bold: true, size: 24, font: 'Times New Roman' })],
-      })
-    );
+  children.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 240, after: 120 },
+      children: [new TextRun({ text: 'DAILY WORK ACTIVITIES', bold: true, size: 24, font: 'Times New Roman' })],
+    })
+  );
 
-    appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek) => {
-      if (layout === 'report') {
-        children.push(
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 120 },
-            children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
-          }),
-          buildWeeklyReportTable(weekData.activities, weekData.images || [])
-        );
-
-        children.push(
-          new Paragraph({
-            alignment: AlignmentType.JUSTIFIED,
-            spacing: { before: 120, after: 240 },
-            children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 22, font: 'Times New Roman' })],
-          })
-        );
-
-        return;
-      }
-
+  appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek) => {
+    if (layout === 'report') {
       children.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 120 },
           children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
         }),
-        buildCurrentWeeklyTable(weekData.activities, weekData.totalHours),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 120 },
-          children: [new TextRun({ text: `Table ${weekData.weekNumber}: Week ${weekData.weekNumber}`, bold: true, size: 20, font: 'Times New Roman' })],
-        }),
+        buildWeeklyReportTable(weekData.activities, weekData.images || [])
+      );
+
+      children.push(
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
-          spacing: { after: 240 },
-          children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 24, font: 'Times New Roman' })],
+          spacing: { before: 120, after: 240 },
+          children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 22, font: 'Times New Roman' })],
         })
       );
 
-      if (weekData.images && weekData.images.length > 0) {
-        children.push(buildImageGridTable(weekData.images));
-      }
-    });
-  }
+      return;
+    }
+
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120 },
+        children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+      }),
+      buildCurrentWeeklyTable(weekData.activities, weekData.totalHours),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 60, after: 120 },
+        children: [new TextRun({ text: `Table ${weekData.weekNumber}: Week ${weekData.weekNumber}`, bold: true, size: 20, font: 'Times New Roman' })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 240 },
+        children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 24, font: 'Times New Roman' })],
+      })
+    );
+
+    if (weekData.images && weekData.images.length > 0) {
+      children.push(buildImageGridTable(weekData.images));
+    }
+  });
+
+  return children;
+}
+
+function buildOtherAppendixPages(appendicesData: AppendicesData) {
+  const children: any[] = [];
+  if (!appendicesData) return children;
 
   const appendixList = [
     { title: 'Certificate of Participation (PRIME Seminar)', key: 'certParticipation' as const },
@@ -744,6 +789,9 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
   ];
 
   appendixList.forEach(app => {
+    const data = appendicesData[app.key];
+    if (!data) return;
+
     children.push(new Paragraph({ pageBreakBefore: true }));
     children.push(
       new Paragraph({
@@ -753,29 +801,26 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
       })
     );
 
-    const data = appendicesData[app.key];
-    if (data) {
-      if (app.isText) {
-        children.push(
-          new Paragraph({
-            alignment: AlignmentType.JUSTIFIED,
-            children: [new TextRun({ text: data, size: 24, font: 'Times New Roman' })],
-          })
-        );
-      } else {
-        children.push(...buildFeaturedImageLayout(data));
-      }
-    } else {
+    if (app.isText) {
       children.push(
         new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: '[Document not provided]', italics: true, size: 24, font: 'Times New Roman' })],
+          alignment: AlignmentType.JUSTIFIED,
+          children: [new TextRun({ text: data, size: 24, font: 'Times New Roman' })],
         })
       );
+    } else {
+      children.push(...buildFeaturedImageLayout(data));
     }
   });
 
   return children;
+}
+
+function buildAppendicesPage(appendicesData: AppendicesData) {
+  return [
+    ...buildDailyJournalAppendixPage(appendicesData),
+    ...buildOtherAppendixPages(appendicesData),
+  ];
 }
 
 function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
