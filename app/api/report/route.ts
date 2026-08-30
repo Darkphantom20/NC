@@ -30,6 +30,7 @@ interface DailyJournalWeek {
 }
 
 interface AppendicesData {
+  dailyJournalLayout?: 'current' | 'report';
   dailyJournal?: DailyJournalWeek[];
   certParticipation?: string;
   primeNarrative?: string;
@@ -510,6 +511,8 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
   if (!appendicesData) return children;
 
   if (appendicesData.dailyJournal && Array.isArray(appendicesData.dailyJournal)) {
+    const layout = appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
+
     children.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
@@ -519,6 +522,47 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
     );
 
     appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek) => {
+      if (layout === 'report') {
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 120 },
+            children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+          })
+        );
+
+        const activities = weekData.activities && weekData.activities.length > 0 ? weekData.activities : [{ day: 'Day 1', date: '', accomplishment: '', hours: '' }];
+
+        activities.forEach((activity) => {
+          children.push(
+            new Paragraph({
+              alignment: AlignmentType.JUSTIFIED,
+              spacing: { before: 60, after: 40 },
+              children: [new TextRun({ text: `Date: ${activity.date || 'N/A'} | Day: ${activity.day || 'N/A'} | Hours: ${activity.hours || '0'}`, bold: true, size: 22, font: 'Times New Roman' })],
+            }),
+            new Paragraph({
+              alignment: AlignmentType.JUSTIFIED,
+              spacing: { after: 40 },
+              children: [new TextRun({ text: `Accomplishment: ${activity.accomplishment || 'No accomplishment added.'}`, size: 22, font: 'Times New Roman' })],
+            })
+          );
+        });
+
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { before: 120, after: 240 },
+            children: [new TextRun({ text: `Narrative: ${weekData.narrative || 'No narrative provided.'}`, size: 22, font: 'Times New Roman' })],
+          })
+        );
+
+        if (weekData.images && weekData.images.length > 0) {
+          children.push(buildImageGridTable(weekData.images));
+        }
+
+        return;
+      }
+
       children.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
