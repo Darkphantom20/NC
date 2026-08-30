@@ -46,6 +46,7 @@ const defaultForm = {
   selfEvaluation: 'The OJT journey served as a transformative learning process, pushing me to transition from theoretical classroom knowledge to practical, fast-paced technical execution.',
   relevancy: 'The host organization directly aligns with my degree program, allowing me to fulfill my expected professional goals of mastering enterprise systems administration and IT support workflows.',
   appendices: {
+    dailyJournalLayout: 'current',
     dailyJournal: [
       {
         weekNumber: 1,
@@ -270,6 +271,13 @@ export default function Home() {
     setForm((prev) => ({
       ...prev,
       appendices: { ...prev.appendices, [key]: value }
+    }));
+  };
+
+  const updateDailyJournalLayout = (layout: 'current' | 'report') => {
+    setForm((prev) => ({
+      ...prev,
+      appendices: { ...prev.appendices, dailyJournalLayout: layout }
     }));
   };
 
@@ -684,84 +692,183 @@ export default function Home() {
             <SectionBlock title="7. Appendices" className="tour-appendices">
               <div className="space-y-6 sm:space-y-8">
                 <div className="space-y-5">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
-                    <button type="button" onClick={addWeek} className="rounded-xl bg-cyan-500/20 px-3 sm:px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 transition active:scale-95 whitespace-nowrap">
-                      + Add Week
-                    </button>
-                  </div>
-                  {form.appendices.dailyJournal.map((week, weekIdx) => (
-                    <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-white">WEEK {week.weekNumber} (Total Hours: {week.totalHours})</span>
-                        {form.appendices.dailyJournal.length > 1 && (
-                          <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-900/20 transition active:scale-95">
-                            Remove Week
-                          </button>
-                        )}
-                      </div>
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Activities</p>
-                        {week.activities.map((act, dayIdx) => (
-                          <div key={dayIdx} className="grid gap-2 sm:gap-2.5 grid-cols-2 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-end bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                            <div className="col-span-1">
-                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Day</label>
-                              <input type="text" placeholder="Day" value={act.day} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
-                            </div>
-                            <div className="col-span-1">
-                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Date</label>
-                              <input type="text" placeholder="Date" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
-                            </div>
-                            <div className="col-span-2 sm:col-span-1">
-                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Accomplishment</label>
-                              <input type="text" placeholder="Accomplishment" value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
-                            </div>
-                            <div className="col-span-1">
-                              <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Hrs</label>
-                              <input type="number" placeholder="Hrs" value={act.hours} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
-                            </div>
-                            <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="col-span-1 text-rose-400 text-xs px-2 py-1.5 hover:text-rose-300 rounded hover:bg-rose-900/20">✕</button>
-                          </div>
-                        ))}
-                        <button type="button" onClick={() => addDay(weekIdx)} className="mt-2 text-xs font-semibold text-cyan-400 hover:text-cyan-300 px-3 py-1.5 rounded hover:bg-cyan-900/20 transition active:scale-95">
-                          + Add Day
-                        </button>
-                      </div>
-                      <label className="block text-sm font-medium text-slate-200 pt-2">
-                        Weekly Narrative Report
-                        <textarea value={week.narrative} onChange={(e) => {
-                            const newJournal = [...form.appendices.dailyJournal];
-                            newJournal[weekIdx].narrative = e.target.value;
-                            setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                          }} rows={2} className={fieldClass} />
-                      </label>
-                      <div className="pt-2">
-                        <label className="block text-sm font-medium text-slate-200">
-                          Upload Pictures for Week {week.weekNumber} (Max 3)
-                          <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
+                  <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
+                      <button type="button" onClick={addWeek} className="rounded-xl bg-cyan-500/20 px-3 sm:px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 transition active:scale-95 whitespace-nowrap">
+                        + Add Week
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Layout</span>
+                      <div className="flex flex-wrap gap-2 sm:gap-3">
+                        <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200">
+                          <input type="radio" name="daily-journal-layout" checked={form.appendices.dailyJournalLayout === 'current'} onChange={() => updateDailyJournalLayout('current')} className="accent-cyan-400" />
+                          Current layout
                         </label>
-                        {week.images && week.images.length > 0 && (
-                          <div className="mt-3 space-y-2.5">
-                            {week.images.map((img, imgIdx) => (
-                              <div key={imgIdx} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 bg-slate-950 p-3 sm:p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
-                                <img src={img.base64} alt="Preview" className="h-12 w-12 sm:h-10 sm:w-10 object-cover rounded-lg flex-shrink-0" />
-                                <input type="text" placeholder="Caption / Picture Detail" value={img.detail} onChange={(e) => {
-                                    const newJournal = [...form.appendices.dailyJournal];
-                                    newJournal[weekIdx].images[imgIdx].detail = e.target.value;
-                                    setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                                  }} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" />
-                                <button type="button" onClick={() => {
-                                    const newJournal = [...form.appendices.dailyJournal];
-                                    newJournal[weekIdx].images = newJournal[weekIdx].images.filter((_, idx) => idx !== imgIdx);
-                                    setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                                  }} className="text-xs text-rose-400 px-3 py-2 rounded hover:bg-rose-900/20 transition flex-shrink-0">✕ Remove</button>
+                        <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200">
+                          <input type="radio" name="daily-journal-layout" checked={form.appendices.dailyJournalLayout === 'report'} onChange={() => updateDailyJournalLayout('report')} className="accent-cyan-400" />
+                          Report layout
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {form.appendices.dailyJournalLayout === 'report' ? (
+                    <div className="space-y-4">
+                      {form.appendices.dailyJournal.map((week, weekIdx) => (
+                        <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-white">WEEK {week.weekNumber} • Total Hours: {week.totalHours}</span>
+                            {form.appendices.dailyJournal.length > 1 && (
+                              <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-900/20 transition active:scale-95">
+                                Remove Week
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
+                            <div className="grid grid-cols-1 gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300 sm:grid-cols-[0.9fr_1.8fr_2.2fr]">
+                              <div className="bg-slate-900/80 px-3 py-2">Date</div>
+                              <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
+                              <div className="bg-slate-900/80 px-3 py-2">Documentation</div>
+                            </div>
+
+                            {week.activities.map((act, dayIdx) => (
+                              <div key={dayIdx} className="grid grid-cols-1 gap-3 border-t border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-[0.9fr_1.8fr_2.2fr] sm:gap-0 sm:gap-x-3 sm:p-0">
+                                <div className="sm:border-r sm:border-slate-800 sm:p-3">
+                                  <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
+                                </div>
+                                <div className="sm:border-r sm:border-slate-800 sm:p-3">
+                                  <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Accomplishment" />
+                                </div>
+                                <div className="sm:p-3">
+                                  <div className="space-y-2">
+                                    <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => {
+                                      const targetIndex = dayIdx;
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      if (!file.type.startsWith('image/')) {
+                                        alert('Please upload an image file (PNG, JPG).');
+                                        return;
+                                      }
+                                      compressImageDataUrl(file, 1200, 0.7).then((compressed) => {
+                                        setForm((prev) => {
+                                          const newJournal = [...prev.appendices.dailyJournal];
+                                          const imageEntry = { base64: compressed, detail: `Documentation for ${act.day || 'Daily activity'}` };
+                                          const existingImages = [...(newJournal[weekIdx].images || [])];
+                                          const imageIndex = Math.min(targetIndex, existingImages.length);
+                                          existingImages[imageIndex] = imageEntry;
+                                          newJournal[weekIdx].images = existingImages;
+                                          return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
+                                        });
+                                      }).catch(() => alert('The selected journal image could not be processed.'));
+                                    }} className={fileInputClass} />
+                                    {week.images && week.images[dayIdx] && (
+                                      <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-2">
+                                        <img src={week.images[dayIdx].base64} alt="Documentation" className="h-20 w-full rounded-md object-cover" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             ))}
                           </div>
-                        )}
-                      </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <button type="button" onClick={() => addDay(weekIdx)} className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 px-3 py-1.5 rounded hover:bg-cyan-900/20 transition active:scale-95">
+                              + Add Day
+                            </button>
+                            <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Report-style journal</span>
+                          </div>
+
+                          <label className="block text-sm font-medium text-slate-200">
+                            Weekly Narrative Report
+                            <textarea value={week.narrative} onChange={(e) => {
+                                const newJournal = [...form.appendices.dailyJournal];
+                                newJournal[weekIdx].narrative = e.target.value;
+                                setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                              }} rows={2} className={fieldClass} />
+                          </label>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="space-y-4">
+                      {form.appendices.dailyJournal.map((week, weekIdx) => (
+                        <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-white">WEEK {week.weekNumber} (Total Hours: {week.totalHours})</span>
+                            {form.appendices.dailyJournal.length > 1 && (
+                              <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-900/20 transition active:scale-95">
+                                Remove Week
+                              </button>
+                            )}
+                          </div>
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Activities</p>
+                            {week.activities.map((act, dayIdx) => (
+                              <div key={dayIdx} className="grid gap-2 sm:gap-2.5 grid-cols-2 sm:grid-cols-[1fr_1fr_2.5fr_1fr_auto] items-end bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                <div className="col-span-1">
+                                  <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Day</label>
+                                  <input type="text" placeholder="Day" value={act.day} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'day', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                                </div>
+                                <div className="col-span-1">
+                                  <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Date</label>
+                                  <input type="text" placeholder="Date" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                                </div>
+                                <div className="col-span-2 sm:col-span-1">
+                                  <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Accomplishment</label>
+                                  <input type="text" placeholder="Accomplishment" value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                                </div>
+                                <div className="col-span-1">
+                                  <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Hrs</label>
+                                  <input type="number" placeholder="Hrs" value={act.hours} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-slate-100 mt-0.5" />
+                                </div>
+                                <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="col-span-1 text-rose-400 text-xs px-2 py-1.5 hover:text-rose-300 rounded hover:bg-rose-900/20">✕</button>
+                              </div>
+                            ))}
+                            <button type="button" onClick={() => addDay(weekIdx)} className="mt-2 text-xs font-semibold text-cyan-400 hover:text-cyan-300 px-3 py-1.5 rounded hover:bg-cyan-900/20 transition active:scale-95">
+                              + Add Day
+                            </button>
+                          </div>
+                          <label className="block text-sm font-medium text-slate-200 pt-2">
+                            Weekly Narrative Report
+                            <textarea value={week.narrative} onChange={(e) => {
+                                const newJournal = [...form.appendices.dailyJournal];
+                                newJournal[weekIdx].narrative = e.target.value;
+                                setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                              }} rows={2} className={fieldClass} />
+                          </label>
+                          <div className="pt-2">
+                            <label className="block text-sm font-medium text-slate-200">
+                              Upload Pictures for Week {week.weekNumber} (Max 3)
+                              <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
+                            </label>
+                            {week.images && week.images.length > 0 && (
+                              <div className="mt-3 space-y-2.5">
+                                {week.images.map((img, imgIdx) => (
+                                  <div key={imgIdx} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 bg-slate-950 p-3 sm:p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                                    <img src={img.base64} alt="Preview" className="h-12 w-12 sm:h-10 sm:w-10 object-cover rounded-lg flex-shrink-0" />
+                                    <input type="text" placeholder="Caption / Picture Detail" value={img.detail} onChange={(e) => {
+                                        const newJournal = [...form.appendices.dailyJournal];
+                                        newJournal[weekIdx].images[imgIdx].detail = e.target.value;
+                                        setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                                      }} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" />
+                                    <button type="button" onClick={() => {
+                                        const newJournal = [...form.appendices.dailyJournal];
+                                        newJournal[weekIdx].images = newJournal[weekIdx].images.filter((_, idx) => idx !== imgIdx);
+                                        setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                                      }} className="text-xs text-rose-400 px-3 py-2 rounded hover:bg-rose-900/20 transition flex-shrink-0">✕ Remove</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">PRIME Report</span>
