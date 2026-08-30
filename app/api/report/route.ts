@@ -878,9 +878,9 @@ function buildWeeklyReportTable(activities: DailyActivity[], images: (string | A
   const tableRows = [
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 15, type: WidthType.PERCENTAGE } }),
         new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 45, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 35, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 40, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -902,7 +902,7 @@ function buildWeeklyReportTable(activities: DailyActivity[], images: (string | A
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { after: 60 },
-            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 200, height: 135 } })],
+            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 150, height: 100 } })],
           })
         );
 
