@@ -551,7 +551,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { after: 0 },
-                  children: [new TextRun({ text: preparedByLabel, bold: true, size: 11, font: 'Times New Roman' })],
+                  children: [new TextRun({ text: preparedByLabel, bold: true, size: 12, font: 'Times New Roman' })],
                 })
               ],
             }),
@@ -561,7 +561,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { after: 0 },
-                  children: [new TextRun({ text: checkedByLabel, bold: true, size: 11, font: 'Times New Roman' })],
+                  children: [new TextRun({ text: checkedByLabel, bold: true, size: 12, font: 'Times New Roman' })],
                 })
               ],
             }),
@@ -575,7 +575,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { before: 0, after: 0 },
-                  children: [new TextRun({ text: preparedByName, bold: true, size: 11, font: 'Times New Roman' })],
+                  children: [new TextRun({ text: preparedByName, bold: true, size: 12, font: 'Times New Roman' })],
                 })
               ],
             }),
@@ -585,7 +585,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { before: 0, after: 0 },
-                  children: [new TextRun({ text: checkedByName, bold: true, size: 11, font: 'Times New Roman' })],
+                  children: [new TextRun({ text: checkedByName, bold: true, size: 12, font: 'Times New Roman' })],
                 })
               ],
             }),
@@ -609,7 +609,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { before: 0, after: 0 },
-                  children: [new TextRun({ text: checkedByRole, size: 11, font: 'Times New Roman' })],
+                  children: [new TextRun({ text: checkedByRole, size: 12, font: 'Times New Roman' })],
                 })
               ],
             }),
@@ -624,8 +624,8 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                   alignment: AlignmentType.LEFT,
                   spacing: { before: 0, after: 0 },
                   children: [
-                    new TextRun({ text: `${dateLabel} `, bold: true, size: 11, font: 'Times New Roman' }),
-                    new TextRun({ text: dateValue, bold: true, size: 11, font: 'Times New Roman' }),
+                    new TextRun({ text: `${dateLabel} `, bold: true, size: 12, font: 'Times New Roman' }),
+                    new TextRun({ text: dateValue, bold: true, size: 12, font: 'Times New Roman' }),
                   ],
                 })
               ],
@@ -636,7 +636,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   spacing: { before: 0, after: 0 },
-                  children: [new TextRun({ text: officeInCharge, size: 11, font: 'Times New Roman' })],
+                  children: [new TextRun({ text: officeInCharge, size: 12, font: 'Times New Roman' })],
                 })
               ],
             }),
