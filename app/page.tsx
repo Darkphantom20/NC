@@ -840,15 +840,6 @@ export default function Home() {
                             </button>
                             <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Report-style journal</span>
                           </div>
-
-                          <label className="block text-sm font-medium text-slate-200">
-                            Weekly Narrative Report
-                            <textarea value={week.narrative} onChange={(e) => {
-                                const newJournal = [...form.appendices.dailyJournal];
-                                newJournal[weekIdx].narrative = e.target.value;
-                                setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                              }} rows={2} className={fieldClass} />
-                          </label>
                         </div>
                       ))}
 
