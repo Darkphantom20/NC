@@ -426,10 +426,10 @@ export default function Home() {
         }
         
         const images = (newJournal[weekIndex] as any)[imageKey];
-        if (images.length < 3) {
+        if (images.length < 4) {
           images.push({ base64: compressed, detail: `Photo documentation for Week ${newJournal[weekIndex].weekNumber}` });
         } else {
-          alert('Maximum of 3 images allowed per week.');
+          alert('Maximum of 4 images allowed per week.');
         }
         return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
       });
@@ -918,7 +918,7 @@ export default function Home() {
                           </label>
                           <div className="pt-2">
                             <label className="block text-sm font-medium text-slate-200">
-                              Upload Pictures for Week {week.weekNumber} (Max 3)
+                              Upload Pictures for Week {week.weekNumber} (Max 4)
                               <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleJournalImageUpload(e, weekIdx)} className={fileInputClass} />
                             </label>
                             {(() => {
@@ -926,20 +926,22 @@ export default function Home() {
                               const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
                               const layoutImages = (week as any)[imageKey];
                               return layoutImages && layoutImages.length > 0 && (
-                                <div className="mt-3 space-y-2.5">
+                                <div className="mt-4 grid grid-cols-2 gap-4">
                                   {layoutImages.map((img: any, imgIdx: number) => (
-                                    <div key={imgIdx} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 bg-slate-950 p-3 sm:p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
-                                      <img src={img.base64} alt="Preview" className="h-12 w-12 sm:h-10 sm:w-10 object-cover rounded-lg flex-shrink-0" />
+                                    <div key={imgIdx} className="flex flex-col bg-slate-950 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                                      <div className="relative mb-2 overflow-hidden rounded-lg bg-slate-900 h-32 sm:h-40 flex items-center justify-center">
+                                        <img src={img.base64} alt="Preview" className="w-full h-full object-cover" />
+                                        <button type="button" onClick={() => {
+                                            const newJournal = [...form.appendices.dailyJournal];
+                                            (newJournal[weekIdx] as any)[imageKey] = ((newJournal[weekIdx] as any)[imageKey] as any[]).filter((_: any, idx: number) => idx !== imgIdx);
+                                            setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
+                                          }} className="absolute top-1 right-1 text-xs text-rose-400 bg-slate-900/80 px-2 py-1 rounded hover:bg-rose-900/60 transition">✕</button>
+                                      </div>
                                       <input type="text" placeholder="Caption / Picture Detail" value={img.detail} onChange={(e) => {
                                           const newJournal = [...form.appendices.dailyJournal];
                                           ((newJournal[weekIdx] as any)[imageKey])[imgIdx].detail = e.target.value;
                                           setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
                                         }} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" />
-                                      <button type="button" onClick={() => {
-                                          const newJournal = [...form.appendices.dailyJournal];
-                                          (newJournal[weekIdx] as any)[imageKey] = ((newJournal[weekIdx] as any)[imageKey] as any[]).filter((_: any, idx: number) => idx !== imgIdx);
-                                          setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                                        }} className="text-xs text-rose-400 px-3 py-2 rounded hover:bg-rose-900/20 transition flex-shrink-0">✕ Remove</button>
                                     </div>
                                   ))}
                                 </div>
