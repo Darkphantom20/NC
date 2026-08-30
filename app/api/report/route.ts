@@ -648,19 +648,17 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
 
   return [
     new Paragraph({
-      spacing: { before: 0, after: 0 },
-      children: [
-        new TextRun({ text: 'Footer', size: 12, font: 'Times New Roman' }),
-      ],
-    }),
-    new Paragraph({
       border: {
         bottom: { style: BorderStyle.DOTTED, size: 1, color: '000000' },
       },
-      spacing: { after: 40 },
+      spacing: { before: 150, after: 20 },
       children: [new TextRun({ text: ' ', size: 1, font: 'Times New Roman' })],
     }),
-    footerTable,
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 0 },
+      children: [footerTable],
+    }),
   ];
 }
 
