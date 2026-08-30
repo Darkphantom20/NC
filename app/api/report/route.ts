@@ -896,9 +896,9 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
   const tableRows = [
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 42, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 40, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 40, bottom: 40, left: 80, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DATE', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 40, bottom: 40, left: 80, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 42, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 40, bottom: 40, left: 80, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 20, font: 'Times New Roman' })] })], width: { size: 40, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -919,7 +919,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
         imageCellChildren.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
+            spacing: { before: 0, after: 0 },
             children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 170, height: 120 } })],
           })
         );
@@ -928,7 +928,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
           imageCellChildren.push(
             new Paragraph({
               alignment: AlignmentType.CENTER,
-              spacing: { after: 20 },
+              spacing: { before: 0, after: 0 },
               children: [new TextRun({ text: detail, size: 16, font: 'Times New Roman' })],
             })
           );
@@ -939,25 +939,26 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
     tableRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: act.date || act.day || '', size: 20, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ margins: { top: 20, bottom: 20, left: 80, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: act.date || act.day || '', size: 20, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({
+            margins: { top: 20, bottom: 20, left: 80, right: 80 },
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { after: 40 }, bullet: { level: 0 }, children: [new TextRun({ text: 'No accomplishment added.', size: 20, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 0, after: 0 }, bullet: { level: 0 }, children: [new TextRun({ text: 'No accomplishment added.', size: 20, font: 'Times New Roman' })] })];
               }
               return lines.map((line, idx) =>
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
-                  spacing: { after: idx === lines.length - 1 ? 40 : 20 },
+                  spacing: { before: 0, after: idx === lines.length - 1 ? 0 : 0 },
                   bullet: { level: 0 },
                   children: [new TextRun({ text: line.trim(), size: 20, font: 'Times New Roman' })]
                 })
               );
             })()
           }),
-          new TableCell({ children: imageCellChildren.length > 0 ? imageCellChildren : [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '', size: 18, font: 'Times New Roman' })] })] }),
+          new TableCell({ margins: { top: 20, bottom: 20, left: 80, right: 80 }, children: imageCellChildren.length > 0 ? imageCellChildren : [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: '', size: 18, font: 'Times New Roman' })] })] }),
         ],
       })
     );
