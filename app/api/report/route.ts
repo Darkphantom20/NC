@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, PageBreak } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Footer, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 
 export const runtime = 'nodejs';
 
@@ -725,18 +725,16 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
 
   appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek, index: number) => {
     if (layout === 'report') {
-      // Add page break before each week except the first one
-      if (index > 0) {
-        children.push(new PageBreak());
-      }
       // Use report layout images, fall back to shared images for backwards compatibility
       const reportImages = weekData.reportLayoutImages || weekData.images || [];
+      const weekParagraph = new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120 },
+        pageBreakBefore: index > 0, // Add page break before each week except the first one
+        children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+      });
       children.push(
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 120 },
-          children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
-        }),
+        weekParagraph,
         buildWeeklyReportTable(weekData.activities, reportImages),
         new Paragraph({
           alignment: AlignmentType.CENTER,
