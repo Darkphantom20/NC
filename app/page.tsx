@@ -753,11 +753,11 @@ export default function Home() {
                       <div className="flex flex-wrap gap-2 sm:gap-3">
                         <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200">
                           <input type="radio" name="daily-journal-layout" checked={form.appendices.dailyJournalLayout === 'current'} onChange={() => updateDailyJournalLayout('current')} className="accent-cyan-400" />
-                          Current layout
+                          Weekly layout
                         </label>
                         <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200">
                           <input type="radio" name="daily-journal-layout" checked={form.appendices.dailyJournalLayout === 'report'} onChange={() => updateDailyJournalLayout('report')} className="accent-cyan-400" />
-                          Report layout
+                          Daily layout
                         </label>
                       </div>
                     </div>
@@ -838,7 +838,7 @@ export default function Home() {
                             <button type="button" onClick={() => addDay(weekIdx)} className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 px-3 py-1.5 rounded hover:bg-cyan-900/20 transition active:scale-95">
                               + Add Day
                             </button>
-                            <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Report-style journal</span>
+                            <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Daily layout</span>
                           </div>
                         </div>
                       ))}
