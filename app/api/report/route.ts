@@ -850,26 +850,36 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
       new TableRow({
         cantSplit: true,
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: act.day || '', size: 17, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: act.date || '', size: 17, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({
+            width: { size: 16, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: act.day || '', size: 12, font: 'Times New Roman' })] })],
+            verticalAlign: 'center',
+          }),
+          new TableCell({
+            width: { size: 18, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: act.date || '', size: 12, font: 'Times New Roman' })] })],
+            verticalAlign: 'center',
+          }),
+          new TableCell({
+            width: { size: 52, type: WidthType.PERCENTAGE },
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: 'No accomplishment added.', size: 17, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: 'No accomplishment added.', size: 12, font: 'Times New Roman' })] })];
               }
               return lines.map((line, idx) =>
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
-                  spacing: { before: 18, after: idx === lines.length - 1 ? 18 : 10 },
-                  children: [new TextRun({ text: line.trim(), size: 17, font: 'Times New Roman' })]
+                  spacing: { before: 14, after: idx === lines.length - 1 ? 14 : 8 },
+                  children: [new TextRun({ text: line.trim(), size: 12, font: 'Times New Roman' })]
                 })
               );
-            })()
+            })(),
           }),
           new TableCell({
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: String(act.hours ?? ''), size: 17, font: 'Times New Roman' })] })],
+            width: { size: 14, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: String(act.hours ?? ''), size: 12, font: 'Times New Roman' })] })],
             verticalAlign: 'center',
           }),
         ],
@@ -895,7 +905,7 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
   return new Table({
     rows: tableRows,
     alignment: AlignmentType.CENTER,
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: 110, type: WidthType.PERCENTAGE },
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
