@@ -892,7 +892,7 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
   return new Table({
     rows: tableRows,
     alignment: AlignmentType.CENTER,
-    width: { size: 96, type: WidthType.PERCENTAGE },
+    width: { size: 100, type: WidthType.PERCENTAGE },
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
@@ -909,8 +909,8 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
     new TableRow({
       children: [
         new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DATE', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 42, type: WidthType.PERCENTAGE } }),
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 40, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 38, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 44, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -932,7 +932,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { before: 0, after: 0 },
-            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 170, height: 120 } })],
+            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 230, height: 150 } })],
           })
         );
 
@@ -979,7 +979,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
   return new Table({
     rows: tableRows,
     alignment: AlignmentType.CENTER,
-    width: { size: 96, type: WidthType.PERCENTAGE },
+    width: { size: 100, type: WidthType.PERCENTAGE },
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
