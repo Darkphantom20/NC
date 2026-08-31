@@ -833,6 +833,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
 function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
   const tableRows = [
     new TableRow({
+      cantSplit: true,
       children: [
         new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 28, after: 28 }, children: [new TextRun({ text: 'DAY', bold: true, size: 18, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
         new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 28, after: 28 }, children: [new TextRun({ text: 'DATE', bold: true, size: 18, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
@@ -847,21 +848,22 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
   rows.forEach((act) => {
     tableRows.push(
       new TableRow({
+        cantSplit: true,
         children: [
           new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: act.day || '', size: 17, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: act.date || '', size: 17, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
-          new TableCell({ 
+          new TableCell({
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: 'No accomplishment added.', size: 17, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 22, after: 22 }, children: [new TextRun({ text: 'No accomplishment added.', size: 17, font: 'Times New Roman' })] })];
               }
-              return lines.map((line, idx) => 
-                new Paragraph({ 
-                  alignment: AlignmentType.CENTER, 
+              return lines.map((line, idx) =>
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
                   spacing: { before: 18, after: idx === lines.length - 1 ? 18 : 10 },
-                  children: [new TextRun({ text: line.trim(), size: 17, font: 'Times New Roman' })] 
+                  children: [new TextRun({ text: line.trim(), size: 17, font: 'Times New Roman' })]
                 })
               );
             })()
@@ -907,10 +909,11 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
 function buildDailyReportTable(activities: DailyActivity[], images: (string | AppendixImage)[] = []) {
   const tableRows = [
     new TableRow({
+      cantSplit: true,
       children: [
         new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DATE', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 38, type: WidthType.PERCENTAGE } }),
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 44, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 34, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: 16, font: 'Times New Roman' })] })], width: { size: 48, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -932,7 +935,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { before: 0, after: 0 },
-            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 230, height: 150 } })],
+            children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 260, height: 170 } })],
           })
         );
 
@@ -950,6 +953,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
 
     tableRows.push(
       new TableRow({
+        cantSplit: true,
         children: [
           new TableCell({ margins: { top: 12, bottom: 12, left: 18, right: 18 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: act.date || act.day || '', size: 15, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({
@@ -979,7 +983,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
   return new Table({
     rows: tableRows,
     alignment: AlignmentType.CENTER,
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: 110, type: WidthType.PERCENTAGE },
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
