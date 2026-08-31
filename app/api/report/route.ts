@@ -879,6 +879,7 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
 
   tableRows.push(
     new TableRow({
+      cantSplit: true,
       children: [
         new TableCell({ 
           columnSpan: 3, 
@@ -1046,6 +1047,7 @@ function buildWeeklyReportTable(activities: DailyActivity[], images: (string | A
 
   tableRows.push(
     new TableRow({
+      cantSplit: true,
       children: [
         new TableCell({
           columnSpan: 3,
