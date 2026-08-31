@@ -771,10 +771,6 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       })
     );
 
-    if (appendicesData.reportFooter) {
-      children.push(...buildReportFooterBlock(appendicesData.reportFooter));
-    }
-
     if (currentImages.length > 0) {
       children.push(buildImageGridTable(currentImages));
     }
