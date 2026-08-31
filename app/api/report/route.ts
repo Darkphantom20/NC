@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       await supabase.from('reports').insert([payload]);
     }
 
-    const reportFooterChildren = data.appendices?.dailyJournalLayout === 'report'
+    const reportFooterChildren = data.appendices?.reportFooter
       ? buildReportFooterBlock(data.appendices?.reportFooter)
       : [];
 
@@ -771,6 +771,10 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       })
     );
 
+    if (appendicesData.reportFooter) {
+      children.push(...buildReportFooterBlock(appendicesData.reportFooter));
+    }
+
     if (currentImages.length > 0) {
       children.push(buildImageGridTable(currentImages));
     }
@@ -905,7 +909,8 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
   return new Table({
     rows: tableRows,
     alignment: AlignmentType.LEFT,
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: 108, type: WidthType.PERCENTAGE },
+    columnWidths: [16, 18, 52, 14],
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
@@ -994,7 +999,8 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
   return new Table({
     rows: tableRows,
     alignment: AlignmentType.LEFT,
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: 108, type: WidthType.PERCENTAGE },
+    columnWidths: [18, 34, 48],
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
