@@ -904,8 +904,8 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
 
   return new Table({
     rows: tableRows,
-    alignment: AlignmentType.CENTER,
-    width: { size: 110, type: WidthType.PERCENTAGE },
+    alignment: AlignmentType.LEFT,
+    width: { size: 100, type: WidthType.PERCENTAGE },
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
@@ -993,8 +993,8 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
 
   return new Table({
     rows: tableRows,
-    alignment: AlignmentType.CENTER,
-    width: { size: 110, type: WidthType.PERCENTAGE },
+    alignment: AlignmentType.LEFT,
+    width: { size: 100, type: WidthType.PERCENTAGE },
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
