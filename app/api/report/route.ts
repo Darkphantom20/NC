@@ -889,7 +889,19 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
     })
   );
 
-  return new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } });
+  return new Table({
+    rows: tableRows,
+    alignment: AlignmentType.RIGHT,
+    width: { size: 88, type: WidthType.PERCENTAGE },
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+    },
+  });
 }
 
 function buildDailyReportTable(activities: DailyActivity[], images: (string | AppendixImage)[] = []) {
@@ -966,7 +978,8 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
 
   return new Table({
     rows: tableRows,
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    alignment: AlignmentType.RIGHT,
+    width: { size: 88, type: WidthType.PERCENTAGE },
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
