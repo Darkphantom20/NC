@@ -493,7 +493,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
+    <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
       {isMounted && (
         <Joyride
           steps={tourSteps}
@@ -547,8 +547,8 @@ export default function Home() {
         />
       )}
 
-      <div className="mx-auto max-w-7xl space-y-8 sm:space-y-12">
-        <header className="overflow-hidden rounded-[24px] border border-cyan-500/20 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl sm:rounded-[32px] sm:p-10">
+      <div className="mx-auto min-w-0 max-w-7xl space-y-8 sm:space-y-12">
+        <header className="min-w-0 overflow-hidden rounded-[24px] border border-cyan-500/20 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl sm:rounded-[32px] sm:p-10">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.25em] text-cyan-300 sm:text-sm font-semibold">JRMSU</p>
@@ -584,8 +584,8 @@ export default function Home() {
           <Card label="Mode" value="Web" color="emerald" />
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
-          <form className="tour-form space-y-8 rounded-[24px] border border-slate-800 bg-slate-900/80 p-6 sm:rounded-[32px] sm:p-8">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-[1.4fr_0.6fr]">
+          <form className="tour-form min-w-0 max-w-full space-y-8 rounded-[24px] border border-slate-800 bg-slate-900/80 p-6 sm:rounded-[32px] sm:p-8">
             
             {/* Added tour-front-page class via modified SectionBlock */}
             <SectionBlock title="Front Page (Cover Page Details)" className="tour-front-page">
@@ -795,8 +795,8 @@ export default function Home() {
                             )}
                           </div>
 
-                          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
-                            <div className="min-w-[560px]">
+                          <div className="min-w-0 max-w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+                            <div className="min-w-0 w-full">
                               <div className="grid grid-cols-[0.9fr_1.8fr_2.2fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
                                 <div className="bg-slate-900/80 px-3 py-2">Date</div>
                                 <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
@@ -804,14 +804,14 @@ export default function Home() {
                               </div>
 
                               {week.activities.map((act, dayIdx) => (
-                                <div key={dayIdx} className="grid grid-cols-[0.9fr_1.8fr_2.2fr] gap-px border-t border-slate-800 bg-slate-950/40 sm:gap-0 sm:gap-x-3">
-                                  <div className="border-r border-slate-800 p-3">
+                                <div key={dayIdx} className="grid min-w-0 grid-cols-[0.9fr_1.8fr_2.2fr] gap-px border-t border-slate-800 bg-slate-950/40 sm:gap-0 sm:gap-x-3">
+                                  <div className="min-w-0 border-r border-slate-800 p-3">
                                     <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
                                   </div>
-                                  <div className="border-r border-slate-800 p-3">
+                                  <div className="min-w-0 border-r border-slate-800 p-3">
                                     <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Accomplishment" />
                                   </div>
-                                  <div className="p-3">
+                                  <div className="min-w-0 p-3">
                                     <div className="space-y-2">
                                       <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => {
                                         const targetIndex = dayIdx;
@@ -836,7 +836,7 @@ export default function Home() {
                                             return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
                                           });
                                         }).catch(() => alert('The selected journal image could not be processed.'));
-                                      }} className={fileInputClass} />
+                                      }} className={`${fileInputClass} max-w-full`} />
                                       {(() => {
                                         const isReportLayout = form.appendices.dailyJournalLayout === 'report';
                                         const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
