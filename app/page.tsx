@@ -236,59 +236,54 @@ export default function Home() {
   const tourSteps: Step[] = [
     {
       target: '.tour-start-btn',
-      title: 'Getting started',
-      content: 'Use the “Show Me How” button anytime to follow a guided walkthrough of the report builder and its sections.',
+      title: 'Start here',
+      content: 'Use this button whenever you want a quick walkthrough of the report sections in order.',
       skipBeacon: true,
-    },
-    {
-      target: '.tour-form',
-      title: 'Main form',
-      content: 'This is the main report editor. Fill in your real internship details section by section before generating the final Word document.',
     },
     {
       target: '.tour-front-page',
       title: 'Front page',
-      content: 'Add your school, student details, company name, and cover-page information in the front page section.',
+      content: 'Start with the front page and enter the school, company, and cover details for the report.',
     },
     {
       target: '.tour-acknowledgement',
       title: 'Acknowledgement',
-      content: 'Replace the sample appreciation text with your own thank-you message for the people and office that supported your training.',
+      content: 'Write your appreciation message for the people and office that supported your internship.',
     },
     {
       target: '.tour-introduction',
       title: 'Introduction',
-      content: 'Update the company background, vision, mission, values, and services with your actual host organization information.',
+      content: 'Describe the company background, mission, services, and overview in the introduction section.',
     },
     {
       target: '.tour-organization-analysis',
       title: 'Organization analysis',
-      content: 'Describe your real assessment of the company using the strengths, weaknesses, opportunities, threats, and improvement recommendations sections.',
+      content: 'Assess the company using the strengths, weaknesses, opportunities, threats, and recommendations.',
     },
     {
       target: '.tour-tasks-duties',
       title: 'Tasks and duties',
-      content: 'Record the actual tasks assigned to you and the procedures you followed during your OJT or internship period.',
+      content: 'Record the actual work tasks, responsibilities, and procedures you performed during your training.',
     },
     {
       target: '.tour-case-analysis',
       title: 'Case analysis',
-      content: 'Write your real work challenges, solutions, lessons learned, and reflections based on your actual experience.',
+      content: 'Explain the work challenges, solutions, and lessons learned from your internship experience.',
     },
     {
       target: '.tour-reflections',
       title: 'Reflections',
-      content: 'Use this section to explain what you learned, how the internship helped you, and why it is relevant to your course and goals.',
+      content: 'Summarize what you learned and how the experience relates to your course and goals.',
     },
     {
       target: '.tour-appendices',
       title: 'Appendices',
-      content: 'Update the daily journal entries, add weekly activities, upload documentation, and provide your supporting files for the report appendix.',
+      content: 'Complete your daily journal, weekly activities, and supporting documentation in the appendix section.',
     },
     {
       target: '.tour-generate-btn',
       title: 'Generate report',
-      content: 'When your entries are complete, click Generate Report to create the DOCX file with the final formatted narrative report.',
+      content: 'When everything is complete, click Generate Report to create the final DOCX output.',
     }
   ];
 
