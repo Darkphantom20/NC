@@ -831,7 +831,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
 }
 
 function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
-  const TABLE_TEXT_SIZE = 26;
+  const TABLE_TEXT_SIZE = 20;
   const tableRows = [
     new TableRow({
       cantSplit: true,
@@ -921,7 +921,7 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
 }
 
 function buildDailyReportTable(activities: DailyActivity[], images: (string | AppendixImage)[] = []) {
-  const TABLE_TEXT_SIZE = 26;
+  const TABLE_TEXT_SIZE = 20;
   const tableRows = [
     new TableRow({
       cantSplit: true,
@@ -1013,7 +1013,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
 }
 
 function buildWeeklyReportTable(activities: DailyActivity[], images: (string | AppendixImage)[] = []) {
-  const TABLE_TEXT_SIZE = 26;
+  const TABLE_TEXT_SIZE = 20;
   const tableRows = [
     new TableRow({
       cantSplit: true,
