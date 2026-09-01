@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle } from 'lucide-react';
-import guideScene from '../494356892_23964838003120045_2210637575151932928_n.jpg';
+import { HelpCircle, X } from 'lucide-react';
+import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
+import memeScene from '../memes.gif';
+import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
 
 const sectionOrder = [
   'Cover Page',
@@ -210,6 +212,18 @@ export default function Home() {
   // Tour State
   const [runTour, setRunTour] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [completionSlideIndex, setCompletionSlideIndex] = useState(0);
+
+  useEffect(() => {
+    if (!showCompletionPopup) return;
+
+    const interval = window.setInterval(() => {
+      setCompletionSlideIndex((prev) => (prev === 0 ? 1 : 0));
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, [showCompletionPopup]);
 
   // Load form data from localStorage on mount
   useEffect(() => {
@@ -489,6 +503,8 @@ export default function Home() {
       link.remove();
       URL.revokeObjectURL(url);
       setStatus('Download started');
+      setCompletionSlideIndex(0);
+      setShowCompletionPopup(true);
     } catch (error: any) {
       setStatus('Error generating file');
       alert(error.message);
@@ -500,6 +516,51 @@ export default function Home() {
 
   return (
     <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
+      {showCompletionPopup && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-cyan-500/30 bg-slate-900/95 shadow-[0_25px_80px_rgba(34,211,238,0.18)] ring-1 ring-white/5">
+            <button
+              type="button"
+              onClick={() => setShowCompletionPopup(false)}
+              className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-800/80 text-slate-200 transition hover:bg-slate-700/90 hover:text-white"
+              aria-label="Close completion popup"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="p-5 pb-4">
+              <div className="mb-4 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-cyan-300">Report complete</p>
+                <h3 className="mt-2 text-2xl font-black text-white">Ayaw mog saba ni Sir</h3>
+              </div>
+
+              <div className="relative overflow-hidden rounded-[22px] border border-slate-700 bg-slate-950/80">
+                <div
+                  className="flex transition-transform duration-700 ease-in-out"
+                  style={{ transform: `translateX(-${completionSlideIndex * 100}%)` }}
+                >
+                  <div className="min-w-full">
+                    <img src={memeScene.src} alt="Meme completion slide" className="h-72 w-full object-cover" />
+                  </div>
+                  <div className="min-w-full">
+                    <img src={completionScene.src} alt="Completion celebration slide" className="h-72 w-full object-cover" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-center gap-2">
+                {[0, 1].map((dot) => (
+                  <span
+                    key={dot}
+                    className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${completionSlideIndex === dot ? 'bg-cyan-400 scale-110' : 'bg-slate-600'}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isMounted && (
         <Joyride
           steps={tourSteps}
