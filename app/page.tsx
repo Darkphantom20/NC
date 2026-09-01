@@ -27,6 +27,7 @@ const defaultForm = {
   submittedToName: 'Mr. Erson A. Rodriguez',
   submittedToTitle: 'Associate Dean of the College of Computing Studies',
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
+  sectionLayout: 'compact',
   background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
   vision: 'To be a premier provider of innovative, reliable, and secure technological solutions and digital services.',
   mission: 'To empower the organization through efficient IT infrastructure, responsive technical support, and robust systems development.',
@@ -740,6 +741,36 @@ export default function Home() {
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Title/Position</span>
                     <input value={form.submittedToTitle} onChange={(e) => updateField('submittedToTitle', e.target.value)} className={fieldClass} />
+                  </label>
+                </div>
+              </div>
+            </SectionBlock>
+
+            <SectionBlock title="Page Layout Style" className="tour-page-layout">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
+                <p className="mb-3 text-xs text-slate-300">
+                  Choose how the acknowledgement through reflection sections are arranged in the generated Word output.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
+                    <input
+                      type="radio"
+                      name="section-layout"
+                      checked={form.sectionLayout === 'compact'}
+                      onChange={() => updateField('sectionLayout', 'compact')}
+                      className="accent-cyan-400"
+                    />
+                    Compact layout
+                  </label>
+                  <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
+                    <input
+                      type="radio"
+                      name="section-layout"
+                      checked={form.sectionLayout === 'onePagePerSection'}
+                      onChange={() => updateField('sectionLayout', 'onePagePerSection')}
+                      className="accent-cyan-400"
+                    />
+                    One section per page
                   </label>
                 </div>
               </div>

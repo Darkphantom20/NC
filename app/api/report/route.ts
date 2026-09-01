@@ -120,6 +120,7 @@ export async function POST(request: Request) {
     const reportFooterChildren = data.appendices?.reportFooter
       ? buildReportFooterBlock(data.appendices?.reportFooter)
       : [];
+    const compactSectionLayout = data.sectionLayout === 'compact';
 
     const documentSections: any[] = [
       {
@@ -138,9 +139,9 @@ export async function POST(request: Request) {
         },
         children: [
           ...buildCoverPage(data),
-          new Paragraph({ pageBreakBefore: true }),
-          ...buildAcknowledgementPage(data),
-          new Paragraph({ pageBreakBefore: true }),
+          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
+          ...buildAcknowledgementPage(data, compactSectionLayout),
+          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('INTRODUCTION', [
             { title: 'Background of the Organization', content: data.background },
             { title: 'Vision', content: data.vision },
@@ -148,33 +149,33 @@ export async function POST(request: Request) {
             { title: 'Objectives', content: data.objectives, isBullet: true },
             { title: 'Core Values', content: data.coreValues, isBullet: true },
             { title: 'Products and Services Offered', content: data.services },
-          ]),
-          new Paragraph({ pageBreakBefore: true }),
+          ], compactSectionLayout),
+          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('ORGANIZATION / COMPANY ANALYSIS', [
             { title: 'Strengths', content: data.strengths, isBullet: true },
             { title: 'Weaknesses', content: data.weaknesses, isBullet: true },
             { title: 'Opportunities', content: data.opportunities, isBullet: true },
             { title: 'Threats', content: data.threats, isBullet: true },
             { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
-          ]),
-          new Paragraph({ pageBreakBefore: true }),
+          ], compactSectionLayout),
+          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('TASKS AND DUTIES', [
             { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
             { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
-          ]),
-          new Paragraph({ pageBreakBefore: true }),
+          ], compactSectionLayout),
+          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('CASE ANALYSIS', [
             { title: 'Issue / Problem 1', content: data.issue1 },
             { title: 'Strategy/Action Undertaken for Problem 1', content: data.issue1Action },
             { title: 'Issue / Problem 2', content: data.issue2 },
             { title: 'Strategy/Action Undertaken for Problem 2', content: data.issue2Action },
             { title: 'Lessons Learned from the Situations', content: data.lessons },
-          ]),
-          new Paragraph({ pageBreakBefore: true }),
+          ], compactSectionLayout),
+          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('REFLECTIONS', [
             { title: 'Self-Evaluation', content: data.selfEvaluation },
             { title: 'Relevancy of the Organization', content: data.relevancy },
-          ]),
+          ], compactSectionLayout),
         ],
       },
     ];
@@ -333,14 +334,14 @@ function buildCoverPage(data: any): Paragraph[] {
   ];
 }
 
-function buildAcknowledgementPage(data: any): Paragraph[] {
+function buildAcknowledgementPage(data: any, compact = false): Paragraph[] {
   const student = data.studentName || '';
   const degree = data.degreeProgram || '';
   const university = 'Jose Rizal Memorial State University';
   const paragraphs: Paragraph[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 360, after: 480 },
+      spacing: { before: compact ? 80 : 360, after: compact ? 180 : 480 },
       children: [new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 28, font: 'Times New Roman' })],
     }),
   ];
@@ -354,7 +355,7 @@ function buildAcknowledgementPage(data: any): Paragraph[] {
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
           indent: { firstLine: 720 },
-          spacing: { before: 120, after: 120, line: 360 },
+          spacing: { before: compact ? 40 : 120, after: compact ? 40 : 120, line: 360 },
           children: [new TextRun({ text: pText, size: 24, font: 'Times New Roman' })],
         })
       );
@@ -364,7 +365,7 @@ function buildAcknowledgementPage(data: any): Paragraph[] {
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         indent: { firstLine: 720 },
-        spacing: { before: 120, after: 120, line: 360 },
+        spacing: { before: compact ? 40 : 120, after: compact ? 40 : 120, line: 360 },
         children: [new TextRun({ text: 'No acknowledgement provided.', size: 24, font: 'Times New Roman' })],
       })
     );
@@ -374,7 +375,7 @@ function buildAcknowledgementPage(data: any): Paragraph[] {
   paragraphs.push(
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: 720, after: 60 },
+      spacing: { before: compact ? 200 : 720, after: 60 },
       children: [new TextRun({ text: student, bold: true, size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
@@ -392,11 +393,11 @@ function buildAcknowledgementPage(data: any): Paragraph[] {
   return paragraphs;
 }
 
-function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
+function buildSectionPage(title: string, sections: SectionData[], compact = false): Paragraph[] {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 120, after: 180 },
+      spacing: { before: compact ? 40 : 120, after: compact ? 80 : 180 },
       children: [new TextRun({ text: title, bold: true, size: 28, font: 'Times New Roman' })],
     }),
   ];
@@ -408,7 +409,7 @@ function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
     if (section.title) {
       children.push(
         new Paragraph({
-          spacing: { before: 120, after: 60 },
+          spacing: { before: compact ? 40 : 120, after: compact ? 20 : 60 },
           children: [new TextRun({ text: `${section.title}:`, bold: true, size: 24, font: 'Times New Roman' })],
         })
       );
@@ -420,7 +421,7 @@ function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
           new Paragraph({
             bullet: { level: 0 },
             indent: { left: 720 },
-            spacing: { after: 60 },
+            spacing: { after: compact ? 20 : 60 },
             children: [new TextRun({ text: line, size: 24, font: 'Times New Roman' })],
           })
         );
@@ -430,7 +431,7 @@ function buildSectionPage(title: string, sections: SectionData[]): Paragraph[] {
       children.push(
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
-          spacing: { after: 80 },
+          spacing: { after: compact ? 20 : 80 },
           children: [new TextRun({ text: combinedText, size: 24, font: 'Times New Roman' })],
         })
       );
