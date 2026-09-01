@@ -121,6 +121,7 @@ export async function POST(request: Request) {
       ? buildReportFooterBlock(data.appendices?.reportFooter)
       : [];
     const compactSectionLayout = data.sectionLayout === 'compact';
+    const acknowledgementLineSpacing = 360;
 
     const documentSections: any[] = [
       {
@@ -140,7 +141,7 @@ export async function POST(request: Request) {
         children: [
           ...buildCoverPage(data),
           new Paragraph({ pageBreakBefore: true }),
-          ...buildAcknowledgementPage(data, compactSectionLayout),
+          ...buildAcknowledgementPage(data, compactSectionLayout, acknowledgementLineSpacing),
           new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('INTRODUCTION', [
             { title: 'Background of the Organization', content: data.background },
@@ -149,7 +150,7 @@ export async function POST(request: Request) {
             { title: 'Objectives', content: data.objectives, isBullet: true },
             { title: 'Core Values', content: data.coreValues, isBullet: true },
             { title: 'Products and Services Offered', content: data.services },
-          ], compactSectionLayout),
+          ], compactSectionLayout, acknowledgementLineSpacing),
           new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('ORGANIZATION / COMPANY ANALYSIS', [
             { title: 'Strengths', content: data.strengths, isBullet: true },
@@ -157,12 +158,12 @@ export async function POST(request: Request) {
             { title: 'Opportunities', content: data.opportunities, isBullet: true },
             { title: 'Threats', content: data.threats, isBullet: true },
             { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
-          ], compactSectionLayout),
+          ], compactSectionLayout, acknowledgementLineSpacing),
           new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('TASKS AND DUTIES', [
             { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
             { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
-          ], compactSectionLayout),
+          ], compactSectionLayout, acknowledgementLineSpacing),
           new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('CASE ANALYSIS', [
             { title: 'Issue / Problem 1', content: data.issue1 },
@@ -170,12 +171,12 @@ export async function POST(request: Request) {
             { title: 'Issue / Problem 2', content: data.issue2 },
             { title: 'Strategy/Action Undertaken for Problem 2', content: data.issue2Action },
             { title: 'Lessons Learned from the Situations', content: data.lessons },
-          ], compactSectionLayout),
+          ], compactSectionLayout, acknowledgementLineSpacing),
           new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('REFLECTIONS', [
             { title: 'Self-Evaluation', content: data.selfEvaluation },
             { title: 'Relevancy of the Organization', content: data.relevancy },
-          ], compactSectionLayout),
+          ], compactSectionLayout, acknowledgementLineSpacing),
         ],
       },
     ];
@@ -264,85 +265,85 @@ function buildCoverPage(data: any): Paragraph[] {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 1440, after: 360 },
-      children: [new TextRun({ text: 'A Narrative Report on the', size: 26, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: 'A Narrative Report on the', size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 360 },
-      children: [new TextRun({ text: 'On-the-Job Training conducted at', size: 26, font: 'Times New Roman', bold: false })],
+      spacing: { after: 360, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: 'On-the-Job Training conducted at', size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 180 },
-      children: [new TextRun({ text: org, size: 30, font: 'Times New Roman', bold: false })],
+      spacing: { after: 180, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: org, size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 1440 },
-      children: [new TextRun({ text: location, size: 26, font: 'Times New Roman', bold: false })],
+      spacing: { after: 1440, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: location, size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 360 },
-      children: [new TextRun({ text: 'Presented to the faculty of', size: 26, font: 'Times New Roman', bold: false })],
+      spacing: { after: 360, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: 'Presented to the faculty of', size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 1440 },
-      children: [new TextRun({ text: faculty, size: 30, font: 'Times New Roman', bold: false })],
+      spacing: { after: 1440, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: faculty, size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 360 },
-      children: [new TextRun({ text: 'In partial fulfillment of the requirements for the degree of', size: 24, font: 'Times New Roman', bold: false })],
+      spacing: { after: 360, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: 'In partial fulfillment of the requirements for the degree of', size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 2160 },
-      children: [new TextRun({ text: degree, size: 30, font: 'Times New Roman', bold: false })],
+      spacing: { after: 2160, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: degree, size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 180 },
-      children: [new TextRun({ text: 'Submitted by:', size: 24, font: 'Times New Roman', bold: false })],
+      spacing: { after: 180, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: 'Submitted by:', size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 180 },
-      children: [new TextRun({ text: student, size: 26, font: 'Times New Roman', bold: false })],
+      spacing: { after: 180, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: student, size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 1080 },
-      children: [new TextRun({ text: studentDegree, size: 24, font: 'Times New Roman', bold: false })],
+      spacing: { after: 1080, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: studentDegree, size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 180 },
-      children: [new TextRun({ text: 'Submitted to:', size: 24, font: 'Times New Roman', bold: false })],
+      spacing: { after: 180, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: 'Submitted to:', size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 180 },
-      children: [new TextRun({ text: adviserName, size: 26, font: 'Times New Roman', bold: false })],
+      spacing: { after: 180, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: adviserName, size: 12, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 0 },
-      children: [new TextRun({ text: adviserTitle, size: 24, font: 'Times New Roman', bold: false })],
+      spacing: { after: 0, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: adviserTitle, size: 12, font: 'Times New Roman', bold: false })],
     }),
   ];
 }
 
-function buildAcknowledgementPage(data: any, compact = false): Paragraph[] {
+function buildAcknowledgementPage(data: any, compact = false, lineSpacing = 240): Paragraph[] {
   const student = data.studentName || '';
   const degree = data.degreeProgram || '';
   const university = 'Jose Rizal Memorial State University';
   const paragraphs: Paragraph[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: compact ? 80 : 360, after: compact ? 180 : 480 },
-      children: [new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 28, font: 'Times New Roman' })],
+      spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
+      children: [new TextRun({ text: 'ACKNOWLEDGEMENT', bold: true, size: 24, font: 'Times New Roman' })],
     }),
   ];
 
@@ -355,7 +356,7 @@ function buildAcknowledgementPage(data: any, compact = false): Paragraph[] {
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
           indent: { firstLine: 720 },
-          spacing: { before: compact ? 40 : 120, after: compact ? 40 : 120, line: 360 },
+          spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
           children: [new TextRun({ text: pText, size: 24, font: 'Times New Roman' })],
         })
       );
@@ -365,7 +366,7 @@ function buildAcknowledgementPage(data: any, compact = false): Paragraph[] {
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         indent: { firstLine: 720 },
-        spacing: { before: compact ? 40 : 120, after: compact ? 40 : 120, line: 360 },
+        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
         children: [new TextRun({ text: 'No acknowledgement provided.', size: 24, font: 'Times New Roman' })],
       })
     );
@@ -375,17 +376,17 @@ function buildAcknowledgementPage(data: any, compact = false): Paragraph[] {
   paragraphs.push(
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: compact ? 200 : 720, after: 60 },
+      spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
       children: [new TextRun({ text: student, bold: true, size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { after: 60 },
+      spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
       children: [new TextRun({ text: degree, size: 24, font: 'Times New Roman' })],
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { after: 0 },
+      spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
       children: [new TextRun({ text: university, size: 24, font: 'Times New Roman' })],
     })
   );
@@ -393,12 +394,12 @@ function buildAcknowledgementPage(data: any, compact = false): Paragraph[] {
   return paragraphs;
 }
 
-function buildSectionPage(title: string, sections: SectionData[], compact = false): Paragraph[] {
+function buildSectionPage(title: string, sections: SectionData[], compact = false, lineSpacing = 240): Paragraph[] {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: compact ? 40 : 120, after: compact ? 80 : 180 },
-      children: [new TextRun({ text: title, bold: true, size: 28, font: 'Times New Roman' })],
+      spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
+      children: [new TextRun({ text: title, bold: true, size: 24, font: 'Times New Roman' })],
     }),
   ];
 
@@ -409,7 +410,7 @@ function buildSectionPage(title: string, sections: SectionData[], compact = fals
     if (section.title) {
       children.push(
         new Paragraph({
-          spacing: { before: compact ? 40 : 120, after: compact ? 20 : 60 },
+          spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
           children: [new TextRun({ text: `${section.title}:`, bold: true, size: 24, font: 'Times New Roman' })],
         })
       );
@@ -421,7 +422,7 @@ function buildSectionPage(title: string, sections: SectionData[], compact = fals
           new Paragraph({
             bullet: { level: 0 },
             indent: { left: 720 },
-            spacing: { after: compact ? 20 : 60 },
+            spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
             children: [new TextRun({ text: line, size: 24, font: 'Times New Roman' })],
           })
         );
@@ -431,7 +432,7 @@ function buildSectionPage(title: string, sections: SectionData[], compact = fals
       children.push(
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
-          spacing: { after: compact ? 20 : 80 },
+          spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
           children: [new TextRun({ text: combinedText, size: 24, font: 'Times New Roman' })],
         })
       );
@@ -478,7 +479,7 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               spacing: { after: 120 },
-              children: [new TextRun({ text: detail_1, size: 20, font: 'Times New Roman' })],
+              children: [new TextRun({ text: detail_1, size: 24, font: 'Times New Roman' })],
             })
           );
         }
@@ -510,7 +511,7 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               spacing: { after: 120 },
-              children: [new TextRun({ text: detail_2, size: 20, font: 'Times New Roman' })],
+              children: [new TextRun({ text: detail_2, size: 24, font: 'Times New Roman' })],
             })
           );
         }
@@ -561,7 +562,7 @@ function buildFeaturedImageLayout(imgData: string | AppendixImage) {
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 200 },
-          children: [new TextRun({ text: detail, size: 22, font: 'Times New Roman' })],
+          children: [new TextRun({ text: detail, size: 24, font: 'Times New Roman' })],
         })
       );
     }
@@ -600,7 +601,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
               new Paragraph({
                 alignment: AlignmentType.LEFT,
                 spacing: { after: 12, line: 276, lineRule: 'auto' },
-                children: [new TextRun({ text: preparedByLabel, bold: true, size: 18, font: 'Times New Roman' })],
+                children: [new TextRun({ text: preparedByLabel, bold: true, size: 24, font: 'Times New Roman' })],
               })
             ],
           }),
@@ -611,7 +612,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
               new Paragraph({
                 alignment: AlignmentType.LEFT,
                 spacing: { after: 12, line: 276, lineRule: 'auto' },
-                children: [new TextRun({ text: checkedByLabel, bold: true, size: 18, font: 'Times New Roman' })],
+                children: [new TextRun({ text: checkedByLabel, bold: true, size: 24, font: 'Times New Roman' })],
               })
             ],
           }),
@@ -626,7 +627,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 6, after: 10, line: 276, lineRule: 'auto' },
-                children: [new TextRun({ text: preparedByName, bold: true, size: 18, font: 'Times New Roman' })],
+                children: [new TextRun({ text: preparedByName, bold: true, size: 24, font: 'Times New Roman' })],
               })
             ],
           }),
@@ -637,7 +638,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 6, after: 10, line: 276, lineRule: 'auto' },
-                children: [new TextRun({ text: checkedByName, bold: true, size: 18, font: 'Times New Roman' })],
+                children: [new TextRun({ text: checkedByName, bold: true, size: 24, font: 'Times New Roman' })],
               })
             ],
           }),
@@ -648,7 +649,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
             margins: { top: 10, bottom: 10, left: 10, right: 10 },
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 8, after: 8, line: 276, lineRule: 'auto' }, children: [new TextRun({ text: '', size: 18, font: 'Times New Roman' })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 8, after: 8, line: 276, lineRule: 'auto' }, children: [new TextRun({ text: '', size: 24, font: 'Times New Roman' })] })],
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
@@ -657,7 +658,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 8, after: 10, line: 276, lineRule: 'auto' },
-                children: [new TextRun({ text: checkedByRole, size: 16, font: 'Times New Roman' })],
+                children: [new TextRun({ text: checkedByRole, size: 24, font: 'Times New Roman' })],
               })
             ],
           }),
@@ -673,8 +674,8 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 8, after: 8, line: 276, lineRule: 'auto' },
                 children: [
-                  new TextRun({ text: `${dateLabel} `, bold: true, size: 16, font: 'Times New Roman' }),
-                  new TextRun({ text: dateValue, bold: true, size: 16, font: 'Times New Roman' }),
+                  new TextRun({ text: `${dateLabel} `, bold: true, size: 24, font: 'Times New Roman' }),
+                  new TextRun({ text: dateValue, bold: true, size: 24, font: 'Times New Roman' }),
                 ],
               })
             ],
@@ -686,7 +687,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 8, after: 8, line: 276, lineRule: 'auto' },
-                children: [new TextRun({ text: officeInCharge, size: 16, font: 'Times New Roman' })],
+                children: [new TextRun({ text: officeInCharge, size: 24, font: 'Times New Roman' })],
               })
             ],
           }),
@@ -709,7 +710,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 120, after: 360 },
-      children: [new TextRun({ text: 'APPENDICES', bold: true, size: 28, font: 'Times New Roman' })],
+      children: [new TextRun({ text: 'APPENDICES', bold: true, size: 24, font: 'Times New Roman' })],
     }),
   ];
 
@@ -722,10 +723,12 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { before: 180, after: 90 },
-        children: [new TextRun({ text: 'WEEKLY WORK ACTIVITIES', bold: true, size: 20, font: 'Times New Roman' })],
+        children: [new TextRun({ text: 'WEEKLY WORK ACTIVITIES', bold: true, size: 24, font: 'Times New Roman' })],
       })
     );
   }
+
+  const narrativeLineSpacing = 360;
 
   appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek, index: number) => {
     if (layout === 'report') {
@@ -756,7 +759,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       alignment: AlignmentType.CENTER,
       spacing: { after: 80 },
       pageBreakBefore: index > 0,
-      children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 20, font: 'Times New Roman' })],
+      children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
     });
     children.push(
       currentWeekParagraph,
@@ -764,11 +767,11 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { before: 60, after: 120 },
-        children: [new TextRun({ text: `Table ${weekData.weekNumber}: Week ${weekData.weekNumber}`, bold: true, size: 20, font: 'Times New Roman' })],
+        children: [new TextRun({ text: `Table ${weekData.weekNumber}: Week ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
       }),
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { after: 240 },
+        spacing: { before: 0, after: 0, line: narrativeLineSpacing, lineRule: 'auto' },
         children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 24, font: 'Times New Roman' })],
       })
     );
@@ -806,7 +809,7 @@ function buildOtherAppendixPages(appendicesData: AppendicesData) {
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { before: 240, after: 240 },
-        children: [new TextRun({ text: app.title, bold: true, size: 28, font: 'Times New Roman' })],
+        children: [new TextRun({ text: app.title, bold: true, size: 24, font: 'Times New Roman' })],
       })
     );
 
@@ -819,7 +822,7 @@ function buildOtherAppendixPages(appendicesData: AppendicesData) {
         children.push(
           new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
-            spacing: { before: 120, after: 200 },
+            spacing: { before: 0, after: 0, line: 360, lineRule: 'auto' },
             children: [new TextRun({ text: String(data), size: 24, font: 'Times New Roman' })],
           })
         );
@@ -848,7 +851,7 @@ function buildAppendicesPage(appendicesData: AppendicesData) {
 }
 
 function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number | string) {
-  const TABLE_TEXT_SIZE = 20;
+  const TABLE_TEXT_SIZE = 24;
   const tableRows = [
     new TableRow({
       cantSplit: true,
@@ -938,7 +941,7 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
 }
 
 function buildDailyReportTable(activities: DailyActivity[], images: (string | AppendixImage)[] = []) {
-  const TABLE_TEXT_SIZE = 20;
+  const TABLE_TEXT_SIZE = 24;
   const tableRows = [
     new TableRow({
       cantSplit: true,
@@ -1030,7 +1033,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
 }
 
 function buildWeeklyReportTable(activities: DailyActivity[], images: (string | AppendixImage)[] = []) {
-  const TABLE_TEXT_SIZE = 20;
+  const TABLE_TEXT_SIZE = 24;
   const tableRows = [
     new TableRow({
       cantSplit: true,

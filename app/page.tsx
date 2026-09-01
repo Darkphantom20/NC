@@ -780,29 +780,7 @@ export default function Home() {
             <SectionBlock title="1. Acknowledgement" className="tour-acknowledgement">
               <div className="space-y-4 sm:space-y-5">
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
-                  <p className="mb-3 text-xs text-slate-300">Choose the line spacing used for the acknowledgement text in the Word output.</p>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                    <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
-                      <input
-                        type="radio"
-                        name="acknowledgement-spacing"
-                        checked={form.acknowledgementLineSpacing === 'single'}
-                        onChange={() => updateField('acknowledgementLineSpacing', 'single')}
-                        className="accent-cyan-400"
-                      />
-                      Single spacing
-                    </label>
-                    <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
-                      <input
-                        type="radio"
-                        name="acknowledgement-spacing"
-                        checked={form.acknowledgementLineSpacing === 'double'}
-                        onChange={() => updateField('acknowledgementLineSpacing', 'double')}
-                        className="accent-cyan-400"
-                      />
-                      Double spacing
-                    </label>
-                  </div>
+                  <p className="mb-3 text-xs text-slate-300">The generated Word document uses 1.5 line and paragraph spacing for the acknowledgement through reflection sections.</p>
                 </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Student Name</span>
