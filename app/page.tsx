@@ -161,7 +161,7 @@ function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-300/90">Guide</span>
               <span className="rounded-full border border-cyan-500/40 bg-cyan-500/15 px-2 py-0.5 text-[8px] sm:text-[9px] font-semibold text-cyan-200/90 backdrop-blur-sm">
-                {step.target?.replace('.', '') || 'Tip'}
+                {step.title || 'Tip'}
               </span>
             </div>
 
@@ -236,48 +236,59 @@ export default function Home() {
   const tourSteps: Step[] = [
     {
       target: '.tour-start-btn',
-      content: 'Welcome to the JRMSU Narrative Report Generator! Replace the sample values with your own data as you go through each section.',
+      title: 'Getting started',
+      content: 'Use the “Show Me How” button anytime to follow a guided walkthrough of the report builder and its sections.',
       skipBeacon: true,
     },
     {
       target: '.tour-form',
-      content: 'This is the main form area. Replace the sample text with your real OJT details, from the cover page down to the appendices.',
+      title: 'Main form',
+      content: 'This is the main report editor. Fill in your real internship details section by section before generating the final Word document.',
     },
     {
       target: '.tour-front-page',
-      content: 'Start with the Front Page section. Replace the current sample information with your training organization, location, student name, and school details.',
+      title: 'Front page',
+      content: 'Add your school, student details, company name, and cover-page information in the front page section.',
     },
     {
       target: '.tour-acknowledgement',
-      content: 'In the Acknowledgement section, replace the example message with your own gratitude and appreciation to the people who helped you.',
+      title: 'Acknowledgement',
+      content: 'Replace the sample appreciation text with your own thank-you message for the people and office that supported your training.',
     },
     {
       target: '.tour-introduction',
-      content: 'Use the Introduction section to replace the sample background with your actual host organization details, including the vision, mission, values, and services.',
+      title: 'Introduction',
+      content: 'Update the company background, vision, mission, values, and services with your actual host organization information.',
     },
     {
       target: '.tour-organization-analysis',
-      content: 'The Organization Analysis section should reflect your real evaluation of the company. Replace the sample strengths, weaknesses, opportunities, threats, and recommendations with your own.',
+      title: 'Organization analysis',
+      content: 'Describe your real assessment of the company using the strengths, weaknesses, opportunities, threats, and improvement recommendations sections.',
     },
     {
       target: '.tour-tasks-duties',
-      content: 'In Tasks and Duties, replace the sample tasks with your actual assigned duties and the procedures you followed during training.',
+      title: 'Tasks and duties',
+      content: 'Record the actual tasks assigned to you and the procedures you followed during your OJT or internship period.',
     },
     {
       target: '.tour-case-analysis',
-      content: 'The Case Analysis section should describe your real challenges, actions taken, and lessons learned. Replace all sample entries with your actual experience.',
+      title: 'Case analysis',
+      content: 'Write your real work challenges, solutions, lessons learned, and reflections based on your actual experience.',
     },
     {
       target: '.tour-reflections',
-      content: 'Use the Reflections section to replace the sample reflection with your honest evaluation and your real connection to your course and goals.',
+      title: 'Reflections',
+      content: 'Use this section to explain what you learned, how the internship helped you, and why it is relevant to your course and goals.',
     },
     {
       target: '.tour-appendices',
-      content: 'Finally, update the appendices by replacing the sample journal details, photos, and supporting documents with your actual records.',
+      title: 'Appendices',
+      content: 'Update the daily journal entries, add weekly activities, upload documentation, and provide your supporting files for the report appendix.',
     },
     {
       target: '.tour-generate-btn',
-      content: 'When all sample content has been replaced with your real information, click Generate Report to create your final DOCX file.',
+      title: 'Generate report',
+      content: 'When your entries are complete, click Generate Report to create the DOCX file with the final formatted narrative report.',
     }
   ];
 
@@ -499,6 +510,7 @@ export default function Home() {
           steps={tourSteps}
           run={runTour}
           continuous={true}
+          scrollToFirstStep={true}
           onEvent={handleJoyrideCallback}
           tooltipComponent={GuideTooltip}
           options={{
@@ -509,6 +521,10 @@ export default function Home() {
             overlayColor: 'rgba(15, 23, 42, 0.48)',
             beaconSize: 42,
             arrowColor: '#0f172a',
+            scrollOffset: 120,
+            scrollDuration: 500,
+            spotlightPadding: 18,
+            showProgress: true,
           }}
           styles={{
             arrow: {
