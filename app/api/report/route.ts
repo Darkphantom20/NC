@@ -48,6 +48,7 @@ interface AppendicesData {
   dailyJournal?: DailyJournalWeek[];
   certParticipation?: string;
   primeNarrative?: string;
+  primeReportImages?: (string | AppendixImage)[];
   resume?: string;
   grades?: string;
   medicalWaiver?: string;
@@ -809,6 +810,21 @@ function buildOtherAppendixPages(appendicesData: AppendicesData) {
     );
 
     if (app.isText) {
+      if (app.key === 'primeNarrative') {
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 200 },
+            children: [new TextRun({ text: String(data), size: 24, font: 'Times New Roman' })],
+          })
+        );
+        const primeImages = (appendicesData.primeReportImages || []).slice(0, 2);
+        if (primeImages.length > 0) {
+          children.push(buildImageGridTable(primeImages));
+        }
+        return;
+      }
+
       children.push(
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,

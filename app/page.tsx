@@ -76,6 +76,7 @@ const defaultForm = {
     ],
     certParticipation: '',
     primeNarrative: 'The PRIME seminar provided profound insights into professional workplace ethics and modern enterprise standards.',
+    primeReportImages: [] as { base64: string; detail: string }[],
     resume: '',
     grades: '',
     medicalWaiver: '',
@@ -476,6 +477,51 @@ export default function Home() {
       console.error(error);
       alert('The selected journal image could not be processed.');
     }
+  };
+
+  const handlePrimeReportImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageIndex: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG).');
+      return;
+    }
+    try {
+      const compressed = await compressImageDataUrl(file, 1400, 0.8);
+      setForm((prev) => {
+        const currentImages = [...(prev.appendices.primeReportImages || [])];
+        if (currentImages.length > 1 && imageIndex >= currentImages.length) {
+          alert('You can upload up to 2 images for the PRIME report.');
+          return prev;
+        }
+        currentImages[imageIndex] = { base64: compressed, detail: `PRIME report photo ${imageIndex + 1}` };
+        return {
+          ...prev,
+          appendices: {
+            ...prev.appendices,
+            primeReportImages: currentImages.slice(0, 2)
+          }
+        };
+      });
+    } catch (error) {
+      console.error(error);
+      alert('The selected PRIME report image could not be processed.');
+    }
+  };
+
+  const updatePrimeReportImageDetail = (imageIndex: number, detail: string) => {
+    setForm((prev) => {
+      const currentImages = [...(prev.appendices.primeReportImages || [])];
+      if (!currentImages[imageIndex]) return prev;
+      currentImages[imageIndex] = { ...currentImages[imageIndex], detail };
+      return {
+        ...prev,
+        appendices: {
+          ...prev.appendices,
+          primeReportImages: currentImages
+        }
+      };
+    });
   };
 
   const handleGenerate = async () => {
@@ -1063,10 +1109,47 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-200">
-                  <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">PRIME Report</span>
-                  <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={3} className={fieldClass} />
-                </label>
+                <div className="space-y-4">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">PRIME Report Narrative</span>
+                    <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={4} className={fieldClass} />
+                  </label>
+
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">PRIME Photo Documentation (Max 2)</p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {[0, 1].map((imageIndex) => {
+                        const currentImage = form.appendices.primeReportImages?.[imageIndex];
+                        return (
+                          <div key={imageIndex} className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                            <label className="block text-xs font-medium text-slate-200">
+                              <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-2">Picture {imageIndex + 1}</span>
+                              <input
+                                type="file"
+                                accept="image/png, image/jpeg, image/jpg, image/webp"
+                                onChange={(e) => handlePrimeReportImageUpload(e, imageIndex)}
+                                className={fileInputClass}
+                              />
+                            </label>
+
+                            {currentImage && (
+                              <div className="mt-3 space-y-2">
+                                <img src={currentImage.base64} alt={`PRIME report photo ${imageIndex + 1}`} className="h-32 w-full rounded-lg object-cover border border-slate-700" />
+                                <input
+                                  type="text"
+                                  value={currentImage.detail}
+                                  onChange={(e) => updatePrimeReportImageDetail(imageIndex, e.target.value)}
+                                  placeholder="Caption below photo"
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2 pt-2">
                   <FileUpload label="Certificate of Participation (PRIME)" onChange={(e) => handleFileUpload(e, 'certParticipation')} />
                   <FileUpload label="Resume and Application Letter" onChange={(e) => handleFileUpload(e, 'resume')} />
