@@ -795,63 +795,75 @@ export default function Home() {
                             )}
                           </div>
 
-                          <div className="min-w-0 max-w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
-                            <div className="min-w-0 w-full">
-                              <div className="grid grid-cols-[0.9fr_1.8fr_2.2fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
-                                <div className="bg-slate-900/80 px-3 py-2">Date</div>
-                                <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
-                                <div className="bg-slate-900/80 px-3 py-2">Documentation</div>
-                              </div>
+                          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
+                            <div className="hidden sm:grid sm:grid-cols-[0.9fr_1.8fr_2.2fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                              <div className="bg-slate-900/80 px-3 py-2">Date</div>
+                              <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
+                              <div className="bg-slate-900/80 px-3 py-2">Documentation</div>
+                            </div>
 
+                            <div className="space-y-3 p-2 sm:space-y-0 sm:p-0">
                               {week.activities.map((act, dayIdx) => (
-                                <div key={dayIdx} className="grid min-w-0 grid-cols-[0.9fr_1.8fr_2.2fr] gap-px border-t border-slate-800 bg-slate-950/40 sm:gap-0 sm:gap-x-3">
-                                  <div className="min-w-0 border-r border-slate-800 p-3">
-                                    <div className="flex items-start gap-2">
-                                      <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
-                                      <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="mt-1 rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1.5 text-[10px] font-bold text-rose-300 transition hover:bg-rose-500/20" aria-label={`Delete date ${act.date || `Day ${dayIdx + 1}`}`}>
-                                        ✕
-                                      </button>
+                                <div key={dayIdx} className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/40 sm:rounded-none sm:border-0 sm:border-t sm:bg-slate-950/40">
+                                  <div className="grid gap-0 sm:grid-cols-[0.9fr_1.8fr_2.2fr] sm:gap-px">
+                                    <div className="border-b border-slate-800 p-3 sm:border-b-0 sm:border-r">
+                                      <div className="mb-2 flex items-center justify-between sm:hidden">
+                                        <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">Date</span>
+                                        <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[9px] font-bold text-rose-300 transition hover:bg-rose-500/20" aria-label={`Delete date ${act.date || `Day ${dayIdx + 1}`}`}>
+                                          ✕
+                                        </button>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
+                                        <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="hidden rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1.5 text-[10px] font-bold text-rose-300 transition hover:bg-rose-500/20 sm:inline-flex" aria-label={`Delete date ${act.date || `Day ${dayIdx + 1}`}`}>
+                                          ✕
+                                        </button>
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div className="min-w-0 border-r border-slate-800 p-3">
-                                    <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Accomplishment" />
-                                  </div>
-                                  <div className="min-w-0 p-3">
-                                    <div className="space-y-2">
-                                      <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => {
-                                        const targetIndex = dayIdx;
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        if (!file.type.startsWith('image/')) {
-                                          alert('Please upload an image file (PNG, JPG).');
-                                          return;
-                                        }
-                                        compressImageDataUrl(file, 1200, 0.7).then((compressed) => {
-                                          setForm((prev) => {
-                                            const newJournal = [...prev.appendices.dailyJournal];
-                                            const imageEntry = { base64: compressed, detail: `Documentation for ${act.day || 'Daily activity'}` };
-                                            const isReportLayout = prev.appendices.dailyJournalLayout === 'report';
-                                            
-                                            const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
-                                            const existingImages = [...((newJournal[weekIdx] as any)[imageKey] || [])];
-                                            const imageIndex = Math.min(targetIndex, existingImages.length);
-                                            existingImages[imageIndex] = imageEntry;
-                                            (newJournal[weekIdx] as any)[imageKey] = existingImages;
-                                            
-                                            return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
-                                          });
-                                        }).catch(() => alert('The selected journal image could not be processed.'));
-                                      }} className={`${fileInputClass} max-w-full`} />
-                                      {(() => {
-                                        const isReportLayout = form.appendices.dailyJournalLayout === 'report';
-                                        const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
-                                        const layoutImages = (week as any)[imageKey];
-                                        return layoutImages && layoutImages[dayIdx] && (
-                                          <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-2">
-                                            <img src={layoutImages[dayIdx].base64} alt="Documentation" className="h-20 w-full rounded-md object-cover" />
-                                          </div>
-                                        );
-                                      })()}
+
+                                    <div className="border-b border-slate-800 p-3 sm:border-b-0 sm:border-r">
+                                      <span className="mb-2 block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:hidden">Accomplishment</span>
+                                      <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Accomplishment" />
+                                    </div>
+
+                                    <div className="p-3">
+                                      <span className="mb-2 block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:hidden">Documentation</span>
+                                      <div className="space-y-2">
+                                        <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => {
+                                          const targetIndex = dayIdx;
+                                          const file = e.target.files?.[0];
+                                          if (!file) return;
+                                          if (!file.type.startsWith('image/')) {
+                                            alert('Please upload an image file (PNG, JPG).');
+                                            return;
+                                          }
+                                          compressImageDataUrl(file, 1200, 0.7).then((compressed) => {
+                                            setForm((prev) => {
+                                              const newJournal = [...prev.appendices.dailyJournal];
+                                              const imageEntry = { base64: compressed, detail: `Documentation for ${act.day || 'Daily activity'}` };
+                                              const isReportLayout = prev.appendices.dailyJournalLayout === 'report';
+                                              
+                                              const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
+                                              const existingImages = [...((newJournal[weekIdx] as any)[imageKey] || [])];
+                                              const imageIndex = Math.min(targetIndex, existingImages.length);
+                                              existingImages[imageIndex] = imageEntry;
+                                              (newJournal[weekIdx] as any)[imageKey] = existingImages;
+                                              
+                                              return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
+                                            });
+                                          }).catch(() => alert('The selected journal image could not be processed.'));
+                                        }} className={`${fileInputClass} max-w-full`} />
+                                        {(() => {
+                                          const isReportLayout = form.appendices.dailyJournalLayout === 'report';
+                                          const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
+                                          const layoutImages = (week as any)[imageKey];
+                                          return layoutImages && layoutImages[dayIdx] && (
+                                            <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-2">
+                                              <img src={layoutImages[dayIdx].base64} alt="Documentation" className="h-20 w-full rounded-md object-cover" />
+                                            </div>
+                                          );
+                                        })()}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
