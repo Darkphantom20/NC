@@ -139,7 +139,7 @@ export async function POST(request: Request) {
         },
         children: [
           ...buildCoverPage(data),
-          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
+          new Paragraph({ pageBreakBefore: true }),
           ...buildAcknowledgementPage(data, compactSectionLayout),
           new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('INTRODUCTION', [
@@ -812,17 +812,17 @@ function buildOtherAppendixPages(appendicesData: AppendicesData) {
 
     if (app.isText) {
       if (app.key === 'primeNarrative') {
-        children.push(
-          new Paragraph({
-            alignment: AlignmentType.JUSTIFIED,
-            spacing: { after: 200 },
-            children: [new TextRun({ text: String(data), size: 24, font: 'Times New Roman' })],
-          })
-        );
         const primeImages = (appendicesData.primeReportImages || []).slice(0, 2);
         if (primeImages.length > 0) {
           children.push(buildImageGridTable(primeImages));
         }
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { before: 120, after: 200 },
+            children: [new TextRun({ text: String(data), size: 24, font: 'Times New Roman' })],
+          })
+        );
         return;
       }
 
