@@ -806,7 +806,12 @@ export default function Home() {
                               {week.activities.map((act, dayIdx) => (
                                 <div key={dayIdx} className="grid min-w-0 grid-cols-[0.9fr_1.8fr_2.2fr] gap-px border-t border-slate-800 bg-slate-950/40 sm:gap-0 sm:gap-x-3">
                                   <div className="min-w-0 border-r border-slate-800 p-3">
-                                    <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
+                                    <div className="flex items-start gap-2">
+                                      <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
+                                      <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="mt-1 rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1.5 text-[10px] font-bold text-rose-300 transition hover:bg-rose-500/20" aria-label={`Delete date ${act.date || `Day ${dayIdx + 1}`}`}>
+                                        ✕
+                                      </button>
+                                    </div>
                                   </div>
                                   <div className="min-w-0 border-r border-slate-800 p-3">
                                     <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Accomplishment" />
