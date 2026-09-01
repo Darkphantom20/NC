@@ -260,77 +260,78 @@ function buildCoverPage(data: any): Paragraph[] {
   const studentDegree = data.studentDegree || '';
   const adviserName = data.submittedToName || '';
   const adviserTitle = data.submittedToTitle || '';
+  const FRONT_PAGE_TEXT_SIZE = 20;
 
   return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 1440, after: 360 },
-      children: [new TextRun({ text: 'A Narrative Report on the', size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: 'A Narrative Report on the', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 360, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'On-the-Job Training conducted at', size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: 'On-the-Job Training conducted at', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 180, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: org, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: org, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 1440, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: location, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: location, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 360, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'Presented to the faculty of', size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: 'Presented to the faculty of', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 1440, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: faculty, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: faculty, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 360, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'In partial fulfillment of the requirements for the degree of', size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: 'In partial fulfillment of the requirements for the degree of', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 2160, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: degree, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: degree, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 180, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'Submitted by:', size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: 'Submitted by:', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 180, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: student, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: student, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 1080, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: studentDegree, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: studentDegree, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 180, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'Submitted to:', size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: 'Submitted to:', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 180, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: adviserName, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: adviserName, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 0, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: adviserTitle, size: 12, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: adviserTitle, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
   ];
 }
