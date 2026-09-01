@@ -28,6 +28,7 @@ const defaultForm = {
   submittedToTitle: 'Associate Dean of the College of Computing Studies',
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
   sectionLayout: 'compact',
+  acknowledgementLineSpacing: 'single',
   background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
   vision: 'To be a premier provider of innovative, reliable, and secure technological solutions and digital services.',
   mission: 'To empower the organization through efficient IT infrastructure, responsive technical support, and robust systems development.',
@@ -253,53 +254,53 @@ export default function Home() {
     {
       target: '.tour-start-btn',
       title: 'Start here',
-      content: 'Use this button whenever you want a quick walkthrough of the report sections in order.',
+      content: 'Use this button to review the steps. Replace all example information with your real OJT details as you go.',
       skipBeacon: true,
     },
     {
       target: '.tour-front-page',
       title: 'Front page',
-      content: 'Start with the front page and enter the school, company, and cover details for the report.',
+      content: 'Replace the sample school, company, and cover details with your actual report information while keeping the page polished and presentable.',
     },
     {
       target: '.tour-acknowledgement',
       title: 'Acknowledgement',
-      content: 'Write your appreciation message for the people and office that supported your internship.',
+      content: 'Replace the sample appreciation text with your real acknowledgement and keep the wording professional and sincere.',
     },
     {
       target: '.tour-introduction',
       title: 'Introduction',
-      content: 'Describe the company background, mission, services, and overview in the introduction section.',
+      content: 'Edit the sample company background, mission, and services so they reflect your actual host office and training experience.',
     },
     {
       target: '.tour-organization-analysis',
       title: 'Organization analysis',
-      content: 'Assess the company using the strengths, weaknesses, opportunities, threats, and recommendations.',
+      content: 'Replace the example strengths, weaknesses, opportunities, and recommendations with your own analysis based on the actual office.',
     },
     {
       target: '.tour-tasks-duties',
       title: 'Tasks and duties',
-      content: 'Record the actual work tasks, responsibilities, and procedures you performed during your training.',
+      content: 'Update the sample tasks and procedures with the true work you performed during your internship.',
     },
     {
       target: '.tour-case-analysis',
       title: 'Case analysis',
-      content: 'Explain the work challenges, solutions, and lessons learned from your internship experience.',
+      content: 'Replace the sample challenges and solutions with your real problems, actions taken, and lessons learned.',
     },
     {
       target: '.tour-reflections',
       title: 'Reflections',
-      content: 'Summarize what you learned and how the experience relates to your course and goals.',
+      content: 'Change the sample reflection content to your actual learning experience and how it connects to your course and goals.',
     },
     {
       target: '.tour-appendices',
       title: 'Appendices',
-      content: 'Complete your daily journal, weekly activities, and supporting documentation in the appendix section.',
+      content: 'Replace the example weekly entries and attachments with your actual daily journal, proofs, and supporting documentation.',
     },
     {
       target: '.tour-generate-btn',
       title: 'Generate report',
-      content: 'When everything is complete, click Generate Report to create the final DOCX output.',
+      content: 'When all sample entries are replaced with your real details, generate the final Word document in its clean, presentable format.',
     }
   ];
 
@@ -675,7 +676,7 @@ export default function Home() {
                 Narrative Report Generator
               </h1>
               <p className="text-sm text-slate-300">
-                Replace the sample details below with your actual OJT information before generating the report.
+                Replace the sample/example details in each form with your actual OJT information while keeping the final Word output neat and presentable.
               </p>
             </div>
             
@@ -778,6 +779,31 @@ export default function Home() {
 
             <SectionBlock title="1. Acknowledgement" className="tour-acknowledgement">
               <div className="space-y-4 sm:space-y-5">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
+                  <p className="mb-3 text-xs text-slate-300">Choose the line spacing used for the acknowledgement text in the Word output.</p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
+                      <input
+                        type="radio"
+                        name="acknowledgement-spacing"
+                        checked={form.acknowledgementLineSpacing === 'single'}
+                        onChange={() => updateField('acknowledgementLineSpacing', 'single')}
+                        className="accent-cyan-400"
+                      />
+                      Single spacing
+                    </label>
+                    <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
+                      <input
+                        type="radio"
+                        name="acknowledgement-spacing"
+                        checked={form.acknowledgementLineSpacing === 'double'}
+                        onChange={() => updateField('acknowledgementLineSpacing', 'double')}
+                        className="accent-cyan-400"
+                      />
+                      Double spacing
+                    </label>
+                  </div>
+                </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Student Name</span>
                   <input value={form.studentName} onChange={(e) => updateField('studentName', e.target.value)} className={fieldClass} />
