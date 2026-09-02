@@ -150,7 +150,7 @@ export async function POST(request: Request) {
             { title: 'Objectives', content: data.objectives, isBullet: true },
             { title: 'Core Values', content: data.coreValues, isBullet: true },
             { title: 'Products and Services Offered', content: data.services },
-          ], compactSectionLayout, acknowledgementLineSpacing),
+          ], compactSectionLayout, acknowledgementLineSpacing, data.organizationStructureImage),
           new Paragraph({ pageBreakBefore: !compactSectionLayout }),
           ...buildSectionPage('ORGANIZATION / COMPANY ANALYSIS', [
             { title: 'Strengths', content: data.strengths, isBullet: true },
@@ -395,7 +395,7 @@ function buildAcknowledgementPage(data: any, compact = false, lineSpacing = 240)
   return paragraphs;
 }
 
-function buildSectionPage(title: string, sections: SectionData[], compact = false, lineSpacing = 240): Paragraph[] {
+function buildSectionPage(title: string, sections: SectionData[], compact = false, lineSpacing = 240, imageData?: string): Paragraph[] {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -439,6 +439,22 @@ function buildSectionPage(title: string, sections: SectionData[], compact = fals
       );
     }
   });
+
+  const imageBuffer = parseBase64Image(imageData || '');
+  if (imageBuffer) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 120, after: 60 },
+        children: [new TextRun({ text: 'Organization Structure', bold: true, size: 24, font: 'Times New Roman' })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 120 },
+        children: [new ImageRun({ type: 'png', data: imageBuffer, transformation: { width: 520, height: 360 } })],
+      })
+    );
+  }
 
   return children;
 }

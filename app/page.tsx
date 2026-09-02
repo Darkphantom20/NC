@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle, X } from 'lucide-react';
+import { HelpCircle, ImagePlus, X } from 'lucide-react';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
 import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
@@ -35,6 +35,7 @@ const defaultForm = {
   objectives: 'To streamline administrative processes and ensure system reliability.',
   coreValues: 'Integrity, Excellence, and Commitment to Public Service.',
   services: 'Provide reliable technical support and ICT services to the institution and its stakeholders.',
+  organizationStructureImage: '',
   strengths: 'The organization possesses highly skilled and dedicated technical personnel capable of handling complex network and software demands.',
   weaknesses: 'Internal operations occasionally face limitations due to aging hardware upgrades and constrained resource allocations.',
   opportunities: 'There are significant external prospects for adopting advanced cloud solutions and process automation technologies.',
@@ -448,6 +449,22 @@ export default function Home() {
     }
   };
 
+  const handleOrganizationStructureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG).');
+      return;
+    }
+    try {
+      const compressed = await compressImageDataUrl(file, 1600, 0.8);
+      updateField('organizationStructureImage', compressed);
+    } catch (error) {
+      console.error(error);
+      alert('The organization structure image could not be processed.');
+    }
+  };
+
   const handleJournalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, weekIndex: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -826,6 +843,43 @@ export default function Home() {
                     <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">Services</span>
                     <textarea value={form.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
                   </label>
+                </div>
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300/80">OJT Area Reference</p>
+                      <p className="mt-1 text-sm text-slate-300">Attach the organization structure to show the people in your specific OJT area.</p>
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-400/10 px-4 py-2.5 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-400/20">
+                      <ImagePlus size={17} aria-hidden="true" />
+                      {form.organizationStructureImage ? 'Replace image' : 'Attach image'}
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg, image/webp"
+                        onChange={handleOrganizationStructureUpload}
+                        className="sr-only"
+                      />
+                    </label>
+                  </div>
+                  {form.organizationStructureImage && (
+                    <div className="mt-4 overflow-hidden rounded-xl border border-slate-700 bg-slate-950/70">
+                      <img
+                        src={form.organizationStructureImage}
+                        alt="Uploaded organization structure"
+                        className="mx-auto max-h-80 w-full object-contain"
+                      />
+                      <div className="flex items-center justify-between gap-3 border-t border-slate-700 px-3 py-2">
+                        <span className="text-xs text-emerald-300">Image attached</span>
+                        <button
+                          type="button"
+                          onClick={() => updateField('organizationStructureImage', '')}
+                          className="text-xs font-semibold text-rose-300 transition hover:text-rose-200"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </SectionBlock>
