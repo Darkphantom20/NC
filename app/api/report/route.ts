@@ -481,7 +481,7 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
         cell1Children.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
+            spacing: JOURNAL_SPACING,
             children: [
               new ImageRun({
                 type: 'png',
@@ -495,7 +495,7 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
           cell1Children.push(
             new Paragraph({
               alignment: AlignmentType.CENTER,
-              spacing: { after: 120 },
+              spacing: JOURNAL_SPACING,
               children: [new TextRun({ text: detail_1, size: 24, font: 'Times New Roman' })],
             })
           );
@@ -513,7 +513,7 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
         cell2Children.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
+            spacing: JOURNAL_SPACING,
             children: [
               new ImageRun({
                 type: 'png',
@@ -527,7 +527,7 @@ function buildImageGridTable(images: (string | AppendixImage)[]) {
           cell2Children.push(
             new Paragraph({
               alignment: AlignmentType.CENTER,
-              spacing: { after: 120 },
+              spacing: JOURNAL_SPACING,
               children: [new TextRun({ text: detail_2, size: 24, font: 'Times New Roman' })],
             })
           );
@@ -722,11 +722,13 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
   ];
 }
 
+const JOURNAL_SPACING = { before: 180, after: 180, line: 360, lineRule: 'auto' as const };
+
 function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 120, after: 360 },
+      spacing: JOURNAL_SPACING,
       children: [new TextRun({ text: 'APPENDICES', bold: true, size: 24, font: 'Times New Roman' })],
     }),
   ];
@@ -739,13 +741,11 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     children.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 180, after: 90 },
+        spacing: JOURNAL_SPACING,
         children: [new TextRun({ text: 'WEEKLY WORK ACTIVITIES', bold: true, size: 24, font: 'Times New Roman' })],
       })
     );
   }
-
-  const narrativeLineSpacing = 360;
 
   appendicesData.dailyJournal.forEach((weekData: DailyJournalWeek, index: number) => {
     if (layout === 'report') {
@@ -753,7 +753,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       const reportImages = weekData.reportLayoutImages || weekData.images || [];
       const weekParagraph = new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { after: 120 },
+        spacing: JOURNAL_SPACING,
         pageBreakBefore: index > 0,
         children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
       });
@@ -761,7 +761,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
         weekParagraph,
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 120 },
+          spacing: JOURNAL_SPACING,
           children: [new TextRun({ text: 'WEEKLY ACCOMPLISHMENT REPORT', bold: true, size: 24, font: 'Times New Roman' })],
         }),
         buildDailyReportTable(weekData.activities, reportImages),
@@ -774,7 +774,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     const currentImages = weekData.currentLayoutImages || weekData.images || [];
     const currentWeekParagraph = new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 80 },
+      spacing: JOURNAL_SPACING,
       pageBreakBefore: index > 0,
       children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
     });
@@ -783,12 +783,12 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
       buildCurrentWeeklyTable(weekData.activities, weekData.totalHours),
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 120 },
+        spacing: JOURNAL_SPACING,
         children: [new TextRun({ text: `Table ${weekData.weekNumber}: Week ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
       }),
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 0, after: 0, line: narrativeLineSpacing, lineRule: 'auto' },
+        spacing: JOURNAL_SPACING,
         children: [new TextRun({ text: weekData.narrative || 'No narrative provided.', size: 24, font: 'Times New Roman' })],
       })
     );
@@ -873,10 +873,10 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
     new TableRow({
       cantSplit: true,
       children: [
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 28, after: 28 }, children: [new TextRun({ text: 'DAY', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 28, after: 28 }, children: [new TextRun({ text: 'DATE', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 28, after: 28 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 46, type: WidthType.PERCENTAGE } }),
-        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 28, after: 28 }, children: [new TextRun({ text: 'NO. OF WORKING HOURS', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 16, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'DAY', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'DATE', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 46, type: WidthType.PERCENTAGE } }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'NO. OF WORKING HOURS', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 16, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -890,12 +890,12 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
         children: [
           new TableCell({
             width: { size: 16, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: act.day || '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: act.day || '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })],
             verticalAlign: 'center',
           }),
           new TableCell({
             width: { size: 18, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: act.date || '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: act.date || '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })],
             verticalAlign: 'center',
           }),
           new TableCell({
@@ -904,12 +904,12 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: 'No accomplishment added.', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'No accomplishment added.', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })];
               }
               return lines.map((line, idx) =>
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
-                  spacing: { before: 14, after: idx === lines.length - 1 ? 14 : 8 },
+                  spacing: JOURNAL_SPACING,
                   children: [new TextRun({ text: line.trim(), size: TABLE_TEXT_SIZE, font: 'Times New Roman' })]
                 })
               );
@@ -917,7 +917,7 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
           }),
           new TableCell({
             width: { size: 14, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 18, after: 18 }, children: [new TextRun({ text: String(act.hours ?? ''), size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: String(act.hours ?? ''), size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })],
             verticalAlign: 'center',
           }),
         ],
@@ -931,10 +931,10 @@ function buildCurrentWeeklyTable(activities: DailyActivity[], totalHours: number
       children: [
         new TableCell({ 
           columnSpan: 3, 
-          children: [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 24, after: 24 }, children: [new TextRun({ text: 'TOTAL NUMBER OF HOURS', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })] 
+          children: [new Paragraph({ alignment: AlignmentType.LEFT, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'TOTAL NUMBER OF HOURS', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })] 
         }),
         new TableCell({ 
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 24, after: 24 }, children: [new TextRun({ text: String(totalHours), bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })] 
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: String(totalHours), bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })] 
         }),
       ],
     })
@@ -963,9 +963,9 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
     new TableRow({
       cantSplit: true,
       children: [
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DATE', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 34, type: WidthType.PERCENTAGE } }),
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 48, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'DATE', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 34, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 48, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -986,7 +986,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
         imageCellChildren.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { before: 0, after: 0 },
+            spacing: JOURNAL_SPACING,
             children: [new ImageRun({ type: 'png', data: buf, transformation: { width: 260, height: 170 } })],
           })
         );
@@ -995,7 +995,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
           imageCellChildren.push(
             new Paragraph({
               alignment: AlignmentType.CENTER,
-              spacing: { before: 0, after: 0 },
+              spacing: JOURNAL_SPACING,
               children: [new TextRun({ text: detail, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })],
             })
           );
@@ -1007,26 +1007,26 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
       new TableRow({
         cantSplit: true,
         children: [
-          new TableCell({ margins: { top: 12, bottom: 12, left: 18, right: 18 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: act.date || act.day || '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
+          new TableCell({ margins: { top: 12, bottom: 12, left: 18, right: 18 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: act.date || act.day || '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({
             margins: { top: 12, bottom: 12, left: 18, right: 18 },
             children: (() => {
               const accomplishmentText = act.accomplishment || 'No accomplishment added.';
               const lines = accomplishmentText.split('\n').filter(line => line.trim());
               if (lines.length === 0) {
-                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 0, after: 0 }, bullet: { level: 0 }, children: [new TextRun({ text: 'No accomplishment added.', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })];
+                return [new Paragraph({ alignment: AlignmentType.LEFT, spacing: JOURNAL_SPACING, bullet: { level: 0 }, children: [new TextRun({ text: 'No accomplishment added.', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })];
               }
               return lines.map((line, idx) =>
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
-                  spacing: { before: 0, after: idx === lines.length - 1 ? 0 : 0 },
+                  spacing: JOURNAL_SPACING,
                   bullet: { level: 0 },
                   children: [new TextRun({ text: line.trim(), size: TABLE_TEXT_SIZE, font: 'Times New Roman' })]
                 })
               );
             })()
           }),
-          new TableCell({ margins: { top: 12, bottom: 12, left: 18, right: 18 }, children: imageCellChildren.length > 0 ? imageCellChildren : [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })] }),
+          new TableCell({ margins: { top: 12, bottom: 12, left: 18, right: 18 }, children: imageCellChildren.length > 0 ? imageCellChildren : [new Paragraph({ alignment: AlignmentType.CENTER, spacing: JOURNAL_SPACING, children: [new TextRun({ text: '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })] }),
         ],
       })
     );
