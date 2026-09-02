@@ -269,9 +269,19 @@ export default function Home() {
       content: 'Replace the sample appreciation text with your real acknowledgement and keep the wording professional and sincere.',
     },
     {
+      target: '.tour-page-layout',
+      title: 'Page Layout Style',
+      content: 'Choose Compact layout to flow sections together, or One section per page to start each report section on its own page in the generated Word document.',
+    },
+    {
       target: '.tour-introduction',
       title: 'Introduction',
-      content: 'Edit the sample company background, mission, and services so they reflect your actual host office and training experience.',
+      content: 'Edit the sample company background, mission, objectives, core values, and services so they reflect your actual host office and training experience.',
+    },
+    {
+      target: '.tour-organization-structure',
+      title: 'Organization structure',
+      content: 'Attach the organization structure image that shows the people in your specific OJT area. It will be centered in the Introduction section of the generated report.',
     },
     {
       target: '.tour-organization-analysis',
@@ -844,7 +854,7 @@ export default function Home() {
                     <textarea value={form.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
                   </label>
                 </div>
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
+                <div className="tour-organization-structure rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300/80">OJT Area Reference</p>
