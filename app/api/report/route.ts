@@ -400,26 +400,48 @@ function buildAcknowledgementPage(data: any, compact = false, lineSpacing = 240)
 function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240): Paragraph[] {
   const rawContent = data.tableOfContents || '';
   const fallbackEntries = [
-    { title: 'Introduction', page: '1' },
-    { title: 'Organization Analysis', page: '2' },
-    { title: 'Tasks & Duties', page: '3' },
-    { title: 'Case Analysis', page: '4' },
-    { title: 'Reflections', page: '5' },
-    { title: 'Appendices', page: '6' },
+    { title: '1. Introduction', page: '1' },
+    { title: '1.1 Background of the Organization', page: '1' },
+    { title: '1.2 Vision', page: '1' },
+    { title: '1.3 Mission', page: '1' },
+    { title: '1.4 Objectives', page: '1' },
+    { title: '1.5 Core Values', page: '1' },
+    { title: '1.6 Products and Services Offered', page: '1' },
+    { title: '2. Organization / Company Analysis', page: '2' },
+    { title: '2.1 Strengths', page: '2' },
+    { title: '2.2 Weaknesses', page: '2' },
+    { title: '2.3 Opportunities', page: '2' },
+    { title: '2.4 Threats', page: '2' },
+    { title: '2.5 Recommendations for Improvement', page: '2' },
+    { title: '3. Tasks and Duties', page: '3' },
+    { title: '3.1 Assigned Tasks and Responsibilities', page: '3' },
+    { title: '3.2 Duties and Procedures Conformed', page: '3' },
+    { title: '4. Case Analysis', page: '4' },
+    { title: '4.1 Issue / Problem 1', page: '4' },
+    { title: '4.2 Strategy/Action Undertaken for Problem 1', page: '4' },
+    { title: '4.3 Issue / Problem 2', page: '4' },
+    { title: '4.4 Strategy/Action Undertaken for Problem 2', page: '4' },
+    { title: '4.5 Lessons Learned from the Situations', page: '4' },
+    { title: '5. Reflections', page: '5' },
+    { title: '5.1 Self-Evaluation', page: '5' },
+    { title: '5.2 Relevancy of the Organization', page: '5' },
+    { title: '6. Appendices', page: '6' },
   ];
 
   const parsedEntries = ensureArray(rawContent).reduce<{ title: string; page: string }[]>((list, line) => {
     const trimmed = line.trim();
     if (!trimmed) return list;
 
-    const match = trimmed.match(/^(\d+\.?\s*)?(.*?)(?:\s+\t|\s+)(\d+)$|^(.*?)(?:\s+\d+)$|^(.*)$/);
-    const extractedTitle = match?.[2] || match?.[4] || match?.[5] || trimmed;
-    const extractedPage = match?.[3] || (trimmed.match(/(\d+)$/)?.[1] ?? '');
+    const match = trimmed.match(/^(.*?)(?:\s+)(\d+)$/) || trimmed.match(/^(.*)$/);
+    const extractedTitle = (match?.[1] || trimmed)
+      .replace(/\s*[:.-]+\s*$/, '')
+      .trim();
+    const extractedPage = match?.[2] || String(list.length + 1);
 
-    if (extractedTitle && extractedTitle.trim()) {
+    if (extractedTitle) {
       list.push({
-        title: extractedTitle.trim().replace(/^\d+\.\s*/, '').replace(/\s*[:.-]+\s*$/, ''),
-        page: extractedPage || String(list.length + 1),
+        title: extractedTitle,
+        page: extractedPage,
       });
     }
 
@@ -436,21 +458,22 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
     }),
   ];
 
-  entries.forEach((entry, index) => {
-    const titleText = `${index + 1}. ${entry.title}`;
-    const fillLength = Math.max(1, 80 - titleText.length);
+  entries.forEach((entry) => {
+    const titleText = entry.title;
+    const fillLength = Math.max(1, 90 - titleText.length);
     const filler = '.'.repeat(fillLength);
+    const indent = titleText.match(/^\d+\.\d+\s+/) ? 500 : 180;
 
     paragraphs.push(
       new Paragraph({
         alignment: AlignmentType.LEFT,
-        indent: { left: 720 },
+        indent: { left: indent },
         tabStops: [{ type: 'right', position: 9000 }],
-        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
+        spacing: { before: 0, after: 4, line: lineSpacing, lineRule: 'auto' },
         children: [
           new TextRun({ text: `${titleText}${filler}`, size: 22, font: 'Times New Roman' }),
           new TextRun({ text: '\t', size: 22, font: 'Times New Roman' }),
-          new TextRun({ text: entry.page, size: 22, font: 'Times New Roman' }),
+          new TextRun({ text: entry.page, size: 22, font: 'Times New Roman', bold: false }),
         ],
       })
     );
