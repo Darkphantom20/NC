@@ -640,9 +640,15 @@ function getSectionPageMap(data: any): Record<string, number> {
     pageMap['school ojt narrative'] = pageMap['school ojt introduction'];
   }
 
-  pageMap.appendices = compact
-    ? narrativeStartPage + Math.max(1, Math.ceil(lineCursor / ESTIMATED_PAGE_LINES))
-    : pageCursor;
+  if (compact) {
+    const narrativePages = Object.entries(pageMap)
+      .filter(([key]) => key !== 'appendices')
+      .map(([, page]) => page);
+    const estimatedLastNarrativePage = narrativeStartPage + Math.max(1, Math.ceil(lineCursor / ESTIMATED_PAGE_LINES)) - 1;
+    pageMap.appendices = Math.max(estimatedLastNarrativePage, ...narrativePages) + 1;
+  } else {
+    pageMap.appendices = pageCursor;
+  }
   return pageMap;
 }
 
