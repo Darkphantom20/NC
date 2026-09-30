@@ -426,19 +426,37 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
         alignment: AlignmentType.LEFT,
         indent: { left: 720 },
         spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '1. Acknowledgement', size: 22, font: 'Times New Roman' })],
+        children: [new TextRun({ text: '1. Introduction', size: 22, font: 'Times New Roman' })],
       }),
       new Paragraph({
         alignment: AlignmentType.LEFT,
         indent: { left: 720 },
         spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '2. Introduction', size: 22, font: 'Times New Roman' })],
+        children: [new TextRun({ text: '2. Organization Analysis', size: 22, font: 'Times New Roman' })],
       }),
       new Paragraph({
         alignment: AlignmentType.LEFT,
         indent: { left: 720 },
         spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '3. Organization Analysis', size: 22, font: 'Times New Roman' })],
+        children: [new TextRun({ text: '3. Tasks & Duties', size: 22, font: 'Times New Roman' })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.LEFT,
+        indent: { left: 720 },
+        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
+        children: [new TextRun({ text: '4. Case Analysis', size: 22, font: 'Times New Roman' })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.LEFT,
+        indent: { left: 720 },
+        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
+        children: [new TextRun({ text: '5. Reflections', size: 22, font: 'Times New Roman' })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.LEFT,
+        indent: { left: 720 },
+        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
+        children: [new TextRun({ text: '6. Appendices', size: 22, font: 'Times New Roman' })],
       })
     );
   }
