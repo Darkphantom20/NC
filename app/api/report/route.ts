@@ -213,7 +213,7 @@ export async function POST(request: Request) {
           }),
         } : undefined,
         children: [
-          ...(!compactSectionLayout ? [new Paragraph({ pageBreakBefore: true })] : []),
+          new Paragraph({ pageBreakBefore: true, children: [new TextRun({ text: ' ', size: 2, font: 'Times New Roman' })] }),
           ...dailyJournalContent,
         ],
       });
@@ -1092,7 +1092,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
       left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
       right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
       insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+          new Paragraph({ pageBreakBefore: true, children: [new TextRun({ text: ' ', size: 2, font: 'Times New Roman' })] }),
     },
     rows: [
       new TableRow({
@@ -1212,6 +1212,7 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
+      pageBreakBefore: true,
       spacing: { before: 120, after: 360 },
       children: [new TextRun({ text: 'APPENDICES', bold: true, size: 24, font: 'Times New Roman' })],
     }),
