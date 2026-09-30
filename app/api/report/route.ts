@@ -401,14 +401,24 @@ function buildAcknowledgementPage(data: any, compact = false, lineSpacing = 240)
 
 function normalizeTOCKey(value: string): string {
   return value
+    .replace(/^\s*\d+(?:\.\d+)*[.)]?\s*/, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .replace(/\b(and|of|the|for|from|to|a)\b/g, ' ')
     .trim();
 }
 
-function estimateSectionPageCount(sectionData: SectionData[], hasImage = false): number {
-  let totalLines = 2;
+const ESTIMATED_PAGE_LINES = 44;
+const BODY_CHARACTERS_PER_LINE = 84;
+
+function estimateWrappedLines(text: string, charactersPerLine = BODY_CHARACTERS_PER_LINE): number {
+  return text.split(/\r?\n/).reduce((total, line) => {
+    return total + Math.max(1, Math.ceil(line.length / charactersPerLine));
+  }, 0);
+}
+
+function estimateSectionLineCount(sectionData: SectionData[], hasImage = false): number {
+  let totalLines = 1;
 
   sectionData.forEach((section) => {
     const text = typeof section.content === 'string'
@@ -416,14 +426,32 @@ function estimateSectionPageCount(sectionData: SectionData[], hasImage = false):
       : Array.isArray(section.content)
         ? section.content.join('\n')
         : String(section.content ?? '');
-
     const lines = ensureArray(text);
-    totalLines += lines.length + (section.isBullet ? Math.max(1, lines.length) : 1);
+
+    totalLines += estimateWrappedLines(`${section.title}:`);
+    if (section.isBullet) {
+      totalLines += lines.reduce((count, line) => count + estimateWrappedLines(line), 0);
+    } else if (lines.length > 0) {
+      totalLines += estimateWrappedLines(lines.join(' '));
+    }
   });
 
-  if (hasImage) totalLines += 4;
+  if (hasImage) totalLines += 17;
+  return totalLines;
+}
 
-  return Math.max(1, Math.ceil(totalLines / 22));
+function estimateSectionPageCount(sectionData: SectionData[], hasImage = false): number {
+  return Math.max(1, Math.ceil(estimateSectionLineCount(sectionData, hasImage) / ESTIMATED_PAGE_LINES));
+}
+
+function estimateAcknowledgementLineCount(data: any): number {
+  const paragraphs = ensureArray(data.acknowledgement || '');
+  return 4 + paragraphs.reduce((total, paragraph) => total + estimateWrappedLines(paragraph), 0);
+}
+
+function estimateTOCLineCount(data: any): number {
+  const entries = ensureArray(data.tableOfContents || '');
+  return 1 + (entries.length || 26);
 }
 
 function estimateAppendixPageCount(appendicesData?: AppendicesData): number {
@@ -455,16 +483,17 @@ function estimateAppendixPageCount(appendicesData?: AppendicesData): number {
 }
 
 function getSectionPageMap(data: any): Record<string, number> {
-  const pageMap: Record<string, number> = {
-    introduction: 4,
-    'organization company analysis': 5,
-    'tasks and duties': 6,
-    'case analysis': 7,
-    reflections: 8,
-    appendices: 9,
-  };
-
-  let currentPage = 4;
+  const compact = data.sectionLayout === 'compact';
+  const acknowledgementLines = estimateAcknowledgementLineCount(data);
+  const tocLines = estimateTOCLineCount(data);
+  const currentLine = acknowledgementLines + tocLines;
+  let pageCursor = compact
+    ? 2 + Math.floor(currentLine / ESTIMATED_PAGE_LINES)
+    : 2
+      + Math.max(1, Math.ceil(acknowledgementLines / ESTIMATED_PAGE_LINES))
+      + Math.max(1, Math.ceil(tocLines / ESTIMATED_PAGE_LINES));
+  let lineCursor = currentLine;
+  const pageMap: Record<string, number> = {};
   const sectionDefinitions = [
     { key: 'introduction', value: [
       { title: 'Background of the Organization', content: data.background },
@@ -499,11 +528,21 @@ function getSectionPageMap(data: any): Record<string, number> {
   ];
 
   sectionDefinitions.forEach((section) => {
-    pageMap[section.key] = currentPage;
-    currentPage += estimateSectionPageCount(section.value, section.image);
+    const lineCount = estimateSectionLineCount(section.value, section.image);
+    pageMap[section.key] = compact
+      ? 2 + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
+      : pageCursor;
+
+    if (compact) {
+      lineCursor += lineCount;
+    } else {
+      pageCursor += estimateSectionPageCount(section.value, section.image);
+    }
   });
 
-  pageMap.appendices = currentPage;
+  pageMap.appendices = compact
+    ? 2 + Math.ceil(lineCursor / ESTIMATED_PAGE_LINES)
+    : pageCursor;
   return pageMap;
 }
 
@@ -548,7 +587,7 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
     const extractedTitle = (match?.[1] || trimmed)
       .replace(/\s*[:.-]+\s*$/, '')
       .trim();
-    const extractedPage = match?.[2] || String(list.length + 1);
+    const extractedPage = match?.[2] || '';
 
     if (extractedTitle) {
       list.push({
@@ -573,10 +612,26 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
   entries.forEach((entry) => {
     const titleText = entry.title;
     const normalizedTitle = normalizeTOCKey(titleText);
-    const mappedPage = Object.entries(sectionPageMap).find(([key]) => normalizeTOCKey(key) === normalizedTitle || normalizedTitle.startsWith(normalizeTOCKey(key)) || normalizeTOCKey(key).startsWith(normalizedTitle))?.[1];
+    const sectionNumber = titleText.match(/^\s*(\d+)(?:\.\d+)*[.)]?\s+/)?.[1];
+    const numberedSectionKeys: Record<string, string> = {
+      '1': 'introduction',
+      '2': 'organization company analysis',
+      '3': 'tasks and duties',
+      '4': 'case analysis',
+      '5': 'reflections',
+      '6': 'appendices',
+    };
+    const numberedPage = sectionNumber ? sectionPageMap[numberedSectionKeys[sectionNumber]] : undefined;
+    const matchedPage = Object.entries(sectionPageMap).find(([key]) => {
+      const normalizedKey = normalizeTOCKey(key);
+      return normalizedKey === normalizedTitle
+        || normalizedTitle.startsWith(normalizedKey)
+        || normalizedKey.startsWith(normalizedTitle);
+    })?.[1];
+    const mappedPage = numberedPage ?? matchedPage;
     const resolvedPage = mappedPage ? String(mappedPage) : entry.page;
     const isSubsection = /^\d+\.\d+\s+/.test(titleText);
-    const showPageNumber = compact || !isSubsection;
+    const showPageNumber = (compact || !isSubsection) && Boolean(resolvedPage);
     const fillLength = Math.max(1, showPageNumber ? 90 - titleText.length : 110 - titleText.length);
     const filler = '.'.repeat(fillLength);
     const indent = isSubsection ? 500 : 180;
