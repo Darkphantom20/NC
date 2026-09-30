@@ -461,7 +461,9 @@ function estimateAcknowledgementLineCount(data: any): number {
 
 function estimateTOCLineCount(data: any): number {
   const entries = ensureArray(data.tableOfContents || '');
-  return 1 + (entries.length || 26);
+  const hasSchoolPlacementEntries = entries.some((entry) => normalizeTOCKey(entry).includes('school ojt'));
+  const schoolEntryCount = data.schoolPlacement?.enabled && !hasSchoolPlacementEntries ? 6 : 0;
+  return 1 + (entries.length || 26) + schoolEntryCount;
 }
 
 function estimateAppendixPageCount(appendicesData?: AppendicesData): number {
@@ -590,7 +592,7 @@ function getSectionPageMap(data: any): Record<string, number> {
       const lineCount = estimateSectionLineCount(section.value, section.image);
       pageMap[section.key] = compact
         ? 2 + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
-        : pageCursor + 1;
+      : pageCursor;
 
       if (compact) {
         lineCursor += lineCount;
@@ -598,6 +600,8 @@ function getSectionPageMap(data: any): Record<string, number> {
         pageCursor += estimateSectionPageCount(section.value, section.image);
       }
     });
+
+    pageMap['school ojt narrative'] = pageMap['school ojt introduction'];
   }
 
   pageMap.appendices = compact
@@ -662,14 +666,15 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
   const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
   if (data.schoolPlacement?.enabled && !entries.some((entry) => normalizeTOCKey(entry.title).includes('school ojt'))) {
     const schoolTOCEntries = [
-      { title: '6. School OJT Narrative', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6. School OJT Narrative (Second Placement)', page: String(sectionPageMap['school ojt narrative'] || 9) },
       { title: '6.1 School OJT Introduction', page: String(sectionPageMap['school ojt introduction'] || 9) },
       { title: '6.2 School OJT Organization Analysis', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
       { title: '6.3 School OJT Tasks and Duties', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
       { title: '6.4 School OJT Case Analysis', page: String(sectionPageMap['school ojt case analysis'] || 9) },
       { title: '6.5 School OJT Reflections', page: String(sectionPageMap['school ojt reflections'] || 9) },
     ];
-    entries.push(...schoolTOCEntries);
+    const appendicesIndex = entries.findIndex((entry) => normalizeTOCKey(entry.title) === 'appendices');
+    entries.splice(appendicesIndex >= 0 ? appendicesIndex : entries.length, 0, ...schoolTOCEntries);
   }
 
   const paragraphs: Paragraph[] = [
@@ -699,7 +704,7 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
         || normalizedTitle.startsWith(normalizedKey)
         || normalizedKey.startsWith(normalizedTitle);
     })?.[1];
-    const mappedPage = numberedPage ?? matchedPage;
+    const mappedPage = matchedPage ?? numberedPage;
     const resolvedPage = mappedPage ? String(mappedPage) : entry.page;
     const isSubsection = /^\d+\.\d+\s+/.test(titleText);
     const showPageNumber = (compact || !isSubsection) && Boolean(resolvedPage);

@@ -1498,12 +1498,15 @@ export default function Home() {
               <Box label="Student" value={form.studentName} />
               <Box label="Program" value={form.degreeProgram} />
               <Box label="Organization" value={form.trainingOrganization} />
+              {form.schoolPlacement.enabled && (
+                <Box label="Second OJT Placement" value={form.schoolPlacement.trainingOrganization} />
+              )}
               <Box label="Status" value={status} />
             </div>
             <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-4 sm:p-5">
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">Current flow</p>
               <div className="mt-4 space-y-3 sm:space-y-3.5">
-                {sectionOrder.map((section, index) => (
+                {[...sectionOrder.slice(0, -1), ...(form.schoolPlacement.enabled ? ['School OJT Narrative'] : []), sectionOrder[sectionOrder.length - 1]].map((section, index) => (
                   <div key={section} className="flex items-center gap-3.5">
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/15 text-xs font-bold text-cyan-300">{index + 1}</span>
                     <span className="text-sm text-slate-200 sm:text-base font-medium">{section}</span>
