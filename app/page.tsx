@@ -349,6 +349,11 @@ export default function Home() {
       content: 'Change the sample reflection content to your actual learning experience and how it connects to your course and goals.',
     },
     {
+      target: '.tour-school-placement',
+      title: 'Second OJT placement',
+      content: 'Enable this section only if you continued your OJT in the school or another location. Keep its Introduction, tasks, problems, and reflections separate from the first placement.',
+    },
+    {
       target: '.tour-appendices',
       title: 'Appendices',
       content: 'Replace the example weekly entries and attachments with your actual daily journal, proofs, and supporting documentation.',
@@ -531,6 +536,22 @@ export default function Home() {
     } catch (error) {
       console.error(error);
       alert('The organization structure image could not be processed.');
+    }
+  };
+
+  const handleSchoolOrganizationStructureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG).');
+      return;
+    }
+    try {
+      const compressed = await compressImageDataUrl(file, 1600, 0.8);
+      updateSchoolPlacementField('organizationStructureImage', compressed);
+    } catch (error) {
+      console.error(error);
+      alert('The school organization structure image could not be processed.');
     }
   };
 
@@ -1141,7 +1162,7 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="School OJT Narrative (Second Placement)">
+            <SectionBlock title="School OJT Narrative (Second Placement)" className="tour-school-placement">
               <div className="space-y-5">
                 <label className="flex items-start gap-3 rounded-2xl border border-cyan-500/30 bg-cyan-500/[0.06] p-4 text-sm text-slate-200">
                   <input
@@ -1168,7 +1189,12 @@ export default function Home() {
                         <input value={form.schoolPlacement.trainingLocation} onChange={(e) => updateSchoolPlacementField('trainingLocation', e.target.value)} className={fieldClass} />
                       </label>
                     </div>
-                    <PlacementNarrativeFields placement={form.schoolPlacement} updateField={updateSchoolPlacementField} />
+                    <PlacementNarrativeFields
+                      placement={form.schoolPlacement}
+                      updateField={updateSchoolPlacementField}
+                      onOrganizationImageUpload={handleSchoolOrganizationStructureUpload}
+                      onRemoveOrganizationImage={() => updateSchoolPlacementField('organizationStructureImage', '')}
+                    />
                   </div>
                 )}
               </div>
@@ -1550,24 +1576,132 @@ function Box({ label, value }: { label: string; value: string }) {
   );
 }
 
-function PlacementNarrativeFields({ placement, updateField }: { placement: typeof defaultForm.schoolPlacement; updateField: (key: keyof typeof defaultForm.schoolPlacement, value: string) => void }) {
-  const fields = [
-    ['background', 'Background'], ['vision', 'Vision'], ['mission', 'Mission'], ['objectives', 'Objectives'],
-    ['coreValues', 'Core Values'], ['services', 'Services'], ['strengths', 'Strengths'], ['weaknesses', 'Weaknesses'],
-    ['opportunities', 'Opportunities'], ['threats', 'Threats'], ['recommendations', 'Recommendations'],
-    ['tasks', 'Assigned Tasks'], ['procedures', 'Procedures Conformed'], ['issue1', 'Problem 1'],
-    ['issue1Action', 'Solution 1'], ['issue2', 'Problem 2'], ['issue2Action', 'Solution 2'], ['lessons', 'Lessons Learned'],
-    ['selfEvaluation', 'Self-Evaluation'], ['relevancy', 'Relevancy to Course & Goals']
-  ] as const;
-
+function PlacementNarrativeFields({
+  placement,
+  updateField,
+  onOrganizationImageUpload,
+  onRemoveOrganizationImage,
+}: {
+  placement: typeof defaultForm.schoolPlacement;
+  updateField: (key: keyof typeof defaultForm.schoolPlacement, value: string) => void;
+  onOrganizationImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveOrganizationImage: () => void;
+}) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {fields.map(([key, label]) => (
-        <label key={key} className="block text-xs sm:text-sm font-medium text-slate-200">
-          <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">{label}</span>
-          <textarea value={placement[key]} onChange={(e) => updateField(key, e.target.value)} rows={key === 'background' || key === 'tasks' || key === 'selfEvaluation' || key === 'relevancy' ? 4 : 3} className={fieldClass} />
-        </label>
-      ))}
+    <div className="space-y-5">
+      <SectionBlock title="1. Introduction">
+        <div className="space-y-4 sm:space-y-5">
+          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+            <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Background</span>
+            <textarea value={placement.background} onChange={(e) => updateField('background', e.target.value)} rows={4} className={fieldClass} />
+          </label>
+          <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-200">
+              <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Vision</span>
+              <input value={placement.vision} onChange={(e) => updateField('vision', e.target.value)} className={fieldClass} />
+            </label>
+            <label className="block text-xs sm:text-sm font-medium text-slate-200">
+              <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Mission</span>
+              <input value={placement.mission} onChange={(e) => updateField('mission', e.target.value)} className={fieldClass} />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
+            <label className="block text-xs sm:text-sm font-medium text-slate-200">
+              <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Objectives</span>
+              <textarea value={placement.objectives} onChange={(e) => updateField('objectives', e.target.value)} rows={3} className={fieldClass} />
+            </label>
+            <label className="block text-xs sm:text-sm font-medium text-slate-200">
+              <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Core Values</span>
+              <textarea value={placement.coreValues} onChange={(e) => updateField('coreValues', e.target.value)} rows={3} className={fieldClass} />
+            </label>
+            <label className="block text-xs sm:text-sm font-medium text-slate-200">
+              <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">Services</span>
+              <textarea value={placement.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
+            </label>
+          </div>
+          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300/80">School OJT Area Reference</p>
+                <p className="mt-1 text-sm text-slate-300">Attach the organization structure for the school-based OJT area.</p>
+              </div>
+              <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-400/10 px-4 py-2.5 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-400/20">
+                {placement.organizationStructureImage ? 'Replace image' : 'Attach image'}
+                <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={onOrganizationImageUpload} className="sr-only" />
+              </label>
+            </div>
+            {placement.organizationStructureImage && (
+              <div className="mt-4 overflow-hidden rounded-xl border border-slate-700 bg-slate-950/70">
+                <img src={placement.organizationStructureImage} alt="Uploaded school organization structure" className="mx-auto max-h-80 w-full object-contain" />
+                <div className="flex items-center justify-between gap-3 border-t border-slate-700 px-3 py-2">
+                  <span className="text-xs text-emerald-300">Image attached</span>
+                  <button type="button" onClick={onRemoveOrganizationImage} className="text-xs font-semibold text-rose-300 transition hover:text-rose-200">Remove</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </SectionBlock>
+
+      <SectionBlock title="2. Organization Analysis">
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+            {(['strengths', 'weaknesses', 'opportunities', 'threats'] as const).map((key) => (
+              <label key={key} className="block text-xs sm:text-sm font-medium text-slate-200">
+                <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">{key}</span>
+                <textarea value={placement[key]} onChange={(e) => updateField(key, e.target.value)} rows={4} className={fieldClass} />
+              </label>
+            ))}
+          </div>
+          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+            <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Recommendations</span>
+            <textarea value={placement.recommendations} onChange={(e) => updateField('recommendations', e.target.value)} rows={4} className={fieldClass} />
+          </label>
+        </div>
+      </SectionBlock>
+
+      <SectionBlock title="3. Tasks and Duties">
+        <div className="space-y-4 sm:space-y-5">
+          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+            <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Assigned Tasks</span>
+            <textarea value={placement.tasks} onChange={(e) => updateField('tasks', e.target.value)} rows={4} className={fieldClass} />
+          </label>
+          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+            <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Procedures Conformed</span>
+            <textarea value={placement.procedures} onChange={(e) => updateField('procedures', e.target.value)} rows={4} className={fieldClass} />
+          </label>
+        </div>
+      </SectionBlock>
+
+      <SectionBlock title="4. Case Analysis">
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+            {([['issue1', 'Problem 1'], ['issue1Action', 'Solution 1'], ['issue2', 'Problem 2'], ['issue2Action', 'Solution 2']] as const).map(([key, label]) => (
+              <label key={key} className="block text-xs sm:text-sm font-medium text-slate-200">
+                <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">{label}</span>
+                <textarea value={placement[key]} onChange={(e) => updateField(key, e.target.value)} rows={4} className={fieldClass} />
+              </label>
+            ))}
+          </div>
+          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+            <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">Lessons Learned</span>
+            <textarea value={placement.lessons} onChange={(e) => updateField('lessons', e.target.value)} rows={4} className={fieldClass} />
+          </label>
+        </div>
+      </SectionBlock>
+
+      <SectionBlock title="5. Reflections">
+        <div className="space-y-4 sm:space-y-5">
+          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+            <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Self-Evaluation</span>
+            <textarea value={placement.selfEvaluation} onChange={(e) => updateField('selfEvaluation', e.target.value)} rows={4} className={fieldClass} />
+          </label>
+          <label className="block text-xs sm:text-sm font-medium text-slate-200">
+            <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Relevancy to Course & Goals</span>
+            <textarea value={placement.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
+          </label>
+        </div>
+      </SectionBlock>
     </div>
   );
 }
