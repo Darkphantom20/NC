@@ -397,35 +397,145 @@ function buildAcknowledgementPage(data: any, compact = false, lineSpacing = 240)
   return paragraphs;
 }
 
+function normalizeTOCKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(and|of|the|for|from|to|a)\b/g, ' ')
+    .trim();
+}
+
+function estimateSectionPageCount(sectionData: SectionData[], hasImage = false): number {
+  let totalLines = 2;
+
+  sectionData.forEach((section) => {
+    const text = typeof section.content === 'string'
+      ? section.content
+      : Array.isArray(section.content)
+        ? section.content.join('\n')
+        : String(section.content ?? '');
+
+    const lines = ensureArray(text);
+    totalLines += lines.length + (section.isBullet ? Math.max(1, lines.length) : 1);
+  });
+
+  if (hasImage) totalLines += 4;
+
+  return Math.max(1, Math.ceil(totalLines / 22));
+}
+
+function estimateAppendixPageCount(appendicesData?: AppendicesData): number {
+  if (!appendicesData) return 1;
+
+  let pages = 1;
+
+  if (appendicesData.dailyJournal && appendicesData.dailyJournal.length > 0) {
+    pages += appendicesData.dailyJournal.length * 2;
+  }
+
+  const appendixKeys = [
+    'certParticipation',
+    'primeNarrative',
+    'resume',
+    'grades',
+    'medicalWaiver',
+    'letterAcceptance',
+    'dtr',
+    'ratingSheet',
+    'certCompletion',
+  ] as const;
+
+  appendixKeys.forEach((key) => {
+    if (appendicesData[key]) pages += 1;
+  });
+
+  return Math.max(1, pages);
+}
+
+function getSectionPageMap(data: any): Record<string, number> {
+  const pageMap: Record<string, number> = {
+    introduction: 4,
+    'organization company analysis': 5,
+    'tasks and duties': 6,
+    'case analysis': 7,
+    reflections: 8,
+    appendices: 9,
+  };
+
+  let currentPage = 4;
+  const sectionDefinitions = [
+    { key: 'introduction', value: [
+      { title: 'Background of the Organization', content: data.background },
+      { title: 'Vision', content: data.vision },
+      { title: 'Mission', content: data.mission },
+      { title: 'Objectives', content: data.objectives, isBullet: true },
+      { title: 'Core Values', content: data.coreValues, isBullet: true },
+      { title: 'Products and Services Offered', content: data.services },
+    ], image: Boolean(data.organizationStructureImage) },
+    { key: 'organization company analysis', value: [
+      { title: 'Strengths', content: data.strengths, isBullet: true },
+      { title: 'Weaknesses', content: data.weaknesses, isBullet: true },
+      { title: 'Opportunities', content: data.opportunities, isBullet: true },
+      { title: 'Threats', content: data.threats, isBullet: true },
+      { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
+    ], image: false },
+    { key: 'tasks and duties', value: [
+      { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
+      { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
+    ], image: false },
+    { key: 'case analysis', value: [
+      { title: 'Issue / Problem 1', content: data.issue1 },
+      { title: 'Strategy/Action Undertaken for Problem 1', content: data.issue1Action },
+      { title: 'Issue / Problem 2', content: data.issue2 },
+      { title: 'Strategy/Action Undertaken for Problem 2', content: data.issue2Action },
+      { title: 'Lessons Learned from the Situations', content: data.lessons },
+    ], image: false },
+    { key: 'reflections', value: [
+      { title: 'Self-Evaluation', content: data.selfEvaluation },
+      { title: 'Relevancy of the Organization', content: data.relevancy },
+    ], image: false },
+  ];
+
+  sectionDefinitions.forEach((section) => {
+    pageMap[section.key] = currentPage;
+    currentPage += estimateSectionPageCount(section.value, section.image);
+  });
+
+  pageMap.appendices = currentPage;
+  return pageMap;
+}
+
 function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240): Paragraph[] {
   const rawContent = data.tableOfContents || '';
+  const sectionPageMap = getSectionPageMap(data);
+
   const fallbackEntries = [
-    { title: '1. Introduction', page: '1' },
-    { title: '1.1 Background of the Organization', page: '1' },
-    { title: '1.2 Vision', page: '1' },
-    { title: '1.3 Mission', page: '1' },
-    { title: '1.4 Objectives', page: '1' },
-    { title: '1.5 Core Values', page: '1' },
-    { title: '1.6 Products and Services Offered', page: '1' },
-    { title: '2. Organization / Company Analysis', page: '2' },
-    { title: '2.1 Strengths', page: '2' },
-    { title: '2.2 Weaknesses', page: '2' },
-    { title: '2.3 Opportunities', page: '2' },
-    { title: '2.4 Threats', page: '2' },
-    { title: '2.5 Recommendations for Improvement', page: '2' },
-    { title: '3. Tasks and Duties', page: '3' },
-    { title: '3.1 Assigned Tasks and Responsibilities', page: '3' },
-    { title: '3.2 Duties and Procedures Conformed', page: '3' },
-    { title: '4. Case Analysis', page: '4' },
-    { title: '4.1 Issue / Problem 1', page: '4' },
-    { title: '4.2 Strategy/Action Undertaken for Problem 1', page: '4' },
-    { title: '4.3 Issue / Problem 2', page: '4' },
-    { title: '4.4 Strategy/Action Undertaken for Problem 2', page: '4' },
-    { title: '4.5 Lessons Learned from the Situations', page: '4' },
-    { title: '5. Reflections', page: '5' },
-    { title: '5.1 Self-Evaluation', page: '5' },
-    { title: '5.2 Relevancy of the Organization', page: '5' },
-    { title: '6. Appendices', page: '6' },
+    { title: '1. Introduction', page: String(sectionPageMap.introduction || 4) },
+    { title: '1.1 Background of the Organization', page: String(sectionPageMap.introduction || 4) },
+    { title: '1.2 Vision', page: String(sectionPageMap.introduction || 4) },
+    { title: '1.3 Mission', page: String(sectionPageMap.introduction || 4) },
+    { title: '1.4 Objectives', page: String(sectionPageMap.introduction || 4) },
+    { title: '1.5 Core Values', page: String(sectionPageMap.introduction || 4) },
+    { title: '1.6 Products and Services Offered', page: String(sectionPageMap.introduction || 4) },
+    { title: '2. Organization / Company Analysis', page: String(sectionPageMap['organization company analysis'] || 5) },
+    { title: '2.1 Strengths', page: String(sectionPageMap['organization company analysis'] || 5) },
+    { title: '2.2 Weaknesses', page: String(sectionPageMap['organization company analysis'] || 5) },
+    { title: '2.3 Opportunities', page: String(sectionPageMap['organization company analysis'] || 5) },
+    { title: '2.4 Threats', page: String(sectionPageMap['organization company analysis'] || 5) },
+    { title: '2.5 Recommendations for Improvement', page: String(sectionPageMap['organization company analysis'] || 5) },
+    { title: '3. Tasks and Duties', page: String(sectionPageMap['tasks and duties'] || 6) },
+    { title: '3.1 Assigned Tasks and Responsibilities', page: String(sectionPageMap['tasks and duties'] || 6) },
+    { title: '3.2 Duties and Procedures Conformed', page: String(sectionPageMap['tasks and duties'] || 6) },
+    { title: '4. Case Analysis', page: String(sectionPageMap['case analysis'] || 7) },
+    { title: '4.1 Issue / Problem 1', page: String(sectionPageMap['case analysis'] || 7) },
+    { title: '4.2 Strategy/Action Undertaken for Problem 1', page: String(sectionPageMap['case analysis'] || 7) },
+    { title: '4.3 Issue / Problem 2', page: String(sectionPageMap['case analysis'] || 7) },
+    { title: '4.4 Strategy/Action Undertaken for Problem 2', page: String(sectionPageMap['case analysis'] || 7) },
+    { title: '4.5 Lessons Learned from the Situations', page: String(sectionPageMap['case analysis'] || 7) },
+    { title: '5. Reflections', page: String(sectionPageMap.reflections || 8) },
+    { title: '5.1 Self-Evaluation', page: String(sectionPageMap.reflections || 8) },
+    { title: '5.2 Relevancy of the Organization', page: String(sectionPageMap.reflections || 8) },
+    { title: '6. Appendices', page: String(sectionPageMap.appendices || 9) },
   ];
 
   const parsedEntries = ensureArray(rawContent).reduce<{ title: string; page: string }[]>((list, line) => {
@@ -460,6 +570,9 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
 
   entries.forEach((entry) => {
     const titleText = entry.title;
+    const normalizedTitle = normalizeTOCKey(titleText);
+    const mappedPage = Object.entries(sectionPageMap).find(([key]) => normalizeTOCKey(key) === normalizedTitle || normalizedTitle.startsWith(normalizeTOCKey(key)) || normalizeTOCKey(key).startsWith(normalizedTitle))?.[1];
+    const resolvedPage = mappedPage ? String(mappedPage) : entry.page;
     const isSubsection = /^\d+\.\d+\s+/.test(titleText);
     const showPageNumber = compact || !isSubsection;
     const fillLength = Math.max(1, showPageNumber ? 90 - titleText.length : 110 - titleText.length);
@@ -468,7 +581,7 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
 
     const pageText = showPageNumber ? [
       new TextRun({ text: '\t', size: 22, font: 'Times New Roman' }),
-      new TextRun({ text: entry.page, size: 22, font: 'Times New Roman', bold: false }),
+      new TextRun({ text: resolvedPage, size: 22, font: 'Times New Roman', bold: false }),
     ] : [];
 
     paragraphs.push(
