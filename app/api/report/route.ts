@@ -432,25 +432,23 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
     const trimmed = line.trim();
     if (!trimmed) return list;
 
-    const leadingMatch = trimmed.match(/^(\d+)(?:\.(\d+))?\.\s*(.+)$/);
-    const numberedTitle = leadingMatch
-      ? `${leadingMatch[1]}${leadingMatch[2] ? `.${leadingMatch[2]}` : ''}. ${leadingMatch[3].trim()}`
-      : trimmed.replace(/\s+\d+$/, '').trim();
-    const pageFromLine = leadingMatch ? leadingMatch[1] : trimmed.match(/(\d+)$/)?.[1] ?? '';
+    const match = trimmed.match(/^(.*?)(?:\s+)(\d+)$/) || trimmed.match(/^(.*)$/);
+    const extractedTitle = (match?.[1] || trimmed)
+      .replace(/\s*[:.-]+\s*$/, '')
+      .trim();
+    const extractedPage = match?.[2] || String(list.length + 1);
 
-    if (!numberedTitle) return list;
-
-    if (!compact && /^\d+\.\d+\./.test(numberedTitle)) return list;
-
-    list.push({
-      title: numberedTitle,
-      page: pageFromLine || String(list.length + 1),
-    });
+    if (extractedTitle) {
+      list.push({
+        title: extractedTitle,
+        page: extractedPage,
+      });
+    }
 
     return list;
   }, []);
 
-  const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries.filter((entry) => compact || !/^\d+\.\d+\./.test(entry.title));
+  const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
 
   const paragraphs: Paragraph[] = [
     new Paragraph({
@@ -462,20 +460,26 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
 
   entries.forEach((entry) => {
     const titleText = entry.title;
-    const fillLength = Math.max(1, 90 - titleText.length);
+    const isSubsection = /^\d+\.\d+\s+/.test(titleText);
+    const showPageNumber = compact || !isSubsection;
+    const fillLength = Math.max(1, showPageNumber ? 90 - titleText.length : 110 - titleText.length);
     const filler = '.'.repeat(fillLength);
-    const isSubsection = /^\d+\.\d+\./.test(titleText);
+    const indent = isSubsection ? 500 : 180;
+
+    const pageText = showPageNumber ? [
+      new TextRun({ text: '\t', size: 22, font: 'Times New Roman' }),
+      new TextRun({ text: entry.page, size: 22, font: 'Times New Roman', bold: false }),
+    ] : [];
 
     paragraphs.push(
       new Paragraph({
         alignment: AlignmentType.LEFT,
-        indent: { left: isSubsection ? 500 : 180 },
+        indent: { left: indent },
         tabStops: [{ type: 'right', position: 9000 }],
-        spacing: { before: 0, after: 3, line: lineSpacing, lineRule: 'auto' },
+        spacing: { before: 0, after: 4, line: lineSpacing, lineRule: 'auto' },
         children: [
           new TextRun({ text: `${titleText}${filler}`, size: 22, font: 'Times New Roman' }),
-          new TextRun({ text: '\t', size: 22, font: 'Times New Roman' }),
-          new TextRun({ text: entry.page, size: 22, font: 'Times New Roman', bold: false }),
+          ...pageText,
         ],
       })
     );
