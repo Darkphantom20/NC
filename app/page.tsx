@@ -1541,9 +1541,9 @@ export default function Home() {
 // Updated to accept className for the tour targeting
 function SectionBlock({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`grid gap-5 border-b border-slate-800/90 py-6 first:pt-0 last:border-b-0 md:grid-cols-[190px_minmax(0,1fr)] md:gap-8 md:py-8 ${className}`}>
-      <h2 className="text-lg font-bold text-white sm:text-xl md:pt-1">{title}</h2>
-      <div className="min-w-0">{children}</div>
+    <section className={`rounded-2xl border border-slate-800 bg-slate-950/60 p-5 sm:rounded-3xl sm:p-6 space-y-5 ${className}`}>
+      <h2 className="text-lg font-bold text-white sm:text-xl">{title}</h2>
+      {children}
     </section>
   );
 }
