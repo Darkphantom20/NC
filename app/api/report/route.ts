@@ -14,7 +14,7 @@ interface AppendixImage {
   detail?: string;
 }
 
-interface DailyActivity {
+          new Paragraph({ pageBreakBefore: true }),
   day: string;
   date: string;
   accomplishment: string;
@@ -213,7 +213,7 @@ export async function POST(request: Request) {
           }),
         } : undefined,
         children: [
-          new Paragraph({ pageBreakBefore: true, children: [new TextRun({ text: ' ', size: 2, font: 'Times New Roman' })] }),
+          ...(!compactSectionLayout ? [new Paragraph({ pageBreakBefore: true })] : []),
           ...dailyJournalContent,
         ],
       });
@@ -640,15 +640,9 @@ function getSectionPageMap(data: any): Record<string, number> {
     pageMap['school ojt narrative'] = pageMap['school ojt introduction'];
   }
 
-  if (compact) {
-    const narrativePages = Object.entries(pageMap)
-      .filter(([key]) => key !== 'appendices')
-      .map(([, page]) => page);
-    const estimatedLastNarrativePage = narrativeStartPage + Math.max(1, Math.ceil(lineCursor / ESTIMATED_PAGE_LINES)) - 1;
-    pageMap.appendices = Math.max(estimatedLastNarrativePage, ...narrativePages) + 1;
-  } else {
-    pageMap.appendices = pageCursor;
-  }
+  pageMap.appendices = compact
+    ? narrativeStartPage + Math.max(1, Math.ceil(lineCursor / ESTIMATED_PAGE_LINES))
+    : pageCursor;
   return pageMap;
 }
 
@@ -1092,6 +1086,7 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
       left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
       right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
       insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
     },
     rows: [
       new TableRow({
@@ -1211,7 +1206,6 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
   const children: any[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      pageBreakBefore: true,
       spacing: { before: 120, after: 360 },
       children: [new TextRun({ text: 'APPENDICES', bold: true, size: 24, font: 'Times New Roman' })],
     }),
