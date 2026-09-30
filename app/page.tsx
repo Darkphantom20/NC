@@ -731,7 +731,7 @@ export default function Home() {
                     <div className="border-b border-slate-300 pb-2 text-center text-sm font-bold uppercase text-slate-800">
                       {page.name}
                     </div>
-                    {'list' in page ? (
+                    {Array.isArray(page.list) ? (
                       <div className="space-y-1 text-[11px] leading-5 text-slate-700">
                         {page.list.map((item) => (
                           <div key={item} className="flex items-start justify-between gap-2">
