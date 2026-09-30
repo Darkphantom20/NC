@@ -560,6 +560,112 @@ export default function Home() {
     });
   };
 
+  const buildPreviewPages = () => {
+    const previewEntries = form.tableOfContents
+      .split(/\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 30);
+
+    const previewPages = [
+      {
+        name: 'Cover Page',
+        content: [
+          'A Narrative Report on the',
+          'On-the-Job Training conducted at',
+          form.trainingOrganization || 'Training Organization',
+          form.trainingLocation || 'Location',
+          'Presented to the faculty of',
+          form.collegeFaculty || 'College of Computing Studies',
+          'In partial fulfillment of the requirements for the degree of',
+          form.degreeProgram || 'Degree Program',
+          'Submitted by:',
+          form.studentName || 'Student Name',
+          form.studentDegree || 'Degree',
+          'Submitted to:',
+          form.submittedToName || 'Adviser Name',
+          form.submittedToTitle || 'Adviser Title',
+        ],
+      },
+      {
+        name: 'Acknowledgement',
+        content: [
+          ...(form.acknowledgement ? form.acknowledgement.split(/\n/) : ['No acknowledgement provided.']),
+          '',
+          form.studentName || 'Student Name',
+          form.degreeProgram || 'Degree Program',
+          'Jose Rizal Memorial State University',
+        ],
+      },
+      {
+        name: 'Table of Contents',
+        list: previewEntries.length > 0 ? previewEntries : [
+          '1. Introduction',
+          '1.1 Background of the Organization',
+          '2. Organization / Company Analysis',
+          '3. Tasks and Duties',
+          '4. Case Analysis',
+          '5. Reflections',
+          '6. Appendices',
+        ],
+      },
+      {
+        name: 'Introduction',
+        sections: [
+          { label: 'Background of the Organization', value: form.background },
+          { label: 'Vision', value: form.vision },
+          { label: 'Mission', value: form.mission },
+          { label: 'Objectives', value: form.objectives },
+          { label: 'Core Values', value: form.coreValues },
+          { label: 'Products and Services Offered', value: form.services },
+        ],
+      },
+      {
+        name: 'Organization / Company Analysis',
+        sections: [
+          { label: 'Strengths', value: form.strengths },
+          { label: 'Weaknesses', value: form.weaknesses },
+          { label: 'Opportunities', value: form.opportunities },
+          { label: 'Threats', value: form.threats },
+          { label: 'Recommendations for Improvement', value: form.recommendations },
+        ],
+      },
+      {
+        name: 'Tasks and Duties',
+        sections: [
+          { label: 'Assigned Tasks and Responsibilities', value: form.tasks },
+          { label: 'Duties and Procedures Conformed', value: form.procedures },
+        ],
+      },
+      {
+        name: 'Case Analysis',
+        sections: [
+          { label: 'Issue / Problem 1', value: form.issue1 },
+          { label: 'Strategy/Action Undertaken for Problem 1', value: form.issue1Action },
+          { label: 'Issue / Problem 2', value: form.issue2 },
+          { label: 'Strategy/Action Undertaken for Problem 2', value: form.issue2Action },
+          { label: 'Lessons Learned from the Situations', value: form.lessons },
+        ],
+      },
+      {
+        name: 'Reflections',
+        sections: [
+          { label: 'Self-Evaluation', value: form.selfEvaluation },
+          { label: 'Relevancy of the Organization', value: form.relevancy },
+        ],
+      },
+      {
+        name: 'Appendices',
+        sections: [
+          { label: 'Weekly Work Activities', value: form.appendices.dailyJournal?.[0]?.narrative || 'Daily journal narrative available in the final document.' },
+          { label: 'PRIME Narrative', value: form.appendices.primeNarrative || 'No PRIME narrative provided.' },
+        ],
+      },
+    ];
+
+    return previewPages;
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     setStatus('Generating DOCX...');
@@ -596,8 +702,65 @@ export default function Home() {
     }
   };
 
+  const previewPages = buildPreviewPages();
+
   return (
     <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
+      {showPreview && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-6xl rounded-[28px] border border-slate-700 bg-slate-900/95 p-4 shadow-[0_25px_80px_rgba(15,23,42,0.8)] sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/80 font-semibold">Document Preview</p>
+                <h3 className="text-2xl font-bold text-white">Report pages</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-200 transition hover:border-slate-500 hover:text-white"
+                aria-label="Close preview"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="grid max-h-[75vh] gap-5 overflow-y-auto md:grid-cols-2 xl:grid-cols-3">
+              {previewPages.map((page) => (
+                <div key={page.name} className="mx-auto w-full max-w-[340px] rounded-[18px] border border-slate-700 bg-white p-4 text-black shadow-lg">
+                  <div className="space-y-3 border border-slate-200 bg-white p-3">
+                    <div className="text-center text-[10px] uppercase tracking-[0.2em] text-slate-500">Page Preview</div>
+                    <div className="border-b border-slate-300 pb-2 text-center text-sm font-bold uppercase text-slate-800">
+                      {page.name}
+                    </div>
+                    {'list' in page ? (
+                      <div className="space-y-1 text-[11px] leading-5 text-slate-700">
+                        {page.list.map((item) => (
+                          <div key={item} className="flex items-start justify-between gap-2">
+                            <span>{item}</span>
+                            <span className="text-slate-500">{item.match(/\d+$/)?.[0] ?? ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 text-[11px] text-slate-700">
+                        {page.content && page.content.map((line) => (
+                          <div key={line} className={line.length > 40 ? 'text-center' : ''}>{line}</div>
+                        ))}
+                        {'sections' in page && page.sections && page.sections.map((section) => (
+                          <div key={section.label} className="pt-2">
+                            <div className="font-semibold text-slate-800">{section.label}</div>
+                            <div className="text-slate-600">{section.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showCompletionPopup && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-cyan-500/30 bg-slate-900/95 shadow-[0_25px_80px_rgba(34,211,238,0.18)] ring-1 ring-white/5">
@@ -1301,14 +1464,23 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={loading}
-              className="tour-generate-btn mt-2 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-3.5 sm:py-4 text-base font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
-            >
-              {loading ? 'Generating...' : 'Generate Report'}
-            </button>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setShowPreview(true)}
+                className="rounded-2xl border border-cyan-500/40 bg-slate-900/80 px-4 py-3.5 text-sm font-semibold text-cyan-300 transition hover:border-cyan-400 hover:bg-slate-800 active:scale-95"
+              >
+                Preview Report
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={loading}
+                className="tour-generate-btn rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-3.5 text-sm font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
+              >
+                {loading ? 'Generating...' : 'Generate Report'}
+              </button>
+            </div>
           </aside>
         </div>
 
