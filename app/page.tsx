@@ -10,6 +10,7 @@ import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
 const sectionOrder = [
   'Cover Page',
   'Acknowledgement',
+  'Table of Contents',
   'Introduction',
   'Organization Analysis',
   'Tasks & Duties',
@@ -27,6 +28,7 @@ const defaultForm = {
   submittedToName: 'Mr. Erson A. Rodriguez',
   submittedToTitle: 'Associate Dean of the College of Computing Studies',
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
+  tableOfContents: '1. Acknowledgement\n2. Introduction\n3. Organization Analysis\n4. Tasks & Duties\n5. Case Analysis\n6. Reflections\n7. Appendices',
   sectionLayout: 'compact',
   acknowledgementLineSpacing: 'single',
   background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
@@ -267,6 +269,11 @@ export default function Home() {
       target: '.tour-acknowledgement',
       title: 'Acknowledgement',
       content: 'Replace the sample appreciation text with your real acknowledgement and keep the wording professional and sincere.',
+    },
+    {
+      target: '.tour-table-of-contents',
+      title: 'Table of Contents',
+      content: 'Add or update the report outline here so the section list follows the acknowledgement and leads into the main narrative sections.',
     },
     {
       target: '.tour-page-layout',
@@ -824,7 +831,19 @@ export default function Home() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="2. Introduction" className="tour-introduction">
+            <SectionBlock title="2. Table of Contents" className="tour-table-of-contents">
+              <div className="space-y-4 sm:space-y-5">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
+                  <p className="mb-3 text-xs text-slate-300">This section appears immediately after the acknowledgement in the generated report and helps outline the main narrative sections.</p>
+                </div>
+                <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Table of Contents</span>
+                  <textarea value={form.tableOfContents} onChange={(e) => updateField('tableOfContents', e.target.value)} rows={6} className={fieldClass} />
+                </label>
+              </div>
+            </SectionBlock>
+
+            <SectionBlock title="3. Introduction" className="tour-introduction">
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Background</span>
