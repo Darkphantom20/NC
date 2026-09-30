@@ -53,6 +53,32 @@ const defaultForm = {
   lessons: 'These situations taught the vital importance of systematic troubleshooting, maintaining proper system backups, and remaining calm under pressure.',
   selfEvaluation: 'The OJT journey served as a transformative learning process, pushing me to transition from theoretical classroom knowledge to practical, fast-paced technical execution.',
   relevancy: 'The host organization directly aligns with my degree program, allowing me to fulfill my expected professional goals of mastering enterprise systems administration and IT support workflows.',
+  schoolPlacement: {
+    enabled: false,
+    trainingOrganization: 'Jose Rizal Memorial State University',
+    trainingLocation: 'School-based OJT',
+    background: '',
+    vision: '',
+    mission: '',
+    objectives: '',
+    coreValues: '',
+    services: '',
+    strengths: '',
+    weaknesses: '',
+    opportunities: '',
+    threats: '',
+    recommendations: '',
+    tasks: '',
+    procedures: '',
+    issue1: '',
+    issue1Action: '',
+    issue2: '',
+    issue2Action: '',
+    lessons: '',
+    selfEvaluation: '',
+    relevancy: '',
+    organizationStructureImage: ''
+  },
   appendices: {
     dailyJournalLayout: 'current',
     reportFooter: {
@@ -243,7 +269,13 @@ export default function Home() {
     const savedForm = localStorage.getItem('narrativeReportForm');
     if (savedForm) {
       try {
-        setForm(JSON.parse(savedForm));
+        const parsedForm = JSON.parse(savedForm);
+        setForm({
+          ...defaultForm,
+          ...parsedForm,
+          schoolPlacement: { ...defaultForm.schoolPlacement, ...(parsedForm.schoolPlacement || {}) },
+          appendices: { ...defaultForm.appendices, ...(parsedForm.appendices || {}) }
+        });
       } catch (error) {
         console.error('Error loading saved form data:', error);
         setForm(defaultForm);
@@ -339,6 +371,20 @@ export default function Home() {
 
   const updateField = (key: keyof typeof defaultForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const updateSchoolPlacementField = (key: keyof typeof defaultForm.schoolPlacement, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      schoolPlacement: { ...prev.schoolPlacement, [key]: value }
+    }));
+  };
+
+  const setSchoolPlacementEnabled = (enabled: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      schoolPlacement: { ...prev.schoolPlacement, enabled }
+    }));
   };
 
   const updateAppendixText = (key: keyof typeof defaultForm.appendices, value: string) => {
@@ -1095,6 +1141,39 @@ export default function Home() {
               </div>
             </SectionBlock>
 
+            <SectionBlock title="School OJT Narrative (Second Placement)">
+              <div className="space-y-5">
+                <label className="flex items-start gap-3 rounded-2xl border border-cyan-500/30 bg-cyan-500/[0.06] p-4 text-sm text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={form.schoolPlacement.enabled}
+                    onChange={(e) => setSchoolPlacementEnabled(e.target.checked)}
+                    className="mt-1 accent-cyan-400"
+                  />
+                  <span>
+                    <span className="block font-semibold text-cyan-200">I continued my OJT in another place</span>
+                    <span className="mt-1 block text-xs text-slate-400">Enable this to create a separate Introduction through Reflections narrative for the school placement.</span>
+                  </span>
+                </label>
+
+                {form.schoolPlacement.enabled && (
+                  <div className="space-y-5 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                        <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">School/OJT Unit</span>
+                        <input value={form.schoolPlacement.trainingOrganization} onChange={(e) => updateSchoolPlacementField('trainingOrganization', e.target.value)} className={fieldClass} />
+                      </label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                        <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Location</span>
+                        <input value={form.schoolPlacement.trainingLocation} onChange={(e) => updateSchoolPlacementField('trainingLocation', e.target.value)} className={fieldClass} />
+                      </label>
+                    </div>
+                    <PlacementNarrativeFields placement={form.schoolPlacement} updateField={updateSchoolPlacementField} />
+                  </div>
+                )}
+              </div>
+            </SectionBlock>
+
             <SectionBlock title="7. Appendices" className="tour-appendices">
               <div className="space-y-6 sm:space-y-8">
                 <div className="space-y-5">
@@ -1467,6 +1546,28 @@ function Box({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 space-y-1.5">
       <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">{label}</p>
       <p className="text-sm font-semibold text-white sm:text-base">{value}</p>
+    </div>
+  );
+}
+
+function PlacementNarrativeFields({ placement, updateField }: { placement: typeof defaultForm.schoolPlacement; updateField: (key: keyof typeof defaultForm.schoolPlacement, value: string) => void }) {
+  const fields = [
+    ['background', 'Background'], ['vision', 'Vision'], ['mission', 'Mission'], ['objectives', 'Objectives'],
+    ['coreValues', 'Core Values'], ['services', 'Services'], ['strengths', 'Strengths'], ['weaknesses', 'Weaknesses'],
+    ['opportunities', 'Opportunities'], ['threats', 'Threats'], ['recommendations', 'Recommendations'],
+    ['tasks', 'Assigned Tasks'], ['procedures', 'Procedures Conformed'], ['issue1', 'Problem 1'],
+    ['issue1Action', 'Solution 1'], ['issue2', 'Problem 2'], ['issue2Action', 'Solution 2'], ['lessons', 'Lessons Learned'],
+    ['selfEvaluation', 'Self-Evaluation'], ['relevancy', 'Relevancy to Course & Goals']
+  ] as const;
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      {fields.map(([key, label]) => (
+        <label key={key} className="block text-xs sm:text-sm font-medium text-slate-200">
+          <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">{label}</span>
+          <textarea value={placement[key]} onChange={(e) => updateField(key, e.target.value)} rows={key === 'background' || key === 'tasks' || key === 'selfEvaluation' || key === 'relevancy' ? 4 : 3} className={fieldClass} />
+        </label>
+      ))}
     </div>
   );
 }

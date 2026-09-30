@@ -181,6 +181,12 @@ export async function POST(request: Request) {
             { title: 'Self-Evaluation', content: data.selfEvaluation },
             { title: 'Relevancy of the Organization', content: data.relevancy },
           ], compactSectionLayout, acknowledgementLineSpacing),
+          ...(data.schoolPlacement?.enabled
+            ? [
+              new Paragraph({ pageBreakBefore: !compactSectionLayout }),
+              ...buildSchoolPlacementPages(data.schoolPlacement, compactSectionLayout, acknowledgementLineSpacing),
+            ]
+            : []),
         ],
       },
     ];
@@ -256,8 +262,12 @@ export async function POST(request: Request) {
 }
 
 function buildCoverPage(data: any): Paragraph[] {
-  const org = data.trainingOrganization || '';
-  const location = data.trainingLocation || '';
+  const org = [data.trainingOrganization, data.schoolPlacement?.enabled ? data.schoolPlacement.trainingOrganization : '']
+    .filter(Boolean)
+    .join(' and ');
+  const location = [data.trainingLocation, data.schoolPlacement?.enabled ? data.schoolPlacement.trainingLocation : '']
+    .filter(Boolean)
+    .join(' and ');
   const faculty = data.collegeFaculty || '';
   const degree = data.degreeProgram || '';
   const student = data.studentName || '';
@@ -540,6 +550,56 @@ function getSectionPageMap(data: any): Record<string, number> {
     }
   });
 
+  if (data.schoolPlacement?.enabled) {
+    const schoolDefinitions = [
+      { key: 'school ojt introduction', value: [
+        { title: 'School/OJT Unit', content: data.schoolPlacement.trainingOrganization },
+        { title: 'Location', content: data.schoolPlacement.trainingLocation },
+        { title: 'Background of the Organization', content: data.schoolPlacement.background },
+        { title: 'Vision', content: data.schoolPlacement.vision },
+        { title: 'Mission', content: data.schoolPlacement.mission },
+        { title: 'Objectives', content: data.schoolPlacement.objectives, isBullet: true },
+        { title: 'Core Values', content: data.schoolPlacement.coreValues, isBullet: true },
+        { title: 'Products and Services Offered', content: data.schoolPlacement.services },
+      ], image: Boolean(data.schoolPlacement.organizationStructureImage) },
+      { key: 'school ojt organization analysis', value: [
+        { title: 'Strengths', content: data.schoolPlacement.strengths, isBullet: true },
+        { title: 'Weaknesses', content: data.schoolPlacement.weaknesses, isBullet: true },
+        { title: 'Opportunities', content: data.schoolPlacement.opportunities, isBullet: true },
+        { title: 'Threats', content: data.schoolPlacement.threats, isBullet: true },
+        { title: 'Recommendations for Improvement', content: data.schoolPlacement.recommendations, isBullet: true },
+      ], image: false },
+      { key: 'school ojt tasks and duties', value: [
+        { title: 'Assigned Tasks and Responsibilities', content: data.schoolPlacement.tasks, isBullet: true },
+        { title: 'Duties and Procedures Conformed', content: data.schoolPlacement.procedures, isBullet: true },
+      ], image: false },
+      { key: 'school ojt case analysis', value: [
+        { title: 'Issue / Problem 1', content: data.schoolPlacement.issue1 },
+        { title: 'Strategy/Action Undertaken for Problem 1', content: data.schoolPlacement.issue1Action },
+        { title: 'Issue / Problem 2', content: data.schoolPlacement.issue2 },
+        { title: 'Strategy/Action Undertaken for Problem 2', content: data.schoolPlacement.issue2Action },
+        { title: 'Lessons Learned from the Situations', content: data.schoolPlacement.lessons },
+      ], image: false },
+      { key: 'school ojt reflections', value: [
+        { title: 'Self-Evaluation', content: data.schoolPlacement.selfEvaluation },
+        { title: 'Relevancy of the Organization', content: data.schoolPlacement.relevancy },
+      ], image: false },
+    ];
+
+    schoolDefinitions.forEach((section) => {
+      const lineCount = estimateSectionLineCount(section.value, section.image);
+      pageMap[section.key] = compact
+        ? 2 + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
+        : pageCursor + 1;
+
+      if (compact) {
+        lineCursor += lineCount;
+      } else {
+        pageCursor += estimateSectionPageCount(section.value, section.image);
+      }
+    });
+  }
+
   pageMap.appendices = compact
     ? 2 + Math.ceil(lineCursor / ESTIMATED_PAGE_LINES)
     : pageCursor;
@@ -600,6 +660,17 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
   }, []);
 
   const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
+  if (data.schoolPlacement?.enabled && !entries.some((entry) => normalizeTOCKey(entry.title).includes('school ojt'))) {
+    const schoolTOCEntries = [
+      { title: '6. School OJT Narrative', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.1 School OJT Introduction', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.2 School OJT Organization Analysis', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
+      { title: '6.3 School OJT Tasks and Duties', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
+      { title: '6.4 School OJT Case Analysis', page: String(sectionPageMap['school ojt case analysis'] || 9) },
+      { title: '6.5 School OJT Reflections', page: String(sectionPageMap['school ojt reflections'] || 9) },
+    ];
+    entries.push(...schoolTOCEntries);
+  }
 
   const paragraphs: Paragraph[] = [
     new Paragraph({
@@ -720,6 +791,67 @@ function buildSectionPage(title: string, sections: SectionData[], compact = fals
   }
 
   return children;
+}
+
+function buildSchoolPlacementPages(placement: any, compact = false, lineSpacing = 240): Paragraph[] {
+  const pages: Paragraph[] = [];
+  const sections = [
+    {
+      title: 'SCHOOL OJT - INTRODUCTION',
+      content: [
+        { title: 'School/OJT Unit', content: placement.trainingOrganization },
+        { title: 'Location', content: placement.trainingLocation },
+        { title: 'Background of the Organization', content: placement.background },
+        { title: 'Vision', content: placement.vision },
+        { title: 'Mission', content: placement.mission },
+        { title: 'Objectives', content: placement.objectives, isBullet: true },
+        { title: 'Core Values', content: placement.coreValues, isBullet: true },
+        { title: 'Products and Services Offered', content: placement.services },
+      ],
+      image: placement.organizationStructureImage,
+    },
+    {
+      title: 'SCHOOL OJT - ORGANIZATION ANALYSIS',
+      content: [
+        { title: 'Strengths', content: placement.strengths, isBullet: true },
+        { title: 'Weaknesses', content: placement.weaknesses, isBullet: true },
+        { title: 'Opportunities', content: placement.opportunities, isBullet: true },
+        { title: 'Threats', content: placement.threats, isBullet: true },
+        { title: 'Recommendations for Improvement', content: placement.recommendations, isBullet: true },
+      ],
+    },
+    {
+      title: 'SCHOOL OJT - TASKS AND DUTIES',
+      content: [
+        { title: 'Assigned Tasks and Responsibilities', content: placement.tasks, isBullet: true },
+        { title: 'Duties and Procedures Conformed', content: placement.procedures, isBullet: true },
+      ],
+    },
+    {
+      title: 'SCHOOL OJT - CASE ANALYSIS',
+      content: [
+        { title: 'Issue / Problem 1', content: placement.issue1 },
+        { title: 'Strategy/Action Undertaken for Problem 1', content: placement.issue1Action },
+        { title: 'Issue / Problem 2', content: placement.issue2 },
+        { title: 'Strategy/Action Undertaken for Problem 2', content: placement.issue2Action },
+        { title: 'Lessons Learned from the Situations', content: placement.lessons },
+      ],
+    },
+    {
+      title: 'SCHOOL OJT - REFLECTIONS',
+      content: [
+        { title: 'Self-Evaluation', content: placement.selfEvaluation },
+        { title: 'Relevancy of the Organization', content: placement.relevancy },
+      ],
+    },
+  ];
+
+  sections.forEach((section, index) => {
+    if (index > 0 && !compact) pages.push(new Paragraph({ pageBreakBefore: true }));
+    pages.push(...buildSectionPage(section.title, section.content, compact, lineSpacing, section.image));
+  });
+
+  return pages;
 }
 
 function buildImageGridTable(images: (string | AppendixImage)[]) {
