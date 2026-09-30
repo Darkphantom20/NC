@@ -51,7 +51,11 @@ const schoolPlacementTOCEntries = [
 function syncSchoolPlacementTOC(contents: string, enabled: boolean): string {
   const lines = contents.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const withoutSchoolEntries = lines
-    .filter((line) => !/school ojt/i.test(line) && !schoolPlacementTOCEntries.includes(line))
+    .filter((line) => (
+      !/school ojt/i.test(line)
+      && !/^6\.\d+\.\d+\s+/.test(line)
+      && !schoolPlacementTOCEntries.includes(line)
+    ))
     .map((line) => {
       if (enabled && /^6\.\s*appendices$/i.test(line)) return '11. Appendices';
       if (!enabled && /^11\.\s*appendices$/i.test(line)) return '6. Appendices';

@@ -461,9 +461,14 @@ function estimateAcknowledgementLineCount(data: any): number {
 
 function estimateTOCLineCount(data: any): number {
   const entries = ensureArray(data.tableOfContents || '');
-  const hasSchoolPlacementEntries = entries.some((entry) => normalizeTOCKey(entry).includes('school ojt') || /^(6\.\s*introduction|7\.\s*organization|8\.\s*tasks|9\.\s*case|10\.\s*reflections)/i.test(entry));
-  const schoolEntryCount = data.schoolPlacement?.enabled && !hasSchoolPlacementEntries ? 25 : 0;
-  return 1 + (entries.length || 26) + schoolEntryCount;
+  const baseEntryCount = entries.filter((entry) => !isSchoolTOCLine(entry)).length || 26;
+  return 1 + baseEntryCount + (data.schoolPlacement?.enabled ? 25 : 0);
+}
+
+function isSchoolTOCLine(title: string): boolean {
+  return /school ojt/i.test(title)
+    || /^6\.\d+\.\d+\s+/.test(title)
+    || /^(6\.\s*introduction|7\.\s*organization|8\.\s*tasks|9\.\s*case|10\.\s*reflections)/i.test(title);
 }
 
 function estimateAppendixPageCount(appendicesData?: AppendicesData): number {
@@ -666,8 +671,9 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
     return list;
   }, []);
 
-  const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
-  if (data.schoolPlacement?.enabled && !entries.some((entry) => normalizeTOCKey(entry.title).includes('school ojt'))) {
+  let entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
+  if (data.schoolPlacement?.enabled) {
+    entries = entries.filter((entry) => !isSchoolTOCLine(entry.title));
     const schoolTOCEntries = [
       { title: '6. Introduction', page: String(sectionPageMap['school ojt introduction'] || 9) },
       { title: '6.1 Background of the Organization', page: String(sectionPageMap['school ojt introduction'] || 9) },
@@ -696,7 +702,10 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
       { title: '10.2 Relevancy of the Organization', page: String(sectionPageMap['school ojt reflections'] || 9) },
     ];
     const appendicesIndex = entries.findIndex((entry) => normalizeTOCKey(entry.title) === 'appendices');
+    if (appendicesIndex >= 0) entries[appendicesIndex] = { ...entries[appendicesIndex], title: '11. Appendices' };
     entries.splice(appendicesIndex >= 0 ? appendicesIndex : entries.length, 0, ...schoolTOCEntries);
+  } else {
+    entries = entries.filter((entry) => !isSchoolTOCLine(entry.title));
   }
 
   const paragraphs: Paragraph[] = [
