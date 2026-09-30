@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle, ImagePlus, X } from 'lucide-react';
+import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X } from 'lucide-react';
 import { renderAsync } from 'docx-preview';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
@@ -304,6 +304,7 @@ export default function Home() {
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState('');
+  const [previewZoom, setPreviewZoom] = useState(1);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewRequestRef = useRef<AbortController | null>(null);
   const previewCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
@@ -814,18 +815,34 @@ export default function Home() {
                 <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/80 font-semibold">Document Preview</p>
                 <h3 className="text-2xl font-bold text-white">Report pages</h3>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPreview(false);
-                  setPreviewBlob(null);
-                  setPreviewError('');
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-200 transition hover:border-slate-500 hover:text-white"
-                aria-label="Close preview"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center rounded-xl border border-slate-700 bg-slate-800/80 p-1">
+                  <button type="button" onClick={() => setPreviewZoom((zoom) => Math.max(0.7, Number((zoom - 0.1).toFixed(1))))} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:opacity-40" aria-label="Zoom out" title="Zoom out" disabled={previewZoom <= 0.7}>
+                    <ZoomOut size={17} />
+                  </button>
+                  <span className="min-w-14 px-2 text-center text-xs font-semibold text-cyan-200" aria-live="polite">{Math.round(previewZoom * 100)}%</span>
+                  <button type="button" onClick={() => setPreviewZoom((zoom) => Math.min(1.6, Number((zoom + 0.1).toFixed(1))))} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:opacity-40" aria-label="Zoom in" title="Zoom in" disabled={previewZoom >= 1.6}>
+                    <ZoomIn size={17} />
+                  </button>
+                  <button type="button" onClick={() => setPreviewZoom(1)} className="ml-1 flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Auto fit preview" title="Auto fit">
+                    <Maximize2 size={15} />
+                    <span className="hidden sm:inline">Auto fit</span>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPreview(false);
+                    setPreviewBlob(null);
+                    setPreviewError('');
+                    setPreviewZoom(1);
+                  }}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-200 transition hover:border-slate-500 hover:text-white"
+                  aria-label="Close preview"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
             <div className="relative max-h-[75vh] min-h-48 overflow-auto rounded-xl bg-slate-800 p-2 sm:p-4" aria-busy={previewLoading}>
               {previewLoading && (
@@ -838,7 +855,7 @@ export default function Home() {
                   {previewError}
                 </p>
               )}
-              <div ref={previewContainerRef} className="report-preview-pages" />
+              <div ref={previewContainerRef} className="report-preview-pages" style={{ zoom: previewZoom } as React.CSSProperties} />
             </div>
           </div>
         </div>
