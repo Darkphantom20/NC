@@ -14,7 +14,6 @@ interface AppendixImage {
   detail?: string;
 }
 
-          new Paragraph({ pageBreakBefore: true }),
   day: string;
   date: string;
   accomplishment: string;
