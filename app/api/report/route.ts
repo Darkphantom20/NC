@@ -399,67 +399,62 @@ function buildAcknowledgementPage(data: any, compact = false, lineSpacing = 240)
 
 function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240): Paragraph[] {
   const rawContent = data.tableOfContents || '';
-  const lines = ensureArray(rawContent);
+  const fallbackEntries = [
+    { title: 'Introduction', page: '1' },
+    { title: 'Organization Analysis', page: '2' },
+    { title: 'Tasks & Duties', page: '3' },
+    { title: 'Case Analysis', page: '4' },
+    { title: 'Reflections', page: '5' },
+    { title: 'Appendices', page: '6' },
+  ];
+
+  const parsedEntries = ensureArray(rawContent).reduce<{ title: string; page: string }[]>((list, line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return list;
+
+    const match = trimmed.match(/^(\d+\.?\s*)?(.*?)(?:\s+\t|\s+)(\d+)$|^(.*?)(?:\s+\d+)$|^(.*)$/);
+    const extractedTitle = match?.[2] || match?.[4] || match?.[5] || trimmed;
+    const extractedPage = match?.[3] || (trimmed.match(/(\d+)$/)?.[1] ?? '');
+
+    if (extractedTitle && extractedTitle.trim()) {
+      list.push({
+        title: extractedTitle.trim().replace(/^\d+\.\s*/, '').replace(/\s*[:.-]+\s*$/, ''),
+        page: extractedPage || String(list.length + 1),
+      });
+    }
+
+    return list;
+  }, []);
+
+  const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
 
   const paragraphs: Paragraph[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 180, line: lineSpacing, lineRule: 'auto' },
-      children: [new TextRun({ text: 'TABLE OF CONTENTS', bold: true, size: 24, font: 'Times New Roman' })],
+      spacing: { before: 0, after: 240, line: lineSpacing, lineRule: 'auto' },
+      children: [new TextRun({ text: 'Table of Contents', bold: true, size: 28, font: 'Times New Roman' })],
     }),
   ];
 
-  if (lines.length > 0) {
-    lines.forEach((line) => {
-      paragraphs.push(
-        new Paragraph({
-          alignment: AlignmentType.LEFT,
-          indent: { left: 720 },
-          spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-          children: [new TextRun({ text: line, size: 22, font: 'Times New Roman' })],
-        })
-      );
-    });
-  } else {
+  entries.forEach((entry, index) => {
+    const titleText = `${index + 1}. ${entry.title}`;
+    const fillLength = Math.max(1, 80 - titleText.length);
+    const filler = '.'.repeat(fillLength);
+
     paragraphs.push(
       new Paragraph({
         alignment: AlignmentType.LEFT,
         indent: { left: 720 },
+        tabStops: [{ type: 'right', position: 9000 }],
         spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '1. Introduction', size: 22, font: 'Times New Roman' })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.LEFT,
-        indent: { left: 720 },
-        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '2. Organization Analysis', size: 22, font: 'Times New Roman' })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.LEFT,
-        indent: { left: 720 },
-        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '3. Tasks & Duties', size: 22, font: 'Times New Roman' })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.LEFT,
-        indent: { left: 720 },
-        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '4. Case Analysis', size: 22, font: 'Times New Roman' })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.LEFT,
-        indent: { left: 720 },
-        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '5. Reflections', size: 22, font: 'Times New Roman' })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.LEFT,
-        indent: { left: 720 },
-        spacing: { before: 0, after: 0, line: lineSpacing, lineRule: 'auto' },
-        children: [new TextRun({ text: '6. Appendices', size: 22, font: 'Times New Roman' })],
+        children: [
+          new TextRun({ text: `${titleText}${filler}`, size: 22, font: 'Times New Roman' }),
+          new TextRun({ text: '\t', size: 22, font: 'Times New Roman' }),
+          new TextRun({ text: entry.page, size: 22, font: 'Times New Roman' }),
+        ],
       })
     );
-  }
+  });
 
   return paragraphs;
 }
