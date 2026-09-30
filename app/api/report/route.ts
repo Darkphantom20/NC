@@ -14,7 +14,7 @@ interface AppendixImage {
   detail?: string;
 }
 
-interface DailyActivity {
+          new Paragraph({ pageBreakBefore: true }),
   day: string;
   date: string;
   accomplishment: string;
@@ -241,7 +241,7 @@ export async function POST(request: Request) {
           }),
         },
         children: [
-          ...(!compactSectionLayout ? [new Paragraph({ pageBreakBefore: true })] : []),
+          new Paragraph({ pageBreakBefore: true }),
           ...remainingAppendixContent,
         ],
       });
