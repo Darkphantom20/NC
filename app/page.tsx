@@ -1032,8 +1032,8 @@ export default function Home() {
 
             <SectionBlock title="Page Layout Style" className="tour-page-layout">
               <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
-                <p className="mb-3 text-xs text-slate-300">
-                  Choose how the acknowledgement through reflection sections are arranged in the generated Word output.
+                  <p className="mb-3 text-xs text-slate-300">
+                  Choose how the Introduction, Organization Analysis, Tasks and Duties, Case Analysis, and Reflections sections are arranged in the generated Word output.
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">

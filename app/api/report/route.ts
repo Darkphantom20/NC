@@ -144,9 +144,9 @@ export async function POST(request: Request) {
           ...buildCoverPage(data),
           new Paragraph({ pageBreakBefore: true }),
           ...buildAcknowledgementPage(data, compactSectionLayout, acknowledgementLineSpacing),
-          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
+          new Paragraph({ pageBreakBefore: true }),
           ...buildTableOfContentsPage(data, compactSectionLayout, acknowledgementLineSpacing),
-          new Paragraph({ pageBreakBefore: !compactSectionLayout }),
+          new Paragraph({ pageBreakBefore: true }),
           ...buildSectionPage('INTRODUCTION', [
             { title: 'Background of the Organization', content: data.background },
             { title: 'Vision', content: data.vision },
@@ -183,7 +183,7 @@ export async function POST(request: Request) {
           ], compactSectionLayout, acknowledgementLineSpacing),
           ...(data.schoolPlacement?.enabled
             ? [
-              new Paragraph({ pageBreakBefore: !compactSectionLayout }),
+              new Paragraph({ pageBreakBefore: true }),
               ...buildSchoolPlacementPages(data.schoolPlacement, compactSectionLayout, acknowledgementLineSpacing),
             ]
             : []),
