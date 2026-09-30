@@ -21,41 +21,46 @@ const sectionOrder = [
 ];
 
 const schoolPlacementTOCEntries = [
-  '6. School OJT Narrative (Second Placement)',
-  '6.1 School OJT Introduction',
-  '6.1.1 Background of the Organization',
-  '6.1.2 Vision',
-  '6.1.3 Mission',
-  '6.1.4 Objectives',
-  '6.1.5 Core Values',
-  '6.1.6 Products and Services Offered',
-  '6.2 School OJT Organization Analysis',
-  '6.2.1 Strengths',
-  '6.2.2 Weaknesses',
-  '6.2.3 Opportunities',
-  '6.2.4 Threats',
-  '6.2.5 Recommendations for Improvement',
-  '6.3 School OJT Tasks and Duties',
-  '6.3.1 Assigned Tasks and Responsibilities',
-  '6.3.2 Duties and Procedures Conformed',
-  '6.4 School OJT Case Analysis',
-  '6.4.1 Issue / Problem 1',
-  '6.4.2 Strategy/Action Undertaken for Problem 1',
-  '6.4.3 Issue / Problem 2',
-  '6.4.4 Strategy/Action Undertaken for Problem 2',
-  '6.4.5 Lessons Learned from the Situations',
-  '6.5 School OJT Reflections',
-  '6.5.1 Self-Evaluation',
-  '6.5.2 Relevancy of the Organization'
+  '6. Introduction',
+  '6.1 Background of the Organization',
+  '6.2 Vision',
+  '6.3 Mission',
+  '6.4 Objectives',
+  '6.5 Core Values',
+  '6.6 Products and Services Offered',
+  '7. Organization / Company Analysis',
+  '7.1 Strengths',
+  '7.2 Weaknesses',
+  '7.3 Opportunities',
+  '7.4 Threats',
+  '7.5 Recommendations for Improvement',
+  '8. Tasks and Duties',
+  '8.1 Assigned Tasks and Responsibilities',
+  '8.2 Duties and Procedures Conformed',
+  '9. Case Analysis',
+  '9.1 Issue / Problem 1',
+  '9.2 Strategy/Action Undertaken for Problem 1',
+  '9.3 Issue / Problem 2',
+  '9.4 Strategy/Action Undertaken for Problem 2',
+  '9.5 Lessons Learned from the Situations',
+  '10. Reflections',
+  '10.1 Self-Evaluation',
+  '10.2 Relevancy of the Organization'
 ];
 
 function syncSchoolPlacementTOC(contents: string, enabled: boolean): string {
   const lines = contents.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const withoutSchoolEntries = lines.filter((line) => !/school ojt/i.test(line));
+  const withoutSchoolEntries = lines
+    .filter((line) => !/school ojt/i.test(line) && !schoolPlacementTOCEntries.includes(line))
+    .map((line) => {
+      if (enabled && /^6\.\s*appendices$/i.test(line)) return '11. Appendices';
+      if (!enabled && /^11\.\s*appendices$/i.test(line)) return '6. Appendices';
+      return line;
+    });
 
   if (!enabled) return withoutSchoolEntries.join('\n');
 
-  const appendicesIndex = withoutSchoolEntries.findIndex((line) => /^6\.\s*appendices$/i.test(line));
+  const appendicesIndex = withoutSchoolEntries.findIndex((line) => /^11\.\s*appendices$/i.test(line));
   withoutSchoolEntries.splice(
     appendicesIndex >= 0 ? appendicesIndex : withoutSchoolEntries.length,
     0,
@@ -296,6 +301,8 @@ export default function Home() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const previewRequestRef = useRef<AbortController | null>(null);
+  const previewCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
 
   useEffect(() => {
     if (!showCompletionPopup) return;
@@ -686,6 +693,17 @@ export default function Home() {
     setShowPreview(true);
     setPreviewLoading(true);
     setPreviewError('');
+    const previewKey = JSON.stringify(form);
+
+    if (previewCacheRef.current?.key === previewKey) {
+      setPreviewBlob(previewCacheRef.current.blob);
+      setPreviewLoading(false);
+      return;
+    }
+
+    previewRequestRef.current?.abort();
+    const controller = new AbortController();
+    previewRequestRef.current = controller;
     setPreviewBlob(null);
 
     try {
@@ -695,6 +713,7 @@ export default function Home() {
           'Content-Type': 'application/json',
           'x-report-preview': 'true',
         },
+        signal: controller.signal,
         body: JSON.stringify(form),
       });
 
@@ -702,8 +721,12 @@ export default function Home() {
         throw new Error(await readErrorMessage(response));
       }
 
-      setPreviewBlob(await response.blob());
+      const blob = await response.blob();
+      if (controller.signal.aborted) return;
+      previewCacheRef.current = { key: previewKey, blob };
+      setPreviewBlob(blob);
     } catch (error) {
+      if (controller.signal.aborted) return;
       const message = error instanceof Error ? error.message : 'Could not prepare the document preview.';
       setPreviewError(message);
       setPreviewLoading(false);
@@ -726,6 +749,7 @@ export default function Home() {
       ignoreLastRenderedPageBreak: false,
       renderHeaders: true,
       renderFooters: true,
+      useBase64URL: true,
     }).catch((error: unknown) => {
       if (!cancelled) {
         setPreviewError(error instanceof Error ? error.message : 'Could not render the document preview.');

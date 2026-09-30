@@ -461,8 +461,8 @@ function estimateAcknowledgementLineCount(data: any): number {
 
 function estimateTOCLineCount(data: any): number {
   const entries = ensureArray(data.tableOfContents || '');
-  const hasSchoolPlacementEntries = entries.some((entry) => normalizeTOCKey(entry).includes('school ojt'));
-  const schoolEntryCount = data.schoolPlacement?.enabled && !hasSchoolPlacementEntries ? 26 : 0;
+  const hasSchoolPlacementEntries = entries.some((entry) => normalizeTOCKey(entry).includes('school ojt') || /^(6\.\s*introduction|7\.\s*organization|8\.\s*tasks|9\.\s*case|10\.\s*reflections)/i.test(entry));
+  const schoolEntryCount = data.schoolPlacement?.enabled && !hasSchoolPlacementEntries ? 25 : 0;
   return 1 + (entries.length || 26) + schoolEntryCount;
 }
 
@@ -669,32 +669,31 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
   const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
   if (data.schoolPlacement?.enabled && !entries.some((entry) => normalizeTOCKey(entry.title).includes('school ojt'))) {
     const schoolTOCEntries = [
-      { title: '6. School OJT Narrative (Second Placement)', page: String(sectionPageMap['school ojt narrative'] || 9) },
-      { title: '6.1 School OJT Introduction', page: String(sectionPageMap['school ojt introduction'] || 9) },
-      { title: '6.1.1 Background of the Organization', page: String(sectionPageMap['school ojt introduction'] || 9) },
-      { title: '6.1.2 Vision', page: String(sectionPageMap['school ojt introduction'] || 9) },
-      { title: '6.1.3 Mission', page: String(sectionPageMap['school ojt introduction'] || 9) },
-      { title: '6.1.4 Objectives', page: String(sectionPageMap['school ojt introduction'] || 9) },
-      { title: '6.1.5 Core Values', page: String(sectionPageMap['school ojt introduction'] || 9) },
-      { title: '6.1.6 Products and Services Offered', page: String(sectionPageMap['school ojt introduction'] || 9) },
-      { title: '6.2 School OJT Organization Analysis', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
-      { title: '6.2.1 Strengths', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
-      { title: '6.2.2 Weaknesses', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
-      { title: '6.2.3 Opportunities', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
-      { title: '6.2.4 Threats', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
-      { title: '6.2.5 Recommendations for Improvement', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
-      { title: '6.3 School OJT Tasks and Duties', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
-      { title: '6.3.1 Assigned Tasks and Responsibilities', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
-      { title: '6.3.2 Duties and Procedures Conformed', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
-      { title: '6.4 School OJT Case Analysis', page: String(sectionPageMap['school ojt case analysis'] || 9) },
-      { title: '6.4.1 Issue / Problem 1', page: String(sectionPageMap['school ojt case analysis'] || 9) },
-      { title: '6.4.2 Strategy/Action Undertaken for Problem 1', page: String(sectionPageMap['school ojt case analysis'] || 9) },
-      { title: '6.4.3 Issue / Problem 2', page: String(sectionPageMap['school ojt case analysis'] || 9) },
-      { title: '6.4.4 Strategy/Action Undertaken for Problem 2', page: String(sectionPageMap['school ojt case analysis'] || 9) },
-      { title: '6.4.5 Lessons Learned from the Situations', page: String(sectionPageMap['school ojt case analysis'] || 9) },
-      { title: '6.5 School OJT Reflections', page: String(sectionPageMap['school ojt reflections'] || 9) },
-      { title: '6.5.1 Self-Evaluation', page: String(sectionPageMap['school ojt reflections'] || 9) },
-      { title: '6.5.2 Relevancy of the Organization', page: String(sectionPageMap['school ojt reflections'] || 9) },
+      { title: '6. Introduction', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.1 Background of the Organization', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.2 Vision', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.3 Mission', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.4 Objectives', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.5 Core Values', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '6.6 Products and Services Offered', page: String(sectionPageMap['school ojt introduction'] || 9) },
+      { title: '7. Organization / Company Analysis', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
+      { title: '7.1 Strengths', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
+      { title: '7.2 Weaknesses', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
+      { title: '7.3 Opportunities', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
+      { title: '7.4 Threats', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
+      { title: '7.5 Recommendations for Improvement', page: String(sectionPageMap['school ojt organization analysis'] || 9) },
+      { title: '8. Tasks and Duties', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
+      { title: '8.1 Assigned Tasks and Responsibilities', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
+      { title: '8.2 Duties and Procedures Conformed', page: String(sectionPageMap['school ojt tasks and duties'] || 9) },
+      { title: '9. Case Analysis', page: String(sectionPageMap['school ojt case analysis'] || 9) },
+      { title: '9.1 Issue / Problem 1', page: String(sectionPageMap['school ojt case analysis'] || 9) },
+      { title: '9.2 Strategy/Action Undertaken for Problem 1', page: String(sectionPageMap['school ojt case analysis'] || 9) },
+      { title: '9.3 Issue / Problem 2', page: String(sectionPageMap['school ojt case analysis'] || 9) },
+      { title: '9.4 Strategy/Action Undertaken for Problem 2', page: String(sectionPageMap['school ojt case analysis'] || 9) },
+      { title: '9.5 Lessons Learned from the Situations', page: String(sectionPageMap['school ojt case analysis'] || 9) },
+      { title: '10. Reflections', page: String(sectionPageMap['school ojt reflections'] || 9) },
+      { title: '10.1 Self-Evaluation', page: String(sectionPageMap['school ojt reflections'] || 9) },
+      { title: '10.2 Relevancy of the Organization', page: String(sectionPageMap['school ojt reflections'] || 9) },
     ];
     const appendicesIndex = entries.findIndex((entry) => normalizeTOCKey(entry.title) === 'appendices');
     entries.splice(appendicesIndex >= 0 ? appendicesIndex : entries.length, 0, ...schoolTOCEntries);
@@ -721,16 +720,16 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
       '6': 'appendices',
     };
     const numberedPage = sectionNumber ? sectionPageMap[numberedSectionKeys[sectionNumber]] : undefined;
-    const schoolSubsectionNumber = titleText.match(/^\s*6\.(\d+)/)?.[1];
-    const schoolSubsectionKeys: Record<string, string> = {
-      '1': 'school ojt introduction',
-      '2': 'school ojt organization analysis',
-      '3': 'school ojt tasks and duties',
-      '4': 'school ojt case analysis',
-      '5': 'school ojt reflections',
+    const schoolMainNumber = titleText.match(/^\s*(\d+)(?:\.\d+)*[.)]?\s+/)?.[1];
+    const schoolSectionKeys: Record<string, string> = {
+      '6': 'school ojt introduction',
+      '7': 'school ojt organization analysis',
+      '8': 'school ojt tasks and duties',
+      '9': 'school ojt case analysis',
+      '10': 'school ojt reflections',
     };
-    const schoolPlacementPage = data.schoolPlacement?.enabled
-      ? sectionPageMap[schoolSubsectionNumber ? schoolSubsectionKeys[schoolSubsectionNumber] : 'school ojt narrative']
+    const schoolPlacementPage = data.schoolPlacement?.enabled && !normalizedTitle.includes('appendices')
+      ? sectionPageMap[schoolSectionKeys[schoolMainNumber || '']]
       : undefined;
     const matchedPage = Object.entries(sectionPageMap).find(([key]) => {
       const normalizedKey = normalizeTOCKey(key);
