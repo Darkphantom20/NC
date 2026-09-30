@@ -28,7 +28,7 @@ const defaultForm = {
   submittedToName: 'Mr. Erson A. Rodriguez',
   submittedToTitle: 'Associate Dean of the College of Computing Studies',
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
-  tableOfContents: '1. Introduction\n2. Organization / Company Analysis\n3. Tasks and Duties\n4. Case Analysis\n5. Reflections\n6. Appendices',
+  tableOfContents: '1. Introduction\n1.1 Background of the Organization\n1.2 Vision\n1.3 Mission\n1.4 Objectives\n1.5 Core Values\n1.6 Products and Services Offered\n2. Organization / Company Analysis\n2.1 Strengths\n2.2 Weaknesses\n2.3 Opportunities\n2.4 Threats\n2.5 Recommendations for Improvement\n3. Tasks and Duties\n3.1 Assigned Tasks and Responsibilities\n3.2 Duties and Procedures Conformed\n4. Case Analysis\n4.1 Issue / Problem 1\n4.2 Strategy/Action Undertaken for Problem 1\n4.3 Issue / Problem 2\n4.4 Strategy/Action Undertaken for Problem 2\n4.5 Lessons Learned from the Situations\n5. Reflections\n5.1 Self-Evaluation\n5.2 Relevancy of the Organization\n6. Appendices',
   sectionLayout: 'compact',
   acknowledgementLineSpacing: 'single',
   background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',

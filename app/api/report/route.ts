@@ -400,39 +400,57 @@ function buildAcknowledgementPage(data: any, compact = false, lineSpacing = 240)
 function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240): Paragraph[] {
   const rawContent = data.tableOfContents || '';
   const fallbackEntries = [
-    { title: 'Introduction', page: '1' },
-    { title: 'Organization / Company Analysis', page: '2' },
-    { title: 'Tasks and Duties', page: '3' },
-    { title: 'Case Analysis', page: '4' },
-    { title: 'Reflections', page: '5' },
-    { title: 'Appendices', page: '6' },
+    { title: '1. Introduction', page: '1' },
+    { title: '1.1 Background of the Organization', page: '1' },
+    { title: '1.2 Vision', page: '1' },
+    { title: '1.3 Mission', page: '1' },
+    { title: '1.4 Objectives', page: '1' },
+    { title: '1.5 Core Values', page: '1' },
+    { title: '1.6 Products and Services Offered', page: '1' },
+    { title: '2. Organization / Company Analysis', page: '2' },
+    { title: '2.1 Strengths', page: '2' },
+    { title: '2.2 Weaknesses', page: '2' },
+    { title: '2.3 Opportunities', page: '2' },
+    { title: '2.4 Threats', page: '2' },
+    { title: '2.5 Recommendations for Improvement', page: '2' },
+    { title: '3. Tasks and Duties', page: '3' },
+    { title: '3.1 Assigned Tasks and Responsibilities', page: '3' },
+    { title: '3.2 Duties and Procedures Conformed', page: '3' },
+    { title: '4. Case Analysis', page: '4' },
+    { title: '4.1 Issue / Problem 1', page: '4' },
+    { title: '4.2 Strategy/Action Undertaken for Problem 1', page: '4' },
+    { title: '4.3 Issue / Problem 2', page: '4' },
+    { title: '4.4 Strategy/Action Undertaken for Problem 2', page: '4' },
+    { title: '4.5 Lessons Learned from the Situations', page: '4' },
+    { title: '5. Reflections', page: '5' },
+    { title: '5.1 Self-Evaluation', page: '5' },
+    { title: '5.2 Relevancy of the Organization', page: '5' },
+    { title: '6. Appendices', page: '6' },
   ];
 
   const parsedEntries = ensureArray(rawContent).reduce<{ title: string; page: string }[]>((list, line) => {
     const trimmed = line.trim();
     if (!trimmed) return list;
 
-    const isSubsection = /^\d+\.\d+\s+/.test(trimmed);
-    if (isSubsection) return list;
+    const leadingMatch = trimmed.match(/^(\d+)(?:\.(\d+))?\.\s*(.+)$/);
+    const numberedTitle = leadingMatch
+      ? `${leadingMatch[1]}${leadingMatch[2] ? `.${leadingMatch[2]}` : ''}. ${leadingMatch[3].trim()}`
+      : trimmed.replace(/\s+\d+$/, '').trim();
+    const pageFromLine = leadingMatch ? leadingMatch[1] : trimmed.match(/(\d+)$/)?.[1] ?? '';
 
-    const match = trimmed.match(/^(?:\d+\.?\s*)?(.*?)(?:\s+)(\d+)$/) || trimmed.match(/^(?:\d+\.?\s*)?(.*)$/);
-    const extractedTitle = (match?.[1] || trimmed)
-      .replace(/^\d+\.\s*/, '')
-      .replace(/\s*[:.-]+\s*$/, '')
-      .trim();
-    const extractedPage = match?.[2] || String(list.length + 1);
+    if (!numberedTitle) return list;
 
-    if (extractedTitle) {
-      list.push({
-        title: extractedTitle,
-        page: extractedPage,
-      });
-    }
+    if (!compact && /^\d+\.\d+\./.test(numberedTitle)) return list;
+
+    list.push({
+      title: numberedTitle,
+      page: pageFromLine || String(list.length + 1),
+    });
 
     return list;
   }, []);
 
-  const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
+  const entries = parsedEntries.length > 0 ? parsedEntries : fallbackEntries.filter((entry) => compact || !/^\d+\.\d+\./.test(entry.title));
 
   const paragraphs: Paragraph[] = [
     new Paragraph({
@@ -446,11 +464,12 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
     const titleText = entry.title;
     const fillLength = Math.max(1, 90 - titleText.length);
     const filler = '.'.repeat(fillLength);
+    const isSubsection = /^\d+\.\d+\./.test(titleText);
 
     paragraphs.push(
       new Paragraph({
         alignment: AlignmentType.LEFT,
-        indent: { left: 180 },
+        indent: { left: isSubsection ? 500 : 180 },
         tabStops: [{ type: 'right', position: 9000 }],
         spacing: { before: 0, after: 3, line: lineSpacing, lineRule: 'auto' },
         children: [
