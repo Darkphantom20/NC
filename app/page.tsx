@@ -304,7 +304,7 @@ export default function Home() {
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState('');
-  const [previewZoom, setPreviewZoom] = useState(1);
+  const [previewZoom, setPreviewZoom] = useState(0.3);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewRequestRef = useRef<AbortController | null>(null);
   const previewCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
@@ -696,7 +696,7 @@ export default function Home() {
 
   const handlePreview = async () => {
     setShowPreview(true);
-    setPreviewZoom(1);
+    setPreviewZoom(window.innerWidth < 640 ? 0.3 : 1);
     setPreviewLoading(true);
     setPreviewError('');
     const previewKey = JSON.stringify(form);
@@ -818,14 +818,14 @@ export default function Home() {
               </div>
               <div className="report-preview-controls flex items-center justify-between gap-2 sm:justify-end">
                 <div className="flex items-center rounded-xl border border-slate-700 bg-slate-800/80 p-1">
-                  <button type="button" onClick={() => setPreviewZoom((zoom) => Math.max(0.7, Number((zoom - 0.1).toFixed(1))))} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:opacity-40" aria-label="Zoom out" title="Zoom out" disabled={previewZoom <= 0.7}>
+                  <button type="button" onClick={() => setPreviewZoom((zoom) => Math.max(0.3, Number((zoom - 0.05).toFixed(2))))} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:opacity-40" aria-label="Zoom out" title="Zoom out" disabled={previewZoom <= 0.3}>
                     <ZoomOut size={17} />
                   </button>
                   <span className="min-w-14 px-2 text-center text-xs font-semibold text-cyan-200" aria-live="polite">{Math.round(previewZoom * 100)}%</span>
-                  <button type="button" onClick={() => setPreviewZoom((zoom) => Math.min(1.6, Number((zoom + 0.1).toFixed(1))))} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:opacity-40" aria-label="Zoom in" title="Zoom in" disabled={previewZoom >= 1.6}>
+                  <button type="button" onClick={() => setPreviewZoom((zoom) => Math.min(1.6, Number((zoom + 0.05).toFixed(2))))} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:opacity-40" aria-label="Zoom in" title="Zoom in" disabled={previewZoom >= 1.6}>
                     <ZoomIn size={17} />
                   </button>
-                  <button type="button" onClick={() => setPreviewZoom(1)} className="ml-1 flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Auto fit preview" title="Auto fit">
+                  <button type="button" onClick={() => setPreviewZoom(window.innerWidth < 640 ? 0.3 : 1)} className="ml-1 flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Auto fit preview" title="Auto fit">
                     <Maximize2 size={15} />
                     <span>Fit</span>
                   </button>
@@ -836,7 +836,7 @@ export default function Home() {
                     setShowPreview(false);
                     setPreviewBlob(null);
                     setPreviewError('');
-                    setPreviewZoom(1);
+                    setPreviewZoom(0.3);
                   }}
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-200 transition hover:border-slate-500 hover:text-white"
                   aria-label="Close preview"
