@@ -108,7 +108,9 @@ export async function POST(request: Request) {
       return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 });
     }
 
-    if (hasSupabaseConfig) {
+    const isPreviewRequest = request.headers.get('x-report-preview') === 'true';
+
+    if (hasSupabaseConfig && !isPreviewRequest) {
       const supabase = createClient(supabaseUrl!, supabaseKey!);
       const payload = {
         student_name: data.studentName || null,

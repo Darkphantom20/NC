@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
 import { HelpCircle, ImagePlus, X } from 'lucide-react';
+import { renderAsync } from 'docx-preview';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
 import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
@@ -221,6 +222,10 @@ export default function Home() {
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   const [completionSlideIndex, setCompletionSlideIndex] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!showCompletionPopup) return;
@@ -561,110 +566,63 @@ export default function Home() {
     });
   };
 
-  const buildPreviewPages = () => {
-    const previewEntries = form.tableOfContents
-      .split(/\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .slice(0, 30);
+  const handlePreview = async () => {
+    setShowPreview(true);
+    setPreviewLoading(true);
+    setPreviewError('');
+    setPreviewBlob(null);
 
-    const previewPages = [
-      {
-        name: 'Cover Page',
-        content: [
-          'A Narrative Report on the',
-          'On-the-Job Training conducted at',
-          form.trainingOrganization || 'Training Organization',
-          form.trainingLocation || 'Location',
-          'Presented to the faculty of',
-          form.collegeFaculty || 'College of Computing Studies',
-          'In partial fulfillment of the requirements for the degree of',
-          form.degreeProgram || 'Degree Program',
-          'Submitted by:',
-          form.studentName || 'Student Name',
-          'Submitted to:',
-          form.submittedToName || 'Adviser Name',
-          form.submittedToTitle || 'Adviser Title',
-        ],
-      },
-      {
-        name: 'Acknowledgement',
-        content: [
-          ...(form.acknowledgement ? form.acknowledgement.split(/\n/) : ['No acknowledgement provided.']),
-          '',
-          form.studentName || 'Student Name',
-          form.degreeProgram || 'Degree Program',
-          'Jose Rizal Memorial State University',
-        ],
-      },
-      {
-        name: 'Table of Contents',
-        list: previewEntries.length > 0 ? previewEntries : [
-          '1. Introduction',
-          '1.1 Background of the Organization',
-          '2. Organization / Company Analysis',
-          '3. Tasks and Duties',
-          '4. Case Analysis',
-          '5. Reflections',
-          '6. Appendices',
-        ],
-      },
-      {
-        name: 'Introduction',
-        sections: [
-          { label: 'Background of the Organization', value: form.background },
-          { label: 'Vision', value: form.vision },
-          { label: 'Mission', value: form.mission },
-          { label: 'Objectives', value: form.objectives },
-          { label: 'Core Values', value: form.coreValues },
-          { label: 'Products and Services Offered', value: form.services },
-        ],
-      },
-      {
-        name: 'Organization / Company Analysis',
-        sections: [
-          { label: 'Strengths', value: form.strengths },
-          { label: 'Weaknesses', value: form.weaknesses },
-          { label: 'Opportunities', value: form.opportunities },
-          { label: 'Threats', value: form.threats },
-          { label: 'Recommendations for Improvement', value: form.recommendations },
-        ],
-      },
-      {
-        name: 'Tasks and Duties',
-        sections: [
-          { label: 'Assigned Tasks and Responsibilities', value: form.tasks },
-          { label: 'Duties and Procedures Conformed', value: form.procedures },
-        ],
-      },
-      {
-        name: 'Case Analysis',
-        sections: [
-          { label: 'Issue / Problem 1', value: form.issue1 },
-          { label: 'Strategy/Action Undertaken for Problem 1', value: form.issue1Action },
-          { label: 'Issue / Problem 2', value: form.issue2 },
-          { label: 'Strategy/Action Undertaken for Problem 2', value: form.issue2Action },
-          { label: 'Lessons Learned from the Situations', value: form.lessons },
-        ],
-      },
-      {
-        name: 'Reflections',
-        sections: [
-          { label: 'Self-Evaluation', value: form.selfEvaluation },
-          { label: 'Relevancy of the Organization', value: form.relevancy },
-        ],
-      },
-      {
-        name: 'Appendices',
-        sections: [
-          { label: 'Weekly Work Activities', value: form.appendices.dailyJournal?.[0]?.narrative || 'Daily journal narrative available in the final document.' },
-          { label: 'PRIME Narrative', value: form.appendices.primeNarrative || 'No PRIME narrative provided.' },
-        ],
-      },
-    ];
+    try {
+      const response = await fetch('/api/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-report-preview': 'true',
+        },
+        body: JSON.stringify(form),
+      });
 
-    return previewPages;
+      if (!response.ok) {
+        throw new Error(await readErrorMessage(response));
+      }
+
+      setPreviewBlob(await response.blob());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not prepare the document preview.';
+      setPreviewError(message);
+      setPreviewLoading(false);
+    }
   };
+
+  useEffect(() => {
+    const container = previewContainerRef.current;
+    if (!showPreview || !previewBlob || !container) return;
+
+    let cancelled = false;
+    container.replaceChildren();
+    setPreviewLoading(true);
+
+    renderAsync(previewBlob, container, container, {
+      className: 'report-docx',
+      breakPages: true,
+      ignoreWidth: false,
+      ignoreHeight: false,
+      ignoreLastRenderedPageBreak: false,
+      renderHeaders: true,
+      renderFooters: true,
+    }).catch((error: unknown) => {
+      if (!cancelled) {
+        setPreviewError(error instanceof Error ? error.message : 'Could not render the document preview.');
+      }
+    }).finally(() => {
+      if (!cancelled) setPreviewLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+      container.replaceChildren();
+    };
+  }, [previewBlob, showPreview]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -702,8 +660,6 @@ export default function Home() {
     }
   };
 
-  const previewPages = buildPreviewPages();
-
   return (
     <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
       {showPreview && (
@@ -716,46 +672,29 @@ export default function Home() {
               </div>
               <button
                 type="button"
-                onClick={() => setShowPreview(false)}
+                onClick={() => {
+                  setShowPreview(false);
+                  setPreviewBlob(null);
+                  setPreviewError('');
+                }}
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-200 transition hover:border-slate-500 hover:text-white"
                 aria-label="Close preview"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="grid max-h-[75vh] gap-5 overflow-y-auto md:grid-cols-2 xl:grid-cols-3">
-              {previewPages.map((page) => (
-                <div key={page.name} className="mx-auto w-full max-w-[340px] rounded-[18px] border border-slate-700 bg-white p-4 text-black shadow-lg">
-                  <div className="space-y-3 border border-slate-200 bg-white p-3">
-                    <div className="text-center text-[10px] uppercase tracking-[0.2em] text-slate-500">Page Preview</div>
-                    <div className="border-b border-slate-300 pb-2 text-center text-sm font-bold uppercase text-slate-800">
-                      {page.name}
-                    </div>
-                    {Array.isArray(page.list) ? (
-                      <div className="space-y-1 text-[11px] leading-5 text-slate-700">
-                        {page.list.map((item) => (
-                          <div key={item} className="flex items-start justify-between gap-2">
-                            <span>{item}</span>
-                            <span className="text-slate-500">{item.match(/\d+$/)?.[0] ?? ''}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="space-y-2 text-[11px] text-slate-700">
-                        {page.content && page.content.map((line) => (
-                          <div key={line} className={line.length > 40 ? 'text-center' : ''}>{line}</div>
-                        ))}
-                        {'sections' in page && page.sections && page.sections.map((section) => (
-                          <div key={section.label} className="pt-2">
-                            <div className="font-semibold text-slate-800">{section.label}</div>
-                            <div className="text-slate-600">{section.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+            <div className="relative max-h-[75vh] min-h-48 overflow-auto rounded-xl bg-slate-800 p-2 sm:p-4" aria-busy={previewLoading}>
+              {previewLoading && (
+                <div className="absolute inset-x-0 top-3 z-10 mx-auto w-fit rounded-full bg-slate-950/90 px-4 py-2 text-xs font-medium text-cyan-200 shadow-lg">
+                  Rendering report pages...
                 </div>
-              ))}
+              )}
+              {previewError && (
+                <p role="alert" className="rounded-lg border border-rose-400/30 bg-rose-950/70 p-4 text-sm text-rose-200">
+                  {previewError}
+                </p>
+              )}
+              <div ref={previewContainerRef} className="report-preview-pages" />
             </div>
           </div>
         </div>
@@ -1467,7 +1406,7 @@ export default function Home() {
             <div className="mt-2 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={() => setShowPreview(true)}
+                onClick={handlePreview}
                 className="rounded-2xl border border-cyan-500/40 bg-slate-900/80 px-4 py-3.5 text-sm font-semibold text-cyan-300 transition hover:border-cyan-400 hover:bg-slate-800 active:scale-95"
               >
                 Preview Report
