@@ -696,6 +696,7 @@ export default function Home() {
 
   const handlePreview = async () => {
     setShowPreview(true);
+    setPreviewZoom(1);
     setPreviewLoading(true);
     setPreviewError('');
     const previewKey = JSON.stringify(form);
@@ -826,7 +827,7 @@ export default function Home() {
                   </button>
                   <button type="button" onClick={() => setPreviewZoom(1)} className="ml-1 flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Auto fit preview" title="Auto fit">
                     <Maximize2 size={15} />
-                    <span className="hidden sm:inline">Auto fit</span>
+                    <span>Fit</span>
                   </button>
                 </div>
                 <button
