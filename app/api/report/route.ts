@@ -467,7 +467,7 @@ function estimateTOCLineCount(data: any): number {
 
 function isSchoolTOCLine(title: string): boolean {
   return /school ojt/i.test(title)
-    || /^6\.\d+\.\d+\s+/.test(title)
+    || /^(?:6|7|8|9|10)\.\d+(?:\.\d+)?\s+/.test(title)
     || /^(6\.\s*introduction|7\.\s*organization|8\.\s*tasks|9\.\s*case|10\.\s*reflections)/i.test(title);
 }
 
