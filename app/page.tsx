@@ -20,6 +20,50 @@ const sectionOrder = [
   'Appendices'
 ];
 
+const schoolPlacementTOCEntries = [
+  '6. School OJT Narrative (Second Placement)',
+  '6.1 School OJT Introduction',
+  '6.1.1 Background of the Organization',
+  '6.1.2 Vision',
+  '6.1.3 Mission',
+  '6.1.4 Objectives',
+  '6.1.5 Core Values',
+  '6.1.6 Products and Services Offered',
+  '6.2 School OJT Organization Analysis',
+  '6.2.1 Strengths',
+  '6.2.2 Weaknesses',
+  '6.2.3 Opportunities',
+  '6.2.4 Threats',
+  '6.2.5 Recommendations for Improvement',
+  '6.3 School OJT Tasks and Duties',
+  '6.3.1 Assigned Tasks and Responsibilities',
+  '6.3.2 Duties and Procedures Conformed',
+  '6.4 School OJT Case Analysis',
+  '6.4.1 Issue / Problem 1',
+  '6.4.2 Strategy/Action Undertaken for Problem 1',
+  '6.4.3 Issue / Problem 2',
+  '6.4.4 Strategy/Action Undertaken for Problem 2',
+  '6.4.5 Lessons Learned from the Situations',
+  '6.5 School OJT Reflections',
+  '6.5.1 Self-Evaluation',
+  '6.5.2 Relevancy of the Organization'
+];
+
+function syncSchoolPlacementTOC(contents: string, enabled: boolean): string {
+  const lines = contents.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const withoutSchoolEntries = lines.filter((line) => !/school ojt/i.test(line));
+
+  if (!enabled) return withoutSchoolEntries.join('\n');
+
+  const appendicesIndex = withoutSchoolEntries.findIndex((line) => /^6\.\s*appendices$/i.test(line));
+  withoutSchoolEntries.splice(
+    appendicesIndex >= 0 ? appendicesIndex : withoutSchoolEntries.length,
+    0,
+    ...schoolPlacementTOCEntries
+  );
+  return withoutSchoolEntries.join('\n');
+}
+
 const defaultForm = {
   trainingOrganization: 'Zamboanga del Norte Provincial Capitol',
   trainingLocation: 'Dipolog City',
@@ -270,11 +314,15 @@ export default function Home() {
     if (savedForm) {
       try {
         const parsedForm = JSON.parse(savedForm);
-        setForm({
+        const mergedForm = {
           ...defaultForm,
           ...parsedForm,
           schoolPlacement: { ...defaultForm.schoolPlacement, ...(parsedForm.schoolPlacement || {}) },
           appendices: { ...defaultForm.appendices, ...(parsedForm.appendices || {}) }
+        };
+        setForm({
+          ...mergedForm,
+          tableOfContents: syncSchoolPlacementTOC(mergedForm.tableOfContents, mergedForm.schoolPlacement.enabled)
         });
       } catch (error) {
         console.error('Error loading saved form data:', error);
@@ -388,6 +436,7 @@ export default function Home() {
   const setSchoolPlacementEnabled = (enabled: boolean) => {
     setForm((prev) => ({
       ...prev,
+      tableOfContents: syncSchoolPlacementTOC(prev.tableOfContents, enabled),
       schoolPlacement: { ...prev.schoolPlacement, enabled }
     }));
   };
