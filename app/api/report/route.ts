@@ -14,6 +14,7 @@ interface AppendixImage {
   detail?: string;
 }
 
+interface DailyActivity {
   day: string;
   date: string;
   accomplishment: string;
