@@ -581,7 +581,6 @@ export default function Home() {
           form.degreeProgram || 'Degree Program',
           'Submitted by:',
           form.studentName || 'Student Name',
-          form.studentDegree || 'Degree',
           'Submitted to:',
           form.submittedToName || 'Adviser Name',
           form.submittedToTitle || 'Adviser Title',
