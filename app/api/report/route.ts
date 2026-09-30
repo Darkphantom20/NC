@@ -212,7 +212,10 @@ export async function POST(request: Request) {
             children: reportFooterChildren,
           }),
         } : undefined,
-        children: dailyJournalContent,
+        children: [
+          ...(!compactSectionLayout ? [new Paragraph({ pageBreakBefore: true })] : []),
+          ...dailyJournalContent,
+        ],
       });
     }
 
@@ -237,7 +240,10 @@ export async function POST(request: Request) {
             children: [],
           }),
         },
-        children: remainingAppendixContent,
+        children: [
+          ...(!compactSectionLayout ? [new Paragraph({ pageBreakBefore: true })] : []),
+          ...remainingAppendixContent,
+        ],
       });
     }
 
