@@ -81,6 +81,12 @@ const defaultForm = {
   studentName: 'Ian P. Padilla',
   submittedToName: 'Mr. Erson A. Rodriguez',
   submittedToTitle: 'Associate Dean of the College of Computing Studies',
+  coverTitle: 'A Narrative Report on the',
+  coverTrainingLabel: 'On-the-Job Training conducted at',
+  coverFacultyLabel: 'Presented to the faculty of',
+  coverDegreeLabel: 'In partial fulfillment of the requirements for the degree of',
+  coverSubmittedByLabel: 'Submitted by:',
+  coverSubmittedToLabel: 'Submitted to:',
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
   tableOfContents: '1. Introduction\n1.1 Background of the Organization\n1.2 Vision\n1.3 Mission\n1.4 Objectives\n1.5 Core Values\n1.6 Products and Services Offered\n2. Organization / Company Analysis\n2.1 Strengths\n2.2 Weaknesses\n2.3 Opportunities\n2.4 Threats\n2.5 Recommendations for Improvement\n3. Tasks and Duties\n3.1 Assigned Tasks and Responsibilities\n3.2 Duties and Procedures Conformed\n4. Case Analysis\n4.1 Issue / Problem 1\n4.2 Strategy/Action Undertaken for Problem 1\n4.3 Issue / Problem 2\n4.4 Strategy/Action Undertaken for Problem 2\n4.5 Lessons Learned from the Situations\n5. Reflections\n5.1 Self-Evaluation\n5.2 Relevancy of the Organization\n6. Appendices',
   sectionLayout: 'compact',
@@ -988,10 +994,34 @@ export default function Home() {
           <form className="tour-form min-w-0 max-w-full space-y-8 rounded-[24px] border border-slate-800 bg-slate-900/80 p-6 sm:rounded-[32px] sm:p-8">
             
             {/* Added tour-front-page class via modified SectionBlock */}
-            <SectionBlock title="Front Page Details (Template Fixed)" className="tour-front-page">
+            <SectionBlock title="Front Page Details" className="tour-front-page">
               <div className="space-y-5">
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 text-xs text-slate-300">
-                  The cover-page logo, labels, spacing, and layout are fixed by the system. Enter only your report details below.
+                <p className="text-xs text-slate-400">Enter the cover-page wording and report details. The institutional header image remains fixed.</p>
+                <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Cover Title</span>
+                    <input value={form.coverTitle} onChange={(e) => updateField('coverTitle', e.target.value)} className={fieldClass} />
+                  </label>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Training Label</span>
+                    <input value={form.coverTrainingLabel} onChange={(e) => updateField('coverTrainingLabel', e.target.value)} className={fieldClass} />
+                  </label>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Faculty Label</span>
+                    <input value={form.coverFacultyLabel} onChange={(e) => updateField('coverFacultyLabel', e.target.value)} className={fieldClass} />
+                  </label>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Degree Label</span>
+                    <input value={form.coverDegreeLabel} onChange={(e) => updateField('coverDegreeLabel', e.target.value)} className={fieldClass} />
+                  </label>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Submitted By Label</span>
+                    <input value={form.coverSubmittedByLabel} onChange={(e) => updateField('coverSubmittedByLabel', e.target.value)} className={fieldClass} />
+                  </label>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-200">
+                    <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Submitted To Label</span>
+                    <input value={form.coverSubmittedToLabel} onChange={(e) => updateField('coverSubmittedToLabel', e.target.value)} className={fieldClass} />
+                  </label>
                 </div>
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">

@@ -280,18 +280,24 @@ function buildCoverPage(data: any): Paragraph[] {
   const studentDegree = data.degreeProgram || '';
   const adviserName = data.submittedToName || '';
   const adviserTitle = data.submittedToTitle || '';
+  const coverTitle = data.coverTitle || 'A Narrative Report on the';
+  const coverTrainingLabel = data.coverTrainingLabel || 'On-the-Job Training conducted at';
+  const coverFacultyLabel = data.coverFacultyLabel || 'Presented to the faculty of';
+  const coverDegreeLabel = data.coverDegreeLabel || 'In partial fulfillment of the requirements for the degree of';
+  const coverSubmittedByLabel = data.coverSubmittedByLabel || 'Submitted by:';
+  const coverSubmittedToLabel = data.coverSubmittedToLabel || 'Submitted to:';
   const FRONT_PAGE_TEXT_SIZE = 20;
 
   return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 1440, after: 360 },
-      children: [new TextRun({ text: 'A Narrative Report on the', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: coverTitle, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 360, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'On-the-Job Training conducted at', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: coverTrainingLabel, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -306,7 +312,7 @@ function buildCoverPage(data: any): Paragraph[] {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 360, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'Presented to the faculty of', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: coverFacultyLabel, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -316,7 +322,7 @@ function buildCoverPage(data: any): Paragraph[] {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 360, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'In partial fulfillment of the requirements for the degree of', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: coverDegreeLabel, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -326,7 +332,7 @@ function buildCoverPage(data: any): Paragraph[] {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 180, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'Submitted by:', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: coverSubmittedByLabel, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -341,7 +347,7 @@ function buildCoverPage(data: any): Paragraph[] {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 180, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: 'Submitted to:', size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
+      children: [new TextRun({ text: coverSubmittedToLabel, size: FRONT_PAGE_TEXT_SIZE, font: 'Times New Roman', bold: false })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
