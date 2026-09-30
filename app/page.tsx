@@ -220,6 +220,7 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   const [completionSlideIndex, setCompletionSlideIndex] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     if (!showCompletionPopup) return;
