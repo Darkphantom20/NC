@@ -14,7 +14,7 @@ interface AppendixImage {
   detail?: string;
 }
 
-          new Paragraph({ pageBreakBefore: true }),
+interface DailyActivity {
   day: string;
   date: string;
   accomplishment: string;
