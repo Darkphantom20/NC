@@ -235,11 +235,11 @@ export async function POST(request: Request) {
             ],
           }),
         },
-        footers: {
+        footers: reportFooterChildren.length > 0 ? {
           default: new Footer({
-            children: [],
+            children: reportFooterChildren,
           }),
-        },
+        } : undefined,
         children: [
           ...(!compactSectionLayout ? [new Paragraph({ pageBreakBefore: true })] : []),
           ...remainingAppendixContent,

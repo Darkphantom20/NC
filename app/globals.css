@@ -35,7 +35,7 @@ body {
   width: min(100%, 8.5in);
   min-height: 11in;
   flex: 0 0 auto;
-  overflow: hidden;
+  overflow: visible;
   background: #ffffff;
   box-shadow: 0 12px 30px rgba(2, 8, 23, 0.35);
 }
