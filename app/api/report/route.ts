@@ -1092,7 +1092,6 @@ function buildReportFooterBlock(footer?: ReportFooterData): any[] {
       left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
       right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
       insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          new Paragraph({ pageBreakBefore: true, children: [new TextRun({ text: ' ', size: 2, font: 'Times New Roman' })] }),
     },
     rows: [
       new TableRow({
