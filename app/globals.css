@@ -40,6 +40,47 @@ body {
   box-shadow: 0 12px 30px rgba(2, 8, 23, 0.35);
 }
 
+@media (max-width: 639px) {
+  .tour-form {
+    padding: 0.75rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .tour-form > section {
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .tour-form input,
+  .tour-form textarea,
+  .tour-form select {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
+
+  .tour-appendices {
+    padding: 0.75rem !important;
+  }
+
+  .tour-appendices > div {
+    gap: 1rem;
+  }
+
+  .report-preview-pages .report-docx {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .report-preview-toolbar h3 {
+    font-size: 1.25rem;
+  }
+
+  .report-preview-controls > div {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 input, textarea, button {
   font: inherit;
 }

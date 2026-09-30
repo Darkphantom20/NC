@@ -808,14 +808,14 @@ export default function Home() {
   return (
     <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
       {showPreview && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-6xl rounded-[28px] border border-slate-700 bg-slate-900/95 p-4 shadow-[0_25px_80px_rgba(15,23,42,0.8)] sm:p-6">
-            <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/80 p-2 backdrop-blur-sm sm:p-4">
+          <div className="report-preview-dialog relative flex max-h-[calc(100dvh-1rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/95 p-3 shadow-[0_25px_80px_rgba(15,23,42,0.8)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-[28px] sm:p-6">
+            <div className="report-preview-toolbar mb-3 flex flex-col items-stretch gap-3 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/80 font-semibold">Document Preview</p>
                 <h3 className="text-2xl font-bold text-white">Report pages</h3>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="report-preview-controls flex items-center justify-between gap-2 sm:justify-end">
                 <div className="flex items-center rounded-xl border border-slate-700 bg-slate-800/80 p-1">
                   <button type="button" onClick={() => setPreviewZoom((zoom) => Math.max(0.7, Number((zoom - 0.1).toFixed(1))))} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:opacity-40" aria-label="Zoom out" title="Zoom out" disabled={previewZoom <= 0.7}>
                     <ZoomOut size={17} />
@@ -844,7 +844,7 @@ export default function Home() {
                 </button>
               </div>
             </div>
-            <div className="relative max-h-[75vh] min-h-48 overflow-auto rounded-xl bg-slate-800 p-2 sm:p-4" aria-busy={previewLoading}>
+            <div className="report-preview-viewport relative min-h-48 flex-1 overflow-auto rounded-xl bg-slate-800 p-2 sm:max-h-[75vh] sm:p-4" aria-busy={previewLoading}>
               {previewLoading && (
                 <div className="absolute inset-x-0 top-3 z-10 mx-auto w-fit rounded-full bg-slate-950/90 px-4 py-2 text-xs font-medium text-cyan-200 shadow-lg">
                   Rendering report pages...
