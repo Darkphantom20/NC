@@ -460,6 +460,23 @@ function estimateSectionPageCount(sectionData: SectionData[], hasImage = false):
   return Math.max(1, Math.ceil(estimateSectionLineCount(sectionData, hasImage) / ESTIMATED_PAGE_LINES));
 }
 
+function addSubsectionPageMap(
+  pageMap: Record<string, number>,
+  sectionNumber: string,
+  sectionData: SectionData[],
+  startPage: number,
+  compact: boolean,
+) {
+  let lineCursor = 1;
+
+  sectionData.forEach((section, index) => {
+    pageMap[`${sectionNumber}.${index + 1}`] = compact
+      ? startPage + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
+      : startPage;
+    lineCursor += estimateSectionLineCount([section]);
+  });
+}
+
 function estimateAcknowledgementLineCount(data: any): number {
   const paragraphs = ensureArray(data.acknowledgement || '');
   return 4 + paragraphs.reduce((total, paragraph) => total + estimateWrappedLines(paragraph), 0);
@@ -509,13 +526,15 @@ function getSectionPageMap(data: any): Record<string, number> {
   const compact = data.sectionLayout === 'compact';
   const acknowledgementLines = estimateAcknowledgementLineCount(data);
   const tocLines = estimateTOCLineCount(data);
-  const currentLine = acknowledgementLines + tocLines;
+  const acknowledgementPages = Math.max(1, Math.ceil(acknowledgementLines / ESTIMATED_PAGE_LINES));
+  const tocPages = Math.max(1, Math.ceil(tocLines / ESTIMATED_PAGE_LINES));
+  const narrativeStartPage = 2 + acknowledgementPages + tocPages;
   let pageCursor = compact
-    ? 2 + Math.floor(currentLine / ESTIMATED_PAGE_LINES)
+    ? narrativeStartPage
     : 2
-      + Math.max(1, Math.ceil(acknowledgementLines / ESTIMATED_PAGE_LINES))
-      + Math.max(1, Math.ceil(tocLines / ESTIMATED_PAGE_LINES));
-  let lineCursor = currentLine;
+      + acknowledgementPages
+      + tocPages;
+  let lineCursor = 0;
   const pageMap: Record<string, number> = {};
   const sectionDefinitions = [
     { key: 'introduction', value: [
@@ -550,11 +569,12 @@ function getSectionPageMap(data: any): Record<string, number> {
     ], image: false },
   ];
 
-  sectionDefinitions.forEach((section) => {
+  sectionDefinitions.forEach((section, index) => {
     const lineCount = estimateSectionLineCount(section.value, section.image);
     pageMap[section.key] = compact
-      ? 2 + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
+      ? narrativeStartPage + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
       : pageCursor;
+    addSubsectionPageMap(pageMap, String(index + 1), section.value, pageMap[section.key], compact);
 
     if (compact) {
       lineCursor += lineCount;
@@ -604,9 +624,11 @@ function getSectionPageMap(data: any): Record<string, number> {
         ? [{ title: 'School OJT Narrative (Second Placement)', content: '' }, ...section.value]
         : section.value;
       const lineCount = estimateSectionLineCount(estimatedValue, section.image);
+      const schoolSectionNumber = String(index + 6);
       pageMap[section.key] = compact
-        ? 2 + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
+        ? narrativeStartPage + Math.floor(lineCursor / ESTIMATED_PAGE_LINES)
         : pageCursor;
+      addSubsectionPageMap(pageMap, schoolSectionNumber, section.value, pageMap[section.key], compact);
 
       if (compact) {
         lineCursor += lineCount;
@@ -619,7 +641,7 @@ function getSectionPageMap(data: any): Record<string, number> {
   }
 
   pageMap.appendices = compact
-    ? 2 + Math.ceil(lineCursor / ESTIMATED_PAGE_LINES)
+    ? narrativeStartPage + Math.ceil(lineCursor / ESTIMATED_PAGE_LINES)
     : pageCursor;
   return pageMap;
 }
@@ -735,6 +757,10 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
       '6': 'appendices',
     };
     const numberedPage = sectionNumber ? sectionPageMap[numberedSectionKeys[sectionNumber]] : undefined;
+    const subsectionMatch = titleText.match(/^\s*(\d+)\.(\d+)/);
+    const subsectionPage = subsectionMatch
+      ? sectionPageMap[`${subsectionMatch[1]}.${subsectionMatch[2]}`]
+      : undefined;
     const schoolMainNumber = titleText.match(/^\s*(\d+)(?:\.\d+)*[.)]?\s+/)?.[1];
     const schoolSectionKeys: Record<string, string> = {
       '6': 'school ojt introduction',
@@ -752,7 +778,7 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
         || normalizedTitle.startsWith(normalizedKey)
         || normalizedKey.startsWith(normalizedTitle);
     })?.[1];
-    const mappedPage = schoolPlacementPage ?? matchedPage ?? numberedPage;
+    const mappedPage = subsectionPage ?? schoolPlacementPage ?? matchedPage ?? numberedPage;
     const resolvedPage = mappedPage ? String(mappedPage) : entry.page;
     const isSubsection = /^\d+\.\d+\s+/.test(titleText);
     const showPageNumber = (compact || !isSubsection) && Boolean(resolvedPage);
