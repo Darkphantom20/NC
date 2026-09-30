@@ -641,7 +641,7 @@ function getSectionPageMap(data: any): Record<string, number> {
   }
 
   pageMap.appendices = compact
-    ? narrativeStartPage + Math.ceil(lineCursor / ESTIMATED_PAGE_LINES)
+    ? narrativeStartPage + Math.max(1, Math.ceil(lineCursor / ESTIMATED_PAGE_LINES))
     : pageCursor;
   return pageMap;
 }
