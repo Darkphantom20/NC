@@ -271,7 +271,7 @@ function buildCoverPage(data: any): Paragraph[] {
   const faculty = data.collegeFaculty || '';
   const degree = data.degreeProgram || '';
   const student = data.studentName || '';
-  const studentDegree = data.studentDegree || '';
+  const studentDegree = data.degreeProgram || '';
   const adviserName = data.submittedToName || '';
   const adviserTitle = data.submittedToTitle || '';
   const FRONT_PAGE_TEXT_SIZE = 20;

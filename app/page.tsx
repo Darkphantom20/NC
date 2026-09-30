@@ -911,8 +911,11 @@ export default function Home() {
           <form className="tour-form min-w-0 max-w-full space-y-8 rounded-[24px] border border-slate-800 bg-slate-900/80 p-6 sm:rounded-[32px] sm:p-8">
             
             {/* Added tour-front-page class via modified SectionBlock */}
-            <SectionBlock title="Front Page (Cover Page Details)" className="tour-front-page">
+            <SectionBlock title="Front Page Details (Template Fixed)" className="tour-front-page">
               <div className="space-y-5">
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 text-xs text-slate-300">
+                  The cover-page logo, labels, spacing, and layout are fixed by the system. Enter only your report details below.
+                </div>
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Organization</span>
