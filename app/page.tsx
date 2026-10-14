@@ -178,32 +178,86 @@ const fieldClass =
 const fileInputClass = 
   'mt-2.5 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20';
 
-async function compressImageDataUrl(file: File, maxWidth = 1400, quality = 0.75): Promise<string> {
+async function resizeImageDataUrl(dataUrl: string, maxWidth: number, quality: number): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const scale = Math.min(1, maxWidth / Math.max(img.width, img.height));
-        canvas.width = Math.max(1, Math.round(img.width * scale));
-        canvas.height = Math.max(1, Math.round(img.height * scale));
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, maxWidth / Math.max(img.width, img.height));
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas is not available in this browser.'));
-          return;
-        }
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas is not available in this browser.'));
+        return;
+      }
 
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = () => reject(new Error('Failed to process image.'));
-      img.src = String(reader.result);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
     };
+    img.onerror = () => reject(new Error('Failed to process an attached image for the report.'));
+    img.src = dataUrl;
+  });
+}
+
+async function compressImageDataUrl(file: File, maxWidth = 1400, quality = 0.75): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error('Could not read selected image.'));
     reader.readAsDataURL(file);
   });
+  return resizeImageDataUrl(dataUrl, maxWidth, quality);
+}
+
+async function transformReportPayload(
+  value: unknown,
+  layout: 'current' | 'report',
+  imageSize?: { maxWidth: number; quality: number }
+): Promise<unknown> {
+  if (typeof value === 'string' && imageSize && value.startsWith('data:image/')) {
+    return resizeImageDataUrl(value, imageSize.maxWidth, imageSize.quality);
+  }
+  if (Array.isArray(value)) {
+    const transformedItems = [];
+    for (const item of value) {
+      transformedItems.push(await transformReportPayload(item, layout, imageSize));
+    }
+    return transformedItems;
+  }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value).filter(([key]) => (
+      !(layout === 'report' && key === 'currentLayoutImages')
+      && !(layout === 'current' && key === 'reportLayoutImages')
+    ));
+    const transformedEntries = [];
+    for (const [key, item] of entries) {
+      transformedEntries.push([key, await transformReportPayload(item, layout, imageSize)] as const);
+    }
+    return Object.fromEntries(transformedEntries);
+  }
+  return value;
+}
+
+async function createReportRequestBody(form: typeof defaultForm): Promise<string> {
+  const layout = form.appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
+  const maxRequestBytes = 4 * 1024 * 1024;
+  let body = JSON.stringify(await transformReportPayload(form, layout));
+  if (new Blob([body]).size <= maxRequestBytes) return body;
+
+  let maxWidth = 1400;
+  let quality = 0.75;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    body = JSON.stringify(await transformReportPayload(form, layout, { maxWidth, quality }));
+    if (new Blob([body]).size <= maxRequestBytes) return body;
+
+    maxWidth = Math.max(320, Math.floor(maxWidth * 0.8));
+    quality = Math.max(0.3, quality * 0.85);
+  }
+
+  throw new Error('The report is still too large to send. Remove some attached images and try again.');
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -720,7 +774,7 @@ export default function Home() {
           'x-report-preview': 'true',
         },
         signal: controller.signal,
-        body: JSON.stringify(form),
+        body: await createReportRequestBody(form),
       });
 
       if (!response.ok) {
@@ -777,7 +831,7 @@ export default function Home() {
       const response = await fetch('/api/report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: await createReportRequestBody(form),
       });
 
       if (!response.ok) {
