@@ -1328,7 +1328,9 @@ function buildOtherAppendixPages(appendicesData: AppendicesData) {
     const data = appendicesData[app.key];
     if (!data) return;
 
-    children.push(new Paragraph({ pageBreakBefore: true }));
+    if (children.length > 0) {
+      children.push(new Paragraph({ pageBreakBefore: true }));
+    }
     children.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
