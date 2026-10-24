@@ -1227,12 +1227,13 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
     );
 
     appendicesData.dailyJournal.forEach((weekData) => {
+      const totalHours = weekData.activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0);
       children.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { before: 120, after: 60 },
           keepNext: true,
-          children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+          children: [new TextRun({ text: `WEEK ${weekData.weekNumber} (Total Hours: ${totalHours})`, bold: true, size: 24, font: 'Times New Roman' })],
         }),
         buildNoPhotoDailyJournalTable(weekData.activities),
       );
@@ -1374,6 +1375,34 @@ function buildNoPhotoDailyJournalTable(activities: DailyActivity[]) {
       })
     );
   });
+
+  const totalHours = rows.reduce((total, activity) => total + (Number(activity.hours) || 0), 0);
+  tableRows.push(
+    new TableRow({
+      cantSplit: true,
+      children: [
+        new TableCell({
+          width: { size: 22, type: WidthType.PERCENTAGE },
+          children: [new Paragraph({ children: [] })],
+        }),
+        new TableCell({
+          width: { size: 66, type: WidthType.PERCENTAGE },
+          children: [new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [new TextRun({ text: 'TOTAL HOURS', bold: true, size: tableTextSize, font: 'Times New Roman' })],
+          })],
+        }),
+        new TableCell({
+          width: { size: 12, type: WidthType.PERCENTAGE },
+          verticalAlign: 'center',
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: String(totalHours), bold: true, size: tableTextSize, font: 'Times New Roman' })],
+          })],
+        }),
+      ],
+    })
+  );
 
   return new Table({
     rows: tableRows,

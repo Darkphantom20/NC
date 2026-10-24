@@ -1390,7 +1390,7 @@ export default function Home() {
                       {form.appendices.dailyJournal.map((week, weekIdx) => (
                         <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-bold text-white">WEEK {week.weekNumber}</span>
+                            <span className="font-bold text-white">WEEK {week.weekNumber} • Total Hours: {week.activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0)}</span>
                             {form.appendices.dailyJournal.length > 1 && (
                               <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-900/20 transition active:scale-95">
                                 Remove Week
