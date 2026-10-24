@@ -1398,13 +1398,14 @@ export default function Home() {
                             )}
                           </div>
                           <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
-                            <div className="hidden sm:grid sm:grid-cols-[1fr_3fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                            <div className="hidden sm:grid sm:grid-cols-[1fr_3fr_0.7fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
                               <div className="bg-slate-900/80 px-3 py-2">Date</div>
                               <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
+                              <div className="bg-slate-900/80 px-3 py-2">Hours</div>
                             </div>
                             <div className="space-y-3 p-2 sm:space-y-0 sm:p-0">
                               {week.activities.map((act, dayIdx) => (
-                                <div key={dayIdx} className="grid gap-0 rounded-xl border border-slate-800 bg-slate-950/40 sm:rounded-none sm:border-0 sm:border-t sm:grid-cols-[1fr_3fr] sm:gap-px">
+                                <div key={dayIdx} className="grid gap-0 rounded-xl border border-slate-800 bg-slate-950/40 sm:rounded-none sm:border-0 sm:border-t sm:grid-cols-[1fr_3fr_0.7fr] sm:gap-px">
                                   <div className="border-b border-slate-800 p-3 sm:border-b-0 sm:border-r">
                                     <div className="mb-2 flex items-center justify-between sm:hidden">
                                       <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">Date</span>
@@ -1418,6 +1419,19 @@ export default function Home() {
                                   <div className="p-3">
                                     <span className="mb-2 block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:hidden">Accomplishment</span>
                                     <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Describe your accomplishment" />
+                                  </div>
+                                  <div className="border-t border-slate-800 p-3 sm:border-t-0 sm:border-l">
+                                    <label htmlFor={`no-photo-hours-${weekIdx}-${dayIdx}`} className="mb-2 block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">Hours</label>
+                                    <input
+                                      id={`no-photo-hours-${weekIdx}-${dayIdx}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.5"
+                                      value={act.hours}
+                                      onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'hours', e.target.value)}
+                                      className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none"
+                                      placeholder="Hours"
+                                    />
                                   </div>
                                 </div>
                               ))}

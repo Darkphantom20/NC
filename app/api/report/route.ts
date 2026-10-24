@@ -1326,7 +1326,14 @@ function buildNoPhotoDailyJournalTable(activities: DailyActivity[]) {
             alignment: AlignmentType.CENTER,
             children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: tableTextSize, font: 'Times New Roman' })],
           })],
-          width: { size: 78, type: WidthType.PERCENTAGE },
+          width: { size: 66, type: WidthType.PERCENTAGE },
+        }),
+        new TableCell({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: 'HOURS', bold: true, size: tableTextSize, font: 'Times New Roman' })],
+          })],
+          width: { size: 12, type: WidthType.PERCENTAGE },
         }),
       ],
     }),
@@ -1349,10 +1356,18 @@ function buildNoPhotoDailyJournalTable(activities: DailyActivity[]) {
             })],
           }),
           new TableCell({
-            width: { size: 78, type: WidthType.PERCENTAGE },
+            width: { size: 66, type: WidthType.PERCENTAGE },
             children: [new Paragraph({
               alignment: AlignmentType.LEFT,
               children: [new TextRun({ text: activity.accomplishment || '', size: tableTextSize, font: 'Times New Roman' })],
+            })],
+          }),
+          new TableCell({
+            width: { size: 12, type: WidthType.PERCENTAGE },
+            verticalAlign: 'center',
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: String(activity.hours ?? ''), size: tableTextSize, font: 'Times New Roman' })],
             })],
           }),
         ],
@@ -1365,7 +1380,7 @@ function buildNoPhotoDailyJournalTable(activities: DailyActivity[]) {
     alignment: AlignmentType.CENTER,
     width: { size: 96, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
-    columnWidths: [2200, 7800],
+    columnWidths: [2200, 6600, 1200],
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
