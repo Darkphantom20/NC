@@ -43,7 +43,7 @@ interface ReportFooterData {
 }
 
 interface AppendicesData {
-  dailyJournalLayout?: 'current' | 'report';
+  dailyJournalLayout?: 'current' | 'report' | 'no-photo';
   reportFooter?: ReportFooterData;
   dailyJournal?: DailyJournalWeek[];
   certParticipation?: string;
@@ -1213,7 +1213,33 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
 
   if (!appendicesData || !appendicesData.dailyJournal || !Array.isArray(appendicesData.dailyJournal)) return children;
 
-  const layout = appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
+  const layout = appendicesData.dailyJournalLayout === 'no-photo'
+    ? 'no-photo'
+    : appendicesData.dailyJournalLayout === 'report' ? 'report' : 'current';
+
+  if (layout === 'no-photo') {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 180, after: 180 },
+        children: [new TextRun({ text: 'DAILY JOURNAL', bold: true, size: 24, font: 'Times New Roman' })],
+      })
+    );
+
+    appendicesData.dailyJournal.forEach((weekData) => {
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 120, after: 60 },
+          keepNext: true,
+          children: [new TextRun({ text: `WEEK ${weekData.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+        }),
+        buildNoPhotoDailyJournalTable(weekData.activities),
+      );
+    });
+
+    return children;
+  }
 
   if (layout === 'current') {
     children.push(
@@ -1279,6 +1305,76 @@ function buildDailyJournalAppendixPage(appendicesData: AppendicesData) {
   });
 
   return children;
+}
+
+function buildNoPhotoDailyJournalTable(activities: DailyActivity[]) {
+  const tableTextSize = 22;
+  const tableRows = [
+    new TableRow({
+      tableHeader: true,
+      cantSplit: true,
+      children: [
+        new TableCell({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: 'DATE', bold: true, size: tableTextSize, font: 'Times New Roman' })],
+          })],
+          width: { size: 22, type: WidthType.PERCENTAGE },
+        }),
+        new TableCell({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: tableTextSize, font: 'Times New Roman' })],
+          })],
+          width: { size: 78, type: WidthType.PERCENTAGE },
+        }),
+      ],
+    }),
+  ];
+  const rows = activities.length > 0
+    ? activities
+    : [{ day: 'Day 1', date: '', accomplishment: '', hours: '' }];
+
+  rows.forEach((activity) => {
+    tableRows.push(
+      new TableRow({
+        cantSplit: true,
+        children: [
+          new TableCell({
+            width: { size: 22, type: WidthType.PERCENTAGE },
+            verticalAlign: 'center',
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: activity.date || '', size: tableTextSize, font: 'Times New Roman' })],
+            })],
+          }),
+          new TableCell({
+            width: { size: 78, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({
+              alignment: AlignmentType.LEFT,
+              children: [new TextRun({ text: activity.accomplishment || '', size: tableTextSize, font: 'Times New Roman' })],
+            })],
+          }),
+        ],
+      })
+    );
+  });
+
+  return new Table({
+    rows: tableRows,
+    alignment: AlignmentType.CENTER,
+    width: { size: 96, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [2200, 7800],
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+    },
+  });
 }
 
 function buildOtherAppendixPages(appendicesData: AppendicesData) {

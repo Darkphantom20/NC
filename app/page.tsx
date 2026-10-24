@@ -213,7 +213,7 @@ async function compressImageDataUrl(file: File, maxWidth = 1400, quality = 0.75)
 
 async function transformReportPayload(
   value: unknown,
-  layout: 'current' | 'report',
+  layout: 'current' | 'report' | 'no-photo',
   imageSize?: { maxWidth: number; quality: number }
 ): Promise<unknown> {
   if (typeof value === 'string' && imageSize && value.startsWith('data:image/')) {
@@ -228,6 +228,8 @@ async function transformReportPayload(
   }
   if (value && typeof value === 'object') {
     const entries = Object.entries(value).filter(([key]) => (
+      !(layout === 'no-photo' && (key === 'currentLayoutImages' || key === 'reportLayoutImages' || key === 'images'))
+      &&
       !(layout === 'report' && key === 'currentLayoutImages')
       && !(layout === 'current' && key === 'reportLayoutImages')
     ));
@@ -241,7 +243,9 @@ async function transformReportPayload(
 }
 
 async function createReportRequestBody(form: typeof defaultForm): Promise<string> {
-  const layout = form.appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
+  const layout = form.appendices.dailyJournalLayout === 'no-photo'
+    ? 'no-photo'
+    : form.appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
   const maxRequestBytes = 4 * 1024 * 1024;
   let body = JSON.stringify(await transformReportPayload(form, layout));
   if (new Blob([body]).size <= maxRequestBytes) return body;
@@ -527,7 +531,7 @@ export default function Home() {
     }));
   };
 
-  const updateDailyJournalLayout = (layout: 'current' | 'report') => {
+  const updateDailyJournalLayout = (layout: 'current' | 'report' | 'no-photo') => {
     setForm((prev) => ({
       ...prev,
       appendices: { ...prev.appendices, dailyJournalLayout: layout }
@@ -1373,11 +1377,61 @@ export default function Home() {
                           <input type="radio" name="daily-journal-layout" checked={form.appendices.dailyJournalLayout === 'report'} onChange={() => updateDailyJournalLayout('report')} className="accent-cyan-400" />
                           Daily layout
                         </label>
+                        <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200">
+                          <input type="radio" name="daily-journal-layout" checked={form.appendices.dailyJournalLayout === 'no-photo'} onChange={() => updateDailyJournalLayout('no-photo')} className="accent-cyan-400" />
+                          No-picture layout
+                        </label>
                       </div>
                     </div>
                   </div>
 
-                  {form.appendices.dailyJournalLayout === 'report' ? (
+                  {form.appendices.dailyJournalLayout === 'no-photo' ? (
+                    <div className="space-y-4">
+                      {form.appendices.dailyJournal.map((week, weekIdx) => (
+                        <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-white">WEEK {week.weekNumber}</span>
+                            {form.appendices.dailyJournal.length > 1 && (
+                              <button type="button" onClick={() => removeWeek(weekIdx)} className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-900/20 transition active:scale-95">
+                                Remove Week
+                              </button>
+                            )}
+                          </div>
+                          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
+                            <div className="hidden sm:grid sm:grid-cols-[1fr_3fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                              <div className="bg-slate-900/80 px-3 py-2">Date</div>
+                              <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
+                            </div>
+                            <div className="space-y-3 p-2 sm:space-y-0 sm:p-0">
+                              {week.activities.map((act, dayIdx) => (
+                                <div key={dayIdx} className="grid gap-0 rounded-xl border border-slate-800 bg-slate-950/40 sm:rounded-none sm:border-0 sm:border-t sm:grid-cols-[1fr_3fr] sm:gap-px">
+                                  <div className="border-b border-slate-800 p-3 sm:border-b-0 sm:border-r">
+                                    <div className="mb-2 flex items-center justify-between sm:hidden">
+                                      <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">Date</span>
+                                      <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-[9px] font-bold text-rose-300 transition hover:bg-rose-500/20" aria-label={`Delete date ${act.date || `Day ${dayIdx + 1}`}`}>✕</button>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <input type="text" value={act.date} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'date', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Date" />
+                                      <button type="button" onClick={() => removeDay(weekIdx, dayIdx)} className="hidden rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1.5 text-[10px] font-bold text-rose-300 transition hover:bg-rose-500/20 sm:inline-flex" aria-label={`Delete date ${act.date || `Day ${dayIdx + 1}`}`}>✕</button>
+                                    </div>
+                                  </div>
+                                  <div className="p-3">
+                                    <span className="mb-2 block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:hidden">Accomplishment</span>
+                                    <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none" placeholder="Describe your accomplishment" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <button type="button" onClick={() => addDay(weekIdx)} className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 px-3 py-1.5 rounded hover:bg-cyan-900/20 transition active:scale-95">
+                              + Add Day
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : form.appendices.dailyJournalLayout === 'report' ? (
                     <div className="space-y-4">
                       {form.appendices.dailyJournal.map((week, weekIdx) => (
                         <div key={weekIdx} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
@@ -1392,11 +1446,11 @@ export default function Home() {
 
                           <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
                             <div className="hidden sm:grid sm:grid-cols-[1.1fr_1.8fr_0.65fr_2fr] gap-px bg-slate-800 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
-                              <div className="bg-slate-900/80 px-3 py-2">Date</div>
-                              <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
-                              <div className="bg-slate-900/80 px-3 py-2">Hours</div>
-                              <div className="bg-slate-900/80 px-3 py-2">Documentation</div>
-                            </div>
+                            <div className="bg-slate-900/80 px-3 py-2">Date</div>
+                            <div className="bg-slate-900/80 px-3 py-2">Accomplishment</div>
+                            <div className="bg-slate-900/80 px-3 py-2">Hours</div>
+                            <div className="bg-slate-900/80 px-3 py-2">Documentation</div>
+                          </div>
 
                             <div className="space-y-3 p-2 sm:space-y-0 sm:p-0">
                               {week.activities.map((act, dayIdx) => (
@@ -1452,13 +1506,13 @@ export default function Home() {
                                               const newJournal = [...prev.appendices.dailyJournal];
                                               const imageEntry = { base64: compressed, detail: `Documentation for ${act.day || 'Daily activity'}` };
                                               const isReportLayout = prev.appendices.dailyJournalLayout === 'report';
-                                              
+
                                               const imageKey = isReportLayout ? 'reportLayoutImages' : 'currentLayoutImages';
                                               const existingImages = [...((newJournal[weekIdx] as any)[imageKey] || [])];
                                               const imageIndex = Math.min(targetIndex, existingImages.length);
                                               existingImages[imageIndex] = imageEntry;
                                               (newJournal[weekIdx] as any)[imageKey] = existingImages;
-                                              
+
                                               return { ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } };
                                             });
                                           }).catch(() => alert('The selected journal image could not be processed.'));
