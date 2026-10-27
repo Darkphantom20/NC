@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X } from 'lucide-react';
+import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText } from 'lucide-react';
 import { renderAsync } from 'docx-preview';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
@@ -897,7 +897,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
+    <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 pb-24 sm:py-8 sm:pb-8 md:py-12 text-slate-100">
       {mobileAccomplishmentEditor && (
         <div
           className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/80 sm:p-6"
@@ -1132,7 +1132,7 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="grid gap-4 sm:grid-cols-3 sm:gap-6">
+        <section className="hidden gap-4 sm:grid sm:grid-cols-3 sm:gap-6">
           <Card label="Sections" value="8" color="cyan" />
           <Card label="Format" value="DOCX" color="violet" />
           <Card label="Mode" value="Web" color="emerald" />
@@ -1846,7 +1846,7 @@ export default function Home() {
               )}
               <Box label="Status" value={status} />
             </div>
-            <div className="mt-auto rounded-2xl border border-slate-700 bg-slate-950/70 p-4 sm:p-5">
+            <div className="mt-auto hidden rounded-2xl border border-slate-700 bg-slate-950/70 p-4 sm:block sm:p-5">
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs font-semibold">Current flow</p>
               <div className="mt-4 space-y-3 sm:space-y-3.5">
                 {[...sectionOrder.slice(0, -1), ...(form.schoolPlacement.enabled ? ['School OJT Narrative'] : []), sectionOrder[sectionOrder.length - 1]].map((section, index) => (
@@ -1882,6 +1882,26 @@ export default function Home() {
             Developed by <span className="font-semibold text-cyan-300">Ian P. Padilla</span>
           </a>
         </footer>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-3 border-t border-slate-800 bg-slate-950/95 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(2,6,23,0.45)] backdrop-blur-xl sm:hidden">
+        <button
+          type="button"
+          onClick={handlePreview}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-slate-900 px-3 text-sm font-semibold text-cyan-200 active:bg-slate-800"
+        >
+          <Eye size={17} aria-hidden="true" />
+          Preview
+        </button>
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={loading}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-3 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <FileText size={17} aria-hidden="true" />
+          {loading ? 'Generating...' : 'Generate'}
+        </button>
       </div>
     </main>
   );
