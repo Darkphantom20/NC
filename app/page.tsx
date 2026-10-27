@@ -426,6 +426,20 @@ export default function Home() {
     }
   }, [form, isMounted]);
 
+  useEffect(() => {
+    const resizeTextareas = () => {
+      document.querySelectorAll<HTMLTextAreaElement>('.tour-form textarea').forEach((textarea) => {
+        if (textarea.closest('.tour-front-page')) return;
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+      });
+    };
+
+    resizeTextareas();
+    window.addEventListener('resize', resizeTextareas);
+    return () => window.removeEventListener('resize', resizeTextareas);
+  }, [form]);
+
   const tourSteps: Step[] = [
     {
       target: '.tour-start-btn',
