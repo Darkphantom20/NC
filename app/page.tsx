@@ -426,20 +426,6 @@ export default function Home() {
     }
   }, [form, isMounted]);
 
-  useEffect(() => {
-    const resizeTextareas = () => {
-      document.querySelectorAll<HTMLTextAreaElement>('.tour-form textarea').forEach((textarea) => {
-        if (textarea.closest('.tour-front-page')) return;
-        textarea.style.height = 'auto';
-        textarea.style.height = `${textarea.scrollHeight}px`;
-      });
-    };
-
-    resizeTextareas();
-    window.addEventListener('resize', resizeTextareas);
-    return () => window.removeEventListener('resize', resizeTextareas);
-  }, [form]);
-
   const tourSteps: Step[] = [
     {
       target: '.tour-start-btn',
@@ -1243,7 +1229,7 @@ export default function Home() {
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Acknowledgement</span>
-                  <textarea value={form.acknowledgement} onChange={(e) => updateField('acknowledgement', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Acknowledgement" value={form.acknowledgement} onChange={(value) => updateField('acknowledgement', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -1255,7 +1241,7 @@ export default function Home() {
                 </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Table of Contents</span>
-                  <textarea value={form.tableOfContents} onChange={(e) => updateField('tableOfContents', e.target.value)} rows={6} className={fieldClass} />
+                  <ExpandableTextarea title="Table of Contents" value={form.tableOfContents} onChange={(value) => updateField('tableOfContents', value)} rows={6} />
                 </label>
               </div>
             </SectionBlock>
@@ -1264,7 +1250,7 @@ export default function Home() {
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Background</span>
-                  <textarea value={form.background} onChange={(e) => updateField('background', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Background" value={form.background} onChange={(value) => updateField('background', value)} rows={4} />
                 </label>
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
@@ -1279,15 +1265,15 @@ export default function Home() {
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Objectives</span>
-                    <textarea value={form.objectives} onChange={(e) => updateField('objectives', e.target.value)} rows={3} className={fieldClass} />
+                    <ExpandableTextarea title="Objectives" value={form.objectives} onChange={(value) => updateField('objectives', value)} rows={3} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Core Values</span>
-                    <textarea value={form.coreValues} onChange={(e) => updateField('coreValues', e.target.value)} rows={3} className={fieldClass} />
+                    <ExpandableTextarea title="Core Values" value={form.coreValues} onChange={(value) => updateField('coreValues', value)} rows={3} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">Services</span>
-                    <textarea value={form.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
+                    <ExpandableTextarea title="Services" value={form.services} onChange={(value) => updateField('services', value)} rows={3} />
                   </label>
                 </div>
                 <div className="tour-organization-structure rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
@@ -1335,24 +1321,24 @@ export default function Home() {
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">✓ Strengths</span>
-                    <textarea value={form.strengths} onChange={(e) => updateField('strengths', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Strengths" value={form.strengths} onChange={(value) => updateField('strengths', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">✗ Weaknesses</span>
-                    <textarea value={form.weaknesses} onChange={(e) => updateField('weaknesses', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Weaknesses" value={form.weaknesses} onChange={(value) => updateField('weaknesses', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">◆ Opportunities</span>
-                    <textarea value={form.opportunities} onChange={(e) => updateField('opportunities', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Opportunities" value={form.opportunities} onChange={(value) => updateField('opportunities', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">⚠ Threats</span>
-                    <textarea value={form.threats} onChange={(e) => updateField('threats', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Threats" value={form.threats} onChange={(value) => updateField('threats', value)} rows={4} />
                   </label>
                 </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Recommendations</span>
-                  <textarea value={form.recommendations} onChange={(e) => updateField('recommendations', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Recommendations" value={form.recommendations} onChange={(value) => updateField('recommendations', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -1361,11 +1347,11 @@ export default function Home() {
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Assigned Tasks</span>
-                  <textarea value={form.tasks} onChange={(e) => updateField('tasks', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Assigned Tasks" value={form.tasks} onChange={(value) => updateField('tasks', value)} rows={4} />
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Procedures Conformed</span>
-                  <textarea value={form.procedures} onChange={(e) => updateField('procedures', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Procedures Conformed" value={form.procedures} onChange={(value) => updateField('procedures', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -1375,24 +1361,24 @@ export default function Home() {
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">Problem 1</span>
-                    <textarea value={form.issue1} onChange={(e) => updateField('issue1', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Problem 1" value={form.issue1} onChange={(value) => updateField('issue1', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Solution 1</span>
-                    <textarea value={form.issue1Action} onChange={(e) => updateField('issue1Action', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Solution 1" value={form.issue1Action} onChange={(value) => updateField('issue1Action', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">Problem 2</span>
-                    <textarea value={form.issue2} onChange={(e) => updateField('issue2', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Problem 2" value={form.issue2} onChange={(value) => updateField('issue2', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Solution 2</span>
-                    <textarea value={form.issue2Action} onChange={(e) => updateField('issue2Action', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="Solution 2" value={form.issue2Action} onChange={(value) => updateField('issue2Action', value)} rows={4} />
                   </label>
                 </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">Lessons Learned</span>
-                  <textarea value={form.lessons} onChange={(e) => updateField('lessons', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Lessons Learned" value={form.lessons} onChange={(value) => updateField('lessons', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -1401,11 +1387,11 @@ export default function Home() {
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Self-Evaluation</span>
-                  <textarea value={form.selfEvaluation} onChange={(e) => updateField('selfEvaluation', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Self-Evaluation" value={form.selfEvaluation} onChange={(value) => updateField('selfEvaluation', value)} rows={4} />
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Relevancy to Course & Goals</span>
-                  <textarea value={form.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
+                  <ExpandableTextarea title="Relevancy to Course & Goals" value={form.relevancy} onChange={(value) => updateField('relevancy', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -1750,9 +1736,9 @@ export default function Home() {
                           </div>
                           <label className="block text-sm font-medium text-slate-200 pt-2">
                             Weekly Narrative Report
-                            <textarea value={week.narrative} onChange={(e) => {
+                            <ExpandableTextarea title="Weekly Narrative Report" value={week.narrative} onChange={(value) => {
                                 const newJournal = [...form.appendices.dailyJournal];
-                                newJournal[weekIdx].narrative = e.target.value;
+                                newJournal[weekIdx].narrative = value;
                                 setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
                               }} rows={2} className={fieldClass} />
                           </label>
@@ -1797,7 +1783,7 @@ export default function Home() {
                 <div className="space-y-4">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">PRIME Report Narrative</span>
-                    <textarea value={form.appendices.primeNarrative} onChange={(e) => updateAppendixText('primeNarrative', e.target.value)} rows={4} className={fieldClass} />
+                    <ExpandableTextarea title="PRIME Report Narrative" value={form.appendices.primeNarrative} onChange={(value) => updateAppendixText('primeNarrative', value)} rows={4} />
                   </label>
 
                   <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
@@ -1959,6 +1945,104 @@ function Box({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ExpandableTextarea({
+  title,
+  value,
+  onChange,
+  rows = 4,
+  placeholder,
+  className = fieldClass,
+}: {
+  title: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  const openEditor = () => {
+    setDraft(value);
+    setIsOpen(true);
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={openEditor}
+        aria-label={`Edit ${title}`}
+        aria-haspopup="dialog"
+        className={`${className} group relative flex min-h-24 w-full cursor-pointer items-start justify-between gap-3 text-left`}
+      >
+        <span className={`line-clamp-3 min-w-0 flex-1 whitespace-pre-wrap break-words ${value ? 'text-slate-100' : 'text-slate-500'}`}>
+          {value || placeholder || `Click to add ${title.toLowerCase()}`}
+        </span>
+        <Maximize2 size={16} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
+      </button>
+
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/80 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Edit ${title}`}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setIsOpen(false);
+          }}
+        >
+          <div className="flex h-[100dvh] w-full flex-col bg-slate-950 sm:h-[min(80dvh,900px)] sm:max-h-[calc(100dvh-3rem)] sm:max-w-3xl sm:overflow-hidden sm:rounded-2xl sm:border sm:border-slate-700 sm:shadow-[0_25px_80px_rgba(15,23,42,0.8)]">
+            <header className="border-b border-slate-800 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300">Report Details</p>
+              <h2 className="mt-1 text-lg font-bold text-white">{title}</h2>
+            </header>
+            <textarea
+              autoFocus
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              rows={Math.max(rows, 8)}
+              className="min-h-0 flex-1 resize-none bg-slate-950 px-4 py-4 text-base leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none sm:px-6"
+              placeholder={placeholder || `Enter ${title.toLowerCase()}`}
+              aria-label={title}
+            />
+            <footer className="flex gap-3 border-t border-slate-800 bg-slate-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="min-h-11 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm font-semibold text-slate-200 sm:flex-none sm:min-w-28"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(draft);
+                  setIsOpen(false);
+                }}
+                className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
+              >
+                Save
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function PlacementNarrativeFields({
   placement,
   updateField,
@@ -1976,7 +2060,7 @@ function PlacementNarrativeFields({
         <div className="space-y-4 sm:space-y-5">
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Background</span>
-            <textarea value={placement.background} onChange={(e) => updateField('background', e.target.value)} rows={4} className={fieldClass} />
+            <ExpandableTextarea title="School OJT Background" value={placement.background} onChange={(value) => updateField('background', value)} rows={4} />
           </label>
           <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
@@ -1991,15 +2075,15 @@ function PlacementNarrativeFields({
           <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Objectives</span>
-              <textarea value={placement.objectives} onChange={(e) => updateField('objectives', e.target.value)} rows={3} className={fieldClass} />
+              <ExpandableTextarea title="School OJT Objectives" value={placement.objectives} onChange={(value) => updateField('objectives', value)} rows={3} />
             </label>
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Core Values</span>
-              <textarea value={placement.coreValues} onChange={(e) => updateField('coreValues', e.target.value)} rows={3} className={fieldClass} />
+              <ExpandableTextarea title="School OJT Core Values" value={placement.coreValues} onChange={(value) => updateField('coreValues', value)} rows={3} />
             </label>
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">Services</span>
-              <textarea value={placement.services} onChange={(e) => updateField('services', e.target.value)} rows={3} className={fieldClass} />
+              <ExpandableTextarea title="School OJT Services" value={placement.services} onChange={(value) => updateField('services', value)} rows={3} />
             </label>
           </div>
           <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
@@ -2032,13 +2116,13 @@ function PlacementNarrativeFields({
             {(['strengths', 'weaknesses', 'opportunities', 'threats'] as const).map((key) => (
               <label key={key} className="block text-xs sm:text-sm font-medium text-slate-200">
                 <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">{key}</span>
-                <textarea value={placement[key]} onChange={(e) => updateField(key, e.target.value)} rows={4} className={fieldClass} />
+                <ExpandableTextarea title={`School OJT ${key}`} value={placement[key]} onChange={(value) => updateField(key, value)} rows={4} />
               </label>
             ))}
           </div>
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Recommendations</span>
-            <textarea value={placement.recommendations} onChange={(e) => updateField('recommendations', e.target.value)} rows={4} className={fieldClass} />
+            <ExpandableTextarea title="School OJT Recommendations" value={placement.recommendations} onChange={(value) => updateField('recommendations', value)} rows={4} />
           </label>
         </div>
       </SectionBlock>
@@ -2047,11 +2131,11 @@ function PlacementNarrativeFields({
         <div className="space-y-4 sm:space-y-5">
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Assigned Tasks</span>
-            <textarea value={placement.tasks} onChange={(e) => updateField('tasks', e.target.value)} rows={4} className={fieldClass} />
+            <ExpandableTextarea title="School OJT Assigned Tasks" value={placement.tasks} onChange={(value) => updateField('tasks', value)} rows={4} />
           </label>
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Procedures Conformed</span>
-            <textarea value={placement.procedures} onChange={(e) => updateField('procedures', e.target.value)} rows={4} className={fieldClass} />
+            <ExpandableTextarea title="School OJT Procedures Conformed" value={placement.procedures} onChange={(value) => updateField('procedures', value)} rows={4} />
           </label>
         </div>
       </SectionBlock>
@@ -2062,13 +2146,13 @@ function PlacementNarrativeFields({
             {([['issue1', 'Problem 1'], ['issue1Action', 'Solution 1'], ['issue2', 'Problem 2'], ['issue2Action', 'Solution 2']] as const).map(([key, label]) => (
               <label key={key} className="block text-xs sm:text-sm font-medium text-slate-200">
                 <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">{label}</span>
-                <textarea value={placement[key]} onChange={(e) => updateField(key, e.target.value)} rows={4} className={fieldClass} />
+                <ExpandableTextarea title={`School OJT ${label}`} value={placement[key]} onChange={(value) => updateField(key, value)} rows={4} />
               </label>
             ))}
           </div>
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">Lessons Learned</span>
-            <textarea value={placement.lessons} onChange={(e) => updateField('lessons', e.target.value)} rows={4} className={fieldClass} />
+            <ExpandableTextarea title="School OJT Lessons Learned" value={placement.lessons} onChange={(value) => updateField('lessons', value)} rows={4} />
           </label>
         </div>
       </SectionBlock>
@@ -2077,11 +2161,11 @@ function PlacementNarrativeFields({
         <div className="space-y-4 sm:space-y-5">
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Self-Evaluation</span>
-            <textarea value={placement.selfEvaluation} onChange={(e) => updateField('selfEvaluation', e.target.value)} rows={4} className={fieldClass} />
+            <ExpandableTextarea title="School OJT Self-Evaluation" value={placement.selfEvaluation} onChange={(value) => updateField('selfEvaluation', value)} rows={4} />
           </label>
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Relevancy to Course & Goals</span>
-            <textarea value={placement.relevancy} onChange={(e) => updateField('relevancy', e.target.value)} rows={4} className={fieldClass} />
+            <ExpandableTextarea title="School OJT Relevancy to Course & Goals" value={placement.relevancy} onChange={(value) => updateField('relevancy', value)} rows={4} />
           </label>
         </div>
       </SectionBlock>
