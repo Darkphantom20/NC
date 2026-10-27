@@ -900,7 +900,7 @@ export default function Home() {
     <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 text-slate-100">
       {mobileAccomplishmentEditor && (
         <div
-          className="fixed inset-0 z-[1300] flex h-[100dvh] flex-col bg-slate-950 sm:hidden"
+          className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/80 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="mobile-accomplishment-title"
@@ -908,37 +908,39 @@ export default function Home() {
             if (event.key === 'Escape') setMobileAccomplishmentEditor(null);
           }}
         >
-          <header className="border-b border-slate-800 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300">Daily Journal</p>
-            <h2 id="mobile-accomplishment-title" className="mt-1 text-lg font-bold text-white">
-              Week {form.appendices.dailyJournal[mobileAccomplishmentEditor.weekIndex]?.weekNumber} · {form.appendices.dailyJournal[mobileAccomplishmentEditor.weekIndex]?.activities[mobileAccomplishmentEditor.dayIndex]?.day || `Day ${mobileAccomplishmentEditor.dayIndex + 1}`}
-            </h2>
-            <p className="mt-1 text-xs text-slate-400">Accomplishment</p>
-          </header>
-          <textarea
-            autoFocus
-            value={mobileAccomplishmentEditor.draft}
-            onChange={(event) => setMobileAccomplishmentEditor((current) => current ? { ...current, draft: event.target.value } : current)}
-            className="min-h-0 flex-1 resize-none bg-slate-950 px-4 py-4 text-base leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none"
-            placeholder="Describe your accomplishment"
-            aria-label="Accomplishment details"
-          />
-          <footer className="flex gap-3 border-t border-slate-800 bg-slate-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-            <button
-              type="button"
-              onClick={() => setMobileAccomplishmentEditor(null)}
-              className="min-h-11 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm font-semibold text-slate-200"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={saveMobileAccomplishment}
-              className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950"
-            >
-              Save
-            </button>
-          </footer>
+          <div className="flex h-[100dvh] w-full flex-col bg-slate-950 sm:h-[min(80dvh,900px)] sm:max-h-[calc(100dvh-3rem)] sm:max-w-3xl sm:overflow-hidden sm:rounded-2xl sm:border sm:border-slate-700 sm:shadow-[0_25px_80px_rgba(15,23,42,0.8)]">
+            <header className="border-b border-slate-800 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300">Daily Journal</p>
+              <h2 id="mobile-accomplishment-title" className="mt-1 text-lg font-bold text-white">
+                Week {form.appendices.dailyJournal[mobileAccomplishmentEditor.weekIndex]?.weekNumber} · {form.appendices.dailyJournal[mobileAccomplishmentEditor.weekIndex]?.activities[mobileAccomplishmentEditor.dayIndex]?.day || `Day ${mobileAccomplishmentEditor.dayIndex + 1}`}
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">Accomplishment</p>
+            </header>
+            <textarea
+              autoFocus
+              value={mobileAccomplishmentEditor.draft}
+              onChange={(event) => setMobileAccomplishmentEditor((current) => current ? { ...current, draft: event.target.value } : current)}
+              className="min-h-0 flex-1 resize-none bg-slate-950 px-4 py-4 text-base leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none sm:px-6"
+              placeholder="Describe your accomplishment"
+              aria-label="Accomplishment details"
+            />
+            <footer className="flex gap-3 border-t border-slate-800 bg-slate-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
+              <button
+                type="button"
+                onClick={() => setMobileAccomplishmentEditor(null)}
+                className="min-h-11 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm font-semibold text-slate-200 sm:flex-none sm:min-w-28"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveMobileAccomplishment}
+                className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
+              >
+                Save
+              </button>
+            </footer>
+          </div>
         </div>
       )}
 
@@ -1503,12 +1505,11 @@ export default function Home() {
                                       type="button"
                                       onClick={() => openMobileAccomplishmentEditor(weekIdx, dayIdx, act.accomplishment)}
                                       aria-label={`Edit accomplishment for ${act.day || `Day ${dayIdx + 1}`}`}
-                                      className="flex min-h-11 w-full items-start justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-left text-xs text-slate-100 sm:hidden"
+                                      className="flex min-h-11 w-full items-start justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-left text-xs text-slate-100"
                                     >
                                       <span className="line-clamp-2 min-w-0 flex-1 whitespace-pre-wrap break-words">{act.accomplishment || 'Tap to add accomplishment'}</span>
                                       <Maximize2 size={15} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
                                     </button>
-                                    <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="hidden w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none sm:block" placeholder="Describe your accomplishment" />
                                   </div>
                                   <div className="border-t border-slate-800 p-3 sm:border-t-0 sm:border-l">
                                     <label htmlFor={`no-photo-hours-${weekIdx}-${dayIdx}`} className="mb-2 block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:hidden">No. of Working Hours</label>
@@ -1585,12 +1586,11 @@ export default function Home() {
                                         type="button"
                                         onClick={() => openMobileAccomplishmentEditor(weekIdx, dayIdx, act.accomplishment)}
                                         aria-label={`Edit accomplishment for ${act.day || `Day ${dayIdx + 1}`}`}
-                                        className="flex min-h-11 w-full items-start justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-left text-xs text-slate-100 sm:hidden"
+                                        className="flex min-h-11 w-full items-start justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-left text-xs text-slate-100"
                                       >
                                         <span className="line-clamp-2 min-w-0 flex-1 whitespace-pre-wrap break-words">{act.accomplishment || 'Tap to add accomplishment'}</span>
                                         <Maximize2 size={15} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
                                       </button>
-                                      <textarea rows={3} value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="hidden w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none sm:block" placeholder="Accomplishment" />
                                     </div>
 
                                     <div className="border-b border-slate-800 p-3 sm:border-b-0 sm:border-r">
@@ -1717,12 +1717,11 @@ export default function Home() {
                                     type="button"
                                     onClick={() => openMobileAccomplishmentEditor(weekIdx, dayIdx, act.accomplishment)}
                                     aria-label={`Edit accomplishment for ${act.day || `Day ${dayIdx + 1}`}`}
-                                    className="mt-0.5 flex min-h-11 w-full items-start justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-left text-xs text-slate-100 sm:hidden"
+                                    className="mt-0.5 flex min-h-11 w-full items-start justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-left text-xs text-slate-100"
                                   >
                                     <span className="line-clamp-2 min-w-0 flex-1 whitespace-pre-wrap break-words">{act.accomplishment || 'Tap to add accomplishment'}</span>
                                     <Maximize2 size={15} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
                                   </button>
-                                  <textarea rows={2} placeholder="Accomplishment" value={act.accomplishment} onChange={(e) => updateDayActivity(weekIdx, dayIdx, 'accomplishment', e.target.value)} className="mt-0.5 hidden w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none sm:block" />
                                 </div>
                                 <div className="col-span-1">
                                   <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Hrs</label>
