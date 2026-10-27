@@ -920,7 +920,7 @@ export default function Home() {
               autoFocus
               value={mobileAccomplishmentEditor.draft}
               onChange={(event) => setMobileAccomplishmentEditor((current) => current ? { ...current, draft: event.target.value } : current)}
-              className="min-h-0 flex-1 resize-none bg-slate-950 px-4 py-4 text-base leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none sm:px-6"
+              className="min-h-0 flex-1 resize-none overflow-y-auto overscroll-contain bg-slate-950 px-4 py-4 text-base leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none sm:px-6"
               placeholder="Describe your accomplishment"
               aria-label="Accomplishment details"
             />
@@ -2013,7 +2013,7 @@ function ExpandableTextarea({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               rows={Math.max(rows, 8)}
-              className="min-h-0 flex-1 resize-none bg-slate-950 px-4 py-4 text-base leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none sm:px-6"
+              className="min-h-0 flex-1 resize-none overflow-y-auto overscroll-contain bg-slate-950 px-4 py-4 text-base leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none sm:px-6"
               placeholder={placeholder || `Enter ${title.toLowerCase()}`}
               aria-label={title}
             />
