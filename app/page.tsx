@@ -1268,6 +1268,39 @@ export default function Home() {
     setMobileAccomplishmentEditor(null);
   };
 
+  const generateMobileAccomplishmentAI = async () => {
+    if (!mobileAccomplishmentEditor || aiGenerating) return;
+    const { weekIndex, dayIndex, draft } = mobileAccomplishmentEditor;
+    const week = form.appendices.dailyJournal[weekIndex];
+    const day = week?.activities[dayIndex];
+    if (!week || !day) return;
+
+    setAiGenerating(`mobile-accomplishment-${weekIndex}-${dayIndex}`);
+    setStatus('Generating accomplishment with AI...');
+    try {
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `Week ${week.weekNumber} - ${day.day} Accomplishment`,
+          context: { report: form, week, day },
+          currentText: draft,
+          instructions: 'Write a polished first-person accomplishment paragraph. Use only listed activities, hours, and actual report data. Do not invent tasks, skills, dates, or outcomes.',
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not generate text.');
+      setMobileAccomplishmentEditor((current) => current
+        ? { ...current, draft: result.text }
+        : current);
+      setStatus('Accomplishment generated and ready to edit');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not generate text.');
+    } finally {
+      setAiGenerating('');
+    }
+  };
+
   const removeDay = (weekIndex: number, dayIndex: number) => {
     setForm((prev) => {
       const journal = [...prev.appendices.dailyJournal];
@@ -1568,13 +1601,24 @@ export default function Home() {
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={saveMobileAccomplishment}
-                className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
-              >
-                Save
-              </button>
+              <div className="ml-auto flex flex-1 gap-2 sm:flex-none">
+                <button
+                  type="button"
+                  onClick={generateMobileAccomplishmentAI}
+                  disabled={Boolean(aiGenerating)}
+                  className="min-h-11 flex flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-xs font-semibold text-violet-200 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:min-w-36 sm:text-sm"
+                >
+                  <Sparkles size={14} aria-hidden="true" />
+                  {aiGenerating.startsWith('mobile-accomplishment-') ? 'Generating...' : 'Generate with AI'}
+                </button>
+                <button
+                  type="button"
+                  onClick={saveMobileAccomplishment}
+                  className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
+                >
+                  Save
+                </button>
+              </div>
             </footer>
           </div>
         </div>
