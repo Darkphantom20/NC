@@ -22,4 +22,4 @@ npm run dev
 
 ## Notes
 
-This starter version provides the UI shell and an API endpoint for future report generation logic.
+Narratives are saved automatically in the current browser. Use **New narrative** to start a separate report, then use **Current narrative** to switch between saved reports. Existing single-report data is migrated automatically the first time the app loads the new version. Browser-local drafts are not shared across browsers or devices, so generate/download a copy to keep a separate backup.

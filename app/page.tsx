@@ -172,6 +172,61 @@ const defaultForm = {
   }
 };
 
+type NarrativeForm = typeof defaultForm;
+
+type NarrativeDraft = {
+  id: string;
+  title: string;
+  updatedAt: string;
+  form: NarrativeForm;
+};
+
+type StoredNarrativeDraft = {
+  id: string;
+  title: string;
+  updatedAt?: string;
+  form: Record<string, unknown>;
+};
+
+const draftsStorageKey = 'narrativeReportDrafts';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function createNarrativeId(): string {
+  return typeof window.crypto.randomUUID === 'function'
+    ? window.crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function isStoredNarrativeDraft(value: unknown): value is StoredNarrativeDraft {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.title === 'string'
+    && isRecord(value.form);
+}
+
+function mergeNarrativeForm(parsedForm: Record<string, unknown>): NarrativeForm {
+  const schoolPlacement = isRecord(parsedForm.schoolPlacement) ? parsedForm.schoolPlacement : {};
+  const appendices = isRecord(parsedForm.appendices) ? parsedForm.appendices : {};
+  const mergedForm = {
+    ...defaultForm,
+    ...parsedForm,
+    schoolPlacement: { ...defaultForm.schoolPlacement, ...schoolPlacement },
+    appendices: { ...defaultForm.appendices, ...appendices }
+  } as NarrativeForm;
+
+  return {
+    ...mergedForm,
+    tableOfContents: syncSchoolPlacementTOC(mergedForm.tableOfContents, mergedForm.schoolPlacement.enabled)
+  };
+}
+
+function createDefaultNarrativeForm(): NarrativeForm {
+  return structuredClone(defaultForm);
+}
+
 const fieldClass =
   'mt-2.5 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:rounded-2xl sm:px-4 sm:py-3.5 sm:text-base';
 
@@ -349,7 +404,11 @@ function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
 }
 
 export default function Home() {
-  const [form, setForm] = useState(defaultForm);
+  const [form, setForm] = useState<NarrativeForm>(() => createDefaultNarrativeForm());
+  const [drafts, setDrafts] = useState<NarrativeDraft[]>([]);
+  const [activeDraftId, setActiveDraftId] = useState('');
+  const [showNewDraftDialog, setShowNewDraftDialog] = useState(false);
+  const [newDraftTitle, setNewDraftTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('Draft ready');
   
@@ -394,37 +453,125 @@ export default function Home() {
     return () => window.clearInterval(interval);
   }, [showCompletionPopup]);
 
-  // Load form data from localStorage on mount
+  // Load saved narratives, or migrate the original single-report draft.
   useEffect(() => {
-    setIsMounted(true);
-    const savedForm = localStorage.getItem('narrativeReportForm');
-    if (savedForm) {
-      try {
-        const parsedForm = JSON.parse(savedForm);
-        const mergedForm = {
-          ...defaultForm,
-          ...parsedForm,
-          schoolPlacement: { ...defaultForm.schoolPlacement, ...(parsedForm.schoolPlacement || {}) },
-          appendices: { ...defaultForm.appendices, ...(parsedForm.appendices || {}) }
-        };
-        setForm({
-          ...mergedForm,
-          tableOfContents: syncSchoolPlacementTOC(mergedForm.tableOfContents, mergedForm.schoolPlacement.enabled)
-        });
-      } catch (error) {
-        console.error('Error loading saved form data:', error);
-        setForm(defaultForm);
+    try {
+      const savedDrafts = localStorage.getItem(draftsStorageKey);
+      if (savedDrafts) {
+        const parsedDrafts: unknown = JSON.parse(savedDrafts);
+        if (isRecord(parsedDrafts) && Array.isArray(parsedDrafts.drafts)) {
+          const restoredDrafts = parsedDrafts.drafts
+            .filter(isStoredNarrativeDraft)
+            .map((draft) => ({
+              id: draft.id,
+              title: draft.title,
+              updatedAt: draft.updatedAt || new Date().toISOString(),
+              form: mergeNarrativeForm(draft.form)
+            }));
+
+          if (restoredDrafts.length > 0) {
+            const requestedActiveId = parsedDrafts.activeDraftId;
+            const restoredActiveId = typeof requestedActiveId === 'string'
+              && restoredDrafts.some((draft) => draft.id === requestedActiveId)
+              ? requestedActiveId
+              : restoredDrafts[0].id;
+            setDrafts(restoredDrafts);
+            setActiveDraftId(restoredActiveId);
+            setForm(restoredDrafts.find((draft) => draft.id === restoredActiveId)?.form || restoredDrafts[0].form);
+            return;
+          }
+        }
       }
+
+      const savedForm = localStorage.getItem('narrativeReportForm');
+      const legacyForm: unknown = savedForm ? JSON.parse(savedForm) : null;
+      const migratedForm = isRecord(legacyForm)
+        ? mergeNarrativeForm(legacyForm)
+        : createDefaultNarrativeForm();
+      const migratedDraft: NarrativeDraft = {
+        id: createNarrativeId(),
+        title: 'My first narrative',
+        updatedAt: new Date().toISOString(),
+        form: migratedForm
+      };
+      setDrafts([migratedDraft]);
+      setActiveDraftId(migratedDraft.id);
+      setForm(migratedForm);
+    } catch (error) {
+      console.error('Error loading saved narrative drafts:', error);
+      const starterDraft: NarrativeDraft = {
+        id: createNarrativeId(),
+        title: 'My narrative',
+        updatedAt: new Date().toISOString(),
+        form: createDefaultNarrativeForm()
+      };
+      setDrafts([starterDraft]);
+      setActiveDraftId(starterDraft.id);
+      setForm(starterDraft.form);
+      setStatus('Could not load saved narratives');
+    } finally {
+      setIsMounted(true);
+      setRunTour(true);
     }
-    setRunTour(true);
   }, []);
 
-  // Save form data to localStorage whenever it changes
+  // Keep the active narrative up to date and persist all drafts in this browser.
   useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem('narrativeReportForm', JSON.stringify(form));
+    if (!isMounted || !activeDraftId) return;
+    setDrafts((currentDrafts) => currentDrafts.map((draft) => (
+      draft.id === activeDraftId
+        ? { ...draft, form, updatedAt: new Date().toISOString() }
+        : draft
+    )));
+  }, [form, activeDraftId, isMounted]);
+
+  useEffect(() => {
+    if (!isMounted || drafts.length === 0 || !activeDraftId) return;
+    try {
+      localStorage.setItem(draftsStorageKey, JSON.stringify({ drafts, activeDraftId }));
+      setStatus('Saved locally');
+    } catch (error) {
+      console.error('Error saving narrative drafts:', error);
+      setStatus('Could not save locally - browser storage may be full');
     }
-  }, [form, isMounted]);
+  }, [drafts, activeDraftId, isMounted]);
+
+  const activeDraft = drafts.find((draft) => draft.id === activeDraftId);
+
+  const openNewDraftDialog = () => {
+    setNewDraftTitle(`Narrative ${drafts.length + 1}`);
+    setShowNewDraftDialog(true);
+  };
+
+  const createNarrative = () => {
+    const newDraft: NarrativeDraft = {
+      id: createNarrativeId(),
+      title: newDraftTitle.trim() || `Narrative ${drafts.length + 1}`,
+      updatedAt: new Date().toISOString(),
+      form: createDefaultNarrativeForm()
+    };
+    setDrafts((currentDrafts) => [
+      ...currentDrafts.map((draft) => (
+        draft.id === activeDraftId ? { ...draft, form, updatedAt: new Date().toISOString() } : draft
+      )),
+      newDraft
+    ]);
+    setActiveDraftId(newDraft.id);
+    setForm(newDraft.form);
+    setShowNewDraftDialog(false);
+    setStatus('New narrative created');
+  };
+
+  const switchNarrative = (draftId: string) => {
+    const selectedDraft = drafts.find((draft) => draft.id === draftId);
+    if (!selectedDraft || draftId === activeDraftId) return;
+    setDrafts((currentDrafts) => currentDrafts.map((draft) => (
+      draft.id === activeDraftId ? { ...draft, form, updatedAt: new Date().toISOString() } : draft
+    )));
+    setForm(selectedDraft.form);
+    setActiveDraftId(selectedDraft.id);
+    setStatus(`Opened ${selectedDraft.title}`);
+  };
 
   const tourSteps: Step[] = [
     {
@@ -879,7 +1026,11 @@ export default function Home() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'JRMSU_Narrative_Report.docx';
+      const fileTitle = (activeDraft?.title || 'JRMSU')
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_')
+        .trim()
+        .replace(/[. ]+$/g, '') || 'JRMSU';
+      link.download = `${fileTitle}_Narrative_Report.docx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -940,6 +1091,52 @@ export default function Home() {
                 Save
               </button>
             </footer>
+          </div>
+        </div>
+      )}
+
+      {showNewDraftDialog && (
+        <div
+          className="fixed inset-0 z-[1400] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="new-narrative-title"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setShowNewDraftDialog(false);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl sm:p-6">
+            <h2 id="new-narrative-title" className="text-xl font-bold text-white">Create a new narrative</h2>
+            <p className="mt-2 text-sm text-slate-300">Your current report will be saved so you can return to it later.</p>
+            <label className="mt-5 block text-sm font-medium text-slate-200">
+              Narrative name
+              <input
+                autoFocus
+                value={newDraftTitle}
+                onChange={(event) => setNewDraftTitle(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') createNarrative();
+                }}
+                className={fieldClass}
+                placeholder="For example, Office OJT"
+              />
+            </label>
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowNewDraftDialog(false)}
+                className="min-h-11 rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={createNarrative}
+                className="min-h-11 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950"
+              >
+                Create narrative
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1131,6 +1328,34 @@ export default function Home() {
             </div>
           </div>
         </header>
+
+        <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-5">
+          <label className="block min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-cyan-300/80">
+            Current narrative
+            <select
+              value={activeDraftId}
+              onChange={(event) => switchNarrative(event.target.value)}
+              disabled={!isMounted}
+              className={`${fieldClass} mt-2 normal-case tracking-normal`}
+              aria-label="Select a narrative to edit"
+            >
+              {drafts.map((draft) => (
+                <option key={draft.id} value={draft.id}>{draft.title}</option>
+              ))}
+            </select>
+            <span className="mt-2 block text-xs font-normal normal-case tracking-normal text-slate-400">
+              {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved in this browser. Changes save automatically.
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={openNewDraftDialog}
+            disabled={!isMounted}
+            className="min-h-11 shrink-0 rounded-xl bg-cyan-500 px-5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            + New narrative
+          </button>
+        </section>
 
         <section className="hidden gap-4 sm:grid sm:grid-cols-3 sm:gap-6">
           <Card label="Sections" value="8" color="cyan" />
