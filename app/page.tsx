@@ -1,13 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { STATUS, type EventData, type Step } from 'react-joyride';
 import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText } from 'lucide-react';
-import JSZip from 'jszip';
-import { renderAsync } from 'docx-preview';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
 import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
+
+const Joyride = dynamic(() => import('react-joyride').then((module) => module.Joyride), {
+  ssr: false,
+});
 
 const sectionOrder = [
   'Cover Page',
@@ -401,6 +405,7 @@ function getCellImageRelationshipIds(cell: Element): string[] {
 }
 
 async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
+  const { default: JSZip } = await import('jszip');
   const archive = await JSZip.loadAsync(await file.arrayBuffer());
   const documentEntry = archive.file('word/document.xml');
   const relationshipEntry = archive.file('word/_rels/document.xml.rels');
@@ -655,10 +660,12 @@ function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start">
         {/* Guide Character Image - Minimized */}
         <div className="relative overflow-hidden rounded-[16px] ring-1 ring-cyan-500/20 flex-shrink-0 mx-auto sm:mx-0">
-          <img
-            src={guideScene.src}
+          <Image
+            src={guideScene}
             alt="Guide illustration"
             className="h-28 w-28 sm:h-32 sm:w-32 object-cover brightness-105 contrast-110"
+            sizes="128px"
+            priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
         </div>
@@ -1402,22 +1409,25 @@ export default function Home() {
     container.replaceChildren();
     setPreviewLoading(true);
 
-    renderAsync(previewBlob, container, container, {
-      className: 'report-docx',
-      breakPages: true,
-      ignoreWidth: false,
-      ignoreHeight: false,
-      ignoreLastRenderedPageBreak: false,
-      renderHeaders: true,
-      renderFooters: true,
-      useBase64URL: true,
-    }).catch((error: unknown) => {
-      if (!cancelled) {
-        setPreviewError(error instanceof Error ? error.message : 'Could not render the document preview.');
-      }
-    }).finally(() => {
-      if (!cancelled) setPreviewLoading(false);
-    });
+    void import('docx-preview')
+      .then(({ renderAsync }) => renderAsync(previewBlob, container, container, {
+        className: 'report-docx',
+        breakPages: true,
+        ignoreWidth: false,
+        ignoreHeight: false,
+        ignoreLastRenderedPageBreak: false,
+        renderHeaders: true,
+        renderFooters: true,
+        useBase64URL: true,
+      }))
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setPreviewError(error instanceof Error ? error.message : 'Could not render the document preview.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -1723,10 +1733,10 @@ export default function Home() {
                   style={{ transform: `translateX(-${completionSlideIndex * 100}%)` }}
                 >
                   <div className="min-w-full">
-                    <img src={memeScene.src} alt="Meme completion slide" className="h-72 w-full object-cover" />
+                    <Image src={memeScene} alt="Meme completion slide" className="h-72 w-full object-cover" sizes="100vw" />
                   </div>
                   <div className="min-w-full">
-                    <img src={completionScene.src} alt="Completion celebration slide" className="h-72 w-full object-cover" />
+                    <Image src={completionScene} alt="Completion celebration slide" className="h-72 w-full object-cover" sizes="100vw" />
                   </div>
                 </div>
               </div>
