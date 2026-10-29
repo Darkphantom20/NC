@@ -235,11 +235,6 @@ export async function POST(request: Request) {
             ],
           }),
         },
-        footers: reportFooterChildren.length > 0 ? {
-          default: new Footer({
-            children: reportFooterChildren,
-          }),
-        } : undefined,
         children: [
           ...(!compactSectionLayout ? [new Paragraph({ pageBreakBefore: true })] : []),
           ...remainingAppendixContent,
@@ -251,7 +246,7 @@ export async function POST(request: Request) {
       documentSections.splice(
         0,
         documentSections.length,
-        ...buildDocxTemplateSections(data, reportFooterChildren),
+        ...buildDocxTemplateSections(data),
       );
     }
 
@@ -581,7 +576,7 @@ function buildTemplateOrganizationPages(label: string, source: any, romanLabel =
   return children;
 }
 
-function buildDocxTemplateSections(data: any, reportFooterChildren: any[]): any[] {
+function buildDocxTemplateSections(data: any): any[] {
   const children: (Paragraph | Table)[] = [
     ...buildTemplateCoverPage(data),
     new Paragraph({ pageBreakBefore: true }),
@@ -644,9 +639,6 @@ function buildDocxTemplateSections(data: any, reportFooterChildren: any[]): any[
         children: [new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() })],
       }),
     },
-    footers: reportFooterChildren.length > 0
-      ? { default: new Footer({ children: reportFooterChildren }) }
-      : undefined,
     children,
   }];
 }
