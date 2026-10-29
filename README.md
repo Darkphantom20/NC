@@ -22,4 +22,4 @@ npm run dev
 
 ## Notes
 
-Narratives are saved automatically in the current browser. Use **New narrative** to start a separate report, then use **Current narrative** to switch between saved reports. Existing single-report data is migrated automatically the first time the app loads the new version. Browser-local drafts are not shared across browsers or devices, so generate/download a copy to keep a separate backup.
+Narratives are saved automatically in this browser using IndexedDB, which supports much more data than `localStorage` and is better suited to reports with attached images. Existing drafts from the earlier `localStorage` format are migrated automatically after the first successful save. Use **New narrative** to start a separate report, then use **Current narrative** to switch between reports. Browser-local drafts are not shared across browsers or devices, and the browser can still enforce storage limits, so generate/download a copy to keep a separate backup.

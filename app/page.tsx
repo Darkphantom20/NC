@@ -189,6 +189,9 @@ type StoredNarrativeDraft = {
 };
 
 const draftsStorageKey = 'narrativeReportDrafts';
+const draftDatabaseName = 'jrmsu-narrative-reports';
+const draftObjectStoreName = 'draft-data';
+const draftCollectionKey = 'all-drafts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -205,6 +208,69 @@ function isStoredNarrativeDraft(value: unknown): value is StoredNarrativeDraft {
     && typeof value.id === 'string'
     && typeof value.title === 'string'
     && isRecord(value.form);
+}
+
+function isStoredNarrativeCollection(
+  value: unknown
+): value is { drafts: StoredNarrativeDraft[]; activeDraftId?: string } {
+  return isRecord(value)
+    && Array.isArray(value.drafts)
+    && value.drafts.every(isStoredNarrativeDraft)
+    && (value.activeDraftId === undefined || typeof value.activeDraftId === 'string');
+}
+
+function openDraftDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) {
+      reject(new Error('IndexedDB is not available in this browser.'));
+      return;
+    }
+
+    const request = window.indexedDB.open(draftDatabaseName, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(draftObjectStoreName)) {
+        request.result.createObjectStore(draftObjectStoreName);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('Could not open browser draft storage.'));
+  });
+}
+
+async function loadDraftCollection(): Promise<unknown> {
+  const database = await openDraftDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(draftObjectStoreName, 'readonly');
+    const request = transaction.objectStore(draftObjectStoreName).get(draftCollectionKey);
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => reject(request.error || new Error('Could not read saved narratives.'));
+    transaction.oncomplete = () => database.close();
+    transaction.onerror = () => reject(transaction.error || new Error('Could not read saved narratives.'));
+    transaction.onabort = () => reject(transaction.error || new Error('Reading saved narratives was cancelled.'));
+  });
+}
+
+async function saveDraftCollection(collection: {
+  drafts: NarrativeDraft[];
+  activeDraftId: string;
+}): Promise<void> {
+  const database = await openDraftDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(draftObjectStoreName, 'readwrite');
+    transaction.objectStore(draftObjectStoreName).put(collection, draftCollectionKey);
+    transaction.oncomplete = () => {
+      database.close();
+      resolve();
+    };
+    transaction.onerror = () => {
+      database.close();
+      reject(transaction.error || new Error('Could not save narratives to browser storage.'));
+    };
+    transaction.onabort = () => {
+      database.close();
+      reject(transaction.error || new Error('Saving narratives to browser storage was cancelled.'));
+    };
+  });
 }
 
 function mergeNarrativeForm(parsedForm: Record<string, unknown>): NarrativeForm {
@@ -430,6 +496,7 @@ export default function Home() {
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewRequestRef = useRef<AbortController | null>(null);
   const previewCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
+  const draftSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const isMobileAccomplishmentEditorOpen = mobileAccomplishmentEditor !== null;
 
@@ -453,66 +520,102 @@ export default function Home() {
     return () => window.clearInterval(interval);
   }, [showCompletionPopup]);
 
-  // Load saved narratives, or migrate the original single-report draft.
+  // Load saved narratives from IndexedDB, falling back to the earlier localStorage format.
   useEffect(() => {
-    try {
-      const savedDrafts = localStorage.getItem(draftsStorageKey);
-      if (savedDrafts) {
-        const parsedDrafts: unknown = JSON.parse(savedDrafts);
-        if (isRecord(parsedDrafts) && Array.isArray(parsedDrafts.drafts)) {
-          const restoredDrafts = parsedDrafts.drafts
-            .filter(isStoredNarrativeDraft)
-            .map((draft) => ({
-              id: draft.id,
-              title: draft.title,
-              updatedAt: draft.updatedAt || new Date().toISOString(),
-              form: mergeNarrativeForm(draft.form)
-            }));
+    let cancelled = false;
 
-          if (restoredDrafts.length > 0) {
-            const requestedActiveId = parsedDrafts.activeDraftId;
-            const restoredActiveId = typeof requestedActiveId === 'string'
-              && restoredDrafts.some((draft) => draft.id === requestedActiveId)
-              ? requestedActiveId
-              : restoredDrafts[0].id;
-            setDrafts(restoredDrafts);
-            setActiveDraftId(restoredActiveId);
-            setForm(restoredDrafts.find((draft) => draft.id === restoredActiveId)?.form || restoredDrafts[0].form);
-            return;
-          }
+    const restoreDrafts = async () => {
+      try {
+        let savedCollection: unknown = null;
+        try {
+          savedCollection = await loadDraftCollection();
+        } catch (error) {
+          console.error('Could not access IndexedDB draft storage:', error);
+          if (!cancelled) setStatus('Could not access expanded browser storage');
+        }
+
+        if (isStoredNarrativeCollection(savedCollection) && savedCollection.drafts.length > 0) {
+          const restoredDrafts = savedCollection.drafts.map((draft) => ({
+            id: draft.id,
+            title: draft.title,
+            updatedAt: draft.updatedAt || new Date().toISOString(),
+            form: mergeNarrativeForm(draft.form)
+          }));
+          const requestedActiveId = savedCollection.activeDraftId;
+          const restoredActiveId = typeof requestedActiveId === 'string'
+            && restoredDrafts.some((draft) => draft.id === requestedActiveId)
+            ? requestedActiveId
+            : restoredDrafts[0].id;
+
+          if (cancelled) return;
+          setDrafts(restoredDrafts);
+          setActiveDraftId(restoredActiveId);
+          setForm(restoredDrafts.find((draft) => draft.id === restoredActiveId)?.form || restoredDrafts[0].form);
+          return;
+        }
+
+        const savedDrafts = localStorage.getItem(draftsStorageKey);
+        const parsedDrafts: unknown = savedDrafts ? JSON.parse(savedDrafts) : null;
+        if (isStoredNarrativeCollection(parsedDrafts) && parsedDrafts.drafts.length > 0) {
+          const restoredDrafts = parsedDrafts.drafts.map((draft) => ({
+            id: draft.id,
+            title: draft.title,
+            updatedAt: draft.updatedAt || new Date().toISOString(),
+            form: mergeNarrativeForm(draft.form)
+          }));
+          const requestedActiveId = parsedDrafts.activeDraftId;
+          const restoredActiveId = typeof requestedActiveId === 'string'
+            && restoredDrafts.some((draft) => draft.id === requestedActiveId)
+            ? requestedActiveId
+            : restoredDrafts[0].id;
+
+          if (cancelled) return;
+          setDrafts(restoredDrafts);
+          setActiveDraftId(restoredActiveId);
+          setForm(restoredDrafts.find((draft) => draft.id === restoredActiveId)?.form || restoredDrafts[0].form);
+          return;
+        }
+
+        const savedForm = localStorage.getItem('narrativeReportForm');
+        const legacyForm: unknown = savedForm ? JSON.parse(savedForm) : null;
+        const migratedForm = isRecord(legacyForm)
+          ? mergeNarrativeForm(legacyForm)
+          : createDefaultNarrativeForm();
+        const migratedDraft: NarrativeDraft = {
+          id: createNarrativeId(),
+          title: 'My first narrative',
+          updatedAt: new Date().toISOString(),
+          form: migratedForm
+        };
+        if (cancelled) return;
+        setDrafts([migratedDraft]);
+        setActiveDraftId(migratedDraft.id);
+        setForm(migratedForm);
+      } catch (error) {
+        console.error('Error loading saved narrative drafts:', error);
+        if (cancelled) return;
+        const starterDraft: NarrativeDraft = {
+          id: createNarrativeId(),
+          title: 'My narrative',
+          updatedAt: new Date().toISOString(),
+          form: createDefaultNarrativeForm()
+        };
+        setDrafts([starterDraft]);
+        setActiveDraftId(starterDraft.id);
+        setForm(starterDraft.form);
+        setStatus('Could not load saved narratives');
+      } finally {
+        if (!cancelled) {
+          setIsMounted(true);
+          setRunTour(true);
         }
       }
+    };
 
-      const savedForm = localStorage.getItem('narrativeReportForm');
-      const legacyForm: unknown = savedForm ? JSON.parse(savedForm) : null;
-      const migratedForm = isRecord(legacyForm)
-        ? mergeNarrativeForm(legacyForm)
-        : createDefaultNarrativeForm();
-      const migratedDraft: NarrativeDraft = {
-        id: createNarrativeId(),
-        title: 'My first narrative',
-        updatedAt: new Date().toISOString(),
-        form: migratedForm
-      };
-      setDrafts([migratedDraft]);
-      setActiveDraftId(migratedDraft.id);
-      setForm(migratedForm);
-    } catch (error) {
-      console.error('Error loading saved narrative drafts:', error);
-      const starterDraft: NarrativeDraft = {
-        id: createNarrativeId(),
-        title: 'My narrative',
-        updatedAt: new Date().toISOString(),
-        form: createDefaultNarrativeForm()
-      };
-      setDrafts([starterDraft]);
-      setActiveDraftId(starterDraft.id);
-      setForm(starterDraft.form);
-      setStatus('Could not load saved narratives');
-    } finally {
-      setIsMounted(true);
-      setRunTour(true);
-    }
+    void restoreDrafts();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Keep the active narrative up to date and persist all drafts in this browser.
@@ -527,13 +630,34 @@ export default function Home() {
 
   useEffect(() => {
     if (!isMounted || drafts.length === 0 || !activeDraftId) return;
-    try {
-      localStorage.setItem(draftsStorageKey, JSON.stringify({ drafts, activeDraftId }));
-      setStatus('Saved locally');
-    } catch (error) {
-      console.error('Error saving narrative drafts:', error);
-      setStatus('Could not save locally - browser storage may be full');
-    }
+    let cancelled = false;
+    const collection = { drafts, activeDraftId };
+    const timeout = window.setTimeout(() => {
+      setStatus('Saving locally...');
+      draftSaveQueueRef.current = draftSaveQueueRef.current
+        .catch(() => undefined)
+        .then(() => saveDraftCollection(collection))
+        .then(() => {
+          try {
+            localStorage.removeItem(draftsStorageKey);
+            localStorage.removeItem('narrativeReportForm');
+          } catch (error) {
+            console.error('Could not remove the migrated localStorage copy:', error);
+          }
+          if (!cancelled) setStatus('Saved locally');
+        })
+        .catch((error: unknown) => {
+          console.error('Error saving narrative drafts to IndexedDB:', error);
+          if (!cancelled) {
+            setStatus('Browser storage is full or unavailable - remove large images and try again');
+          }
+        });
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
   }, [drafts, activeDraftId, isMounted]);
 
   const activeDraft = drafts.find((draft) => draft.id === activeDraftId);
