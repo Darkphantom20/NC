@@ -1604,11 +1604,11 @@ export default function Home() {
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Vision</span>
-                    <input value={form.vision} onChange={(e) => updateField('vision', e.target.value)} className={fieldClass} />
+                    <ExpandableTextarea title="Vision" value={form.vision} onChange={(value) => updateField('vision', value)} rows={3} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Mission</span>
-                    <input value={form.mission} onChange={(e) => updateField('mission', e.target.value)} className={fieldClass} />
+                    <ExpandableTextarea title="Mission" value={form.mission} onChange={(value) => updateField('mission', value)} rows={3} />
                   </label>
                 </div>
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
@@ -2414,11 +2414,11 @@ function PlacementNarrativeFields({
           <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Vision</span>
-              <input value={placement.vision} onChange={(e) => updateField('vision', e.target.value)} className={fieldClass} />
+              <ExpandableTextarea title="School OJT Vision" value={placement.vision} onChange={(value) => updateField('vision', value)} rows={3} />
             </label>
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Mission</span>
-              <input value={placement.mission} onChange={(e) => updateField('mission', e.target.value)} className={fieldClass} />
+              <ExpandableTextarea title="School OJT Mission" value={placement.mission} onChange={(value) => updateField('mission', value)} rows={3} />
             </label>
           </div>
           <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
