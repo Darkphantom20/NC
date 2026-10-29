@@ -2920,6 +2920,10 @@ function ExpandableTextarea({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen) setDraft(value);
+  }, [value, isOpen]);
+
   const openEditor = () => {
     setDraft(value);
     setIsOpen(true);
@@ -2940,17 +2944,6 @@ function ExpandableTextarea({
           </span>
           <Maximize2 size={16} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
         </button>
-        {onGenerate && (
-          <button
-            type="button"
-            onClick={onGenerate}
-            disabled={generating}
-            className="inline-flex items-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60"
-          >
-            <Sparkles size={14} aria-hidden="true" />
-            {generating ? 'Generating...' : 'Generate with AI'}
-          </button>
-        )}
       </div>
 
       {isOpen && (
@@ -2978,6 +2971,17 @@ function ExpandableTextarea({
               aria-label={title}
             />
             <footer className="flex gap-3 border-t border-slate-800 bg-slate-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
+              {onGenerate && (
+                <button
+                  type="button"
+                  onClick={onGenerate}
+                  disabled={generating}
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:min-w-36"
+                >
+                  <Sparkles size={15} aria-hidden="true" />
+                  {generating ? 'Generating...' : 'Generate with AI'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
