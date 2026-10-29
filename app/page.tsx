@@ -2911,6 +2911,7 @@ function ExpandableTextarea({
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const [generationTopic, setGenerationTopic] = useState('');
+  const [showGenerationFocus, setShowGenerationFocus] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -2929,6 +2930,7 @@ function ExpandableTextarea({
   const openEditor = () => {
     setDraft(value);
     setGenerationTopic('');
+    setShowGenerationFocus(false);
     setIsOpen(true);
   };
 
@@ -2974,13 +2976,14 @@ function ExpandableTextarea({
               aria-label={title}
             />
             <footer className="space-y-3 border-t border-slate-800 bg-slate-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
-              {onGenerate && (
+              {onGenerate && showGenerationFocus && (
                 <div>
                   <label htmlFor={`generation-topic-${title}`} className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-violet-300">
                     Generation focus or main points
                   </label>
                   <input
                     id={`generation-topic-${title}`}
+                    autoFocus
                     value={generationTopic}
                     onChange={(event) => setGenerationTopic(event.target.value)}
                     placeholder="Example: Focus my MISO duties, technical skills, and people helped..."
@@ -2993,6 +2996,10 @@ function ExpandableTextarea({
                   <button
                     type="button"
                     onClick={async () => {
+                      if (!showGenerationFocus) {
+                        setShowGenerationFocus(true);
+                        return;
+                      }
                       const generatedText = await onGenerate(generationTopic);
                       if (generatedText) setDraft(generatedText);
                     }}
@@ -3000,7 +3007,11 @@ function ExpandableTextarea({
                     className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:min-w-36"
                   >
                     <Sparkles size={15} aria-hidden="true" />
-                    {generating ? 'Generating...' : 'Generate with AI'}
+                    {generating
+                      ? 'Generating...'
+                      : showGenerationFocus
+                        ? 'Generate content'
+                        : 'Generate with AI'}
                   </button>
                 )}
                 <button
