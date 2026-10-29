@@ -1916,27 +1916,36 @@ export default function Home() {
                 <p className="mb-3 text-xs text-slate-300">
                   Choose the structure used for the generated Word report.
                 </p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
-                    <input
-                      type="radio"
-                      name="report-template"
-                      checked={form.reportTemplate === 'current'}
-                      onChange={() => updateField('reportTemplate', 'current')}
-                      className="accent-cyan-400"
-                    />
-                    Current System Layout
-                  </label>
-                  <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
-                    <input
-                      type="radio"
-                      name="report-template"
-                      checked={form.reportTemplate === 'docx-template'}
-                      onChange={() => updateField('reportTemplate', 'docx-template')}
-                      className="accent-cyan-400"
-                    />
-                    narrative-report.docx Layout
-                  </label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="w-full sm:flex-1">
+                    <label htmlFor="report-template-select" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      Current layout
+                    </label>
+                    <select
+                      id="report-template-select"
+                      value={form.reportTemplate}
+                      onChange={(event) => updateField('reportTemplate', event.target.value)}
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
+                    >
+                      <option value="current">Current System Layout</option>
+                      <option value="docx-template">narrative-report.docx Layout</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const selector = document.getElementById('report-template-select') as HTMLSelectElement | null;
+                      if (!selector) return;
+                      if (typeof selector.showPicker === 'function') {
+                        selector.showPicker();
+                      } else {
+                        selector.focus();
+                      }
+                    }}
+                    className="shrink-0 rounded-lg bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-400/20 transition hover:bg-cyan-300"
+                  >
+                    + Choose layout
+                  </button>
                 </div>
               </div>
             </SectionBlock>
