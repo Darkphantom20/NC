@@ -306,13 +306,154 @@ function templateParagraph(text: string, options: {
   return [paragraph];
 }
 
-function buildTemplateOrganizationPages(label: string, source: any): Paragraph[] {
+function buildTemplateCoverPage(data: any): Paragraph[] {
+  const placementOrganizations = [
+    data.trainingOrganization,
+    data.schoolPlacement?.enabled ? data.schoolPlacement.trainingOrganization : '',
+  ].filter(Boolean);
+  const placementLocations = [
+    data.trainingLocation,
+    data.schoolPlacement?.enabled ? data.schoolPlacement.trainingLocation : '',
+  ].filter(Boolean);
+
+  const centered = (text: string, options: {
+    before?: number;
+    after?: number;
+    bold?: boolean;
+    size?: number;
+    line?: number;
+  } = {}) => new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: {
+      before: options.before ?? 0,
+      after: options.after ?? 360,
+      line: options.line ?? 360,
+      lineRule: 'auto',
+    },
+    children: [new TextRun({
+      text,
+      bold: options.bold ?? false,
+      size: options.size ?? 32,
+      font: 'Times New Roman',
+    })],
+  });
+
+  return [
+    centered('A Narrative Report on the', { before: 1440, after: 120, size: 32 }),
+    centered('On-the-Job Training conducted at', { after: 240, size: 32 }),
+    centered(placementOrganizations.join(' and '), { bold: true, after: 120, size: 32 }),
+    centered(placementLocations.join(' and '), { after: 1440, size: 32 }),
+    centered('Presented to the faculty of', { after: 120, size: 32 }),
+    centered(data.collegeFaculty || '', { after: 1440, size: 32 }),
+    centered('In partial fulfillment of the requirements for the degree of', { after: 120, size: 32 }),
+    centered(data.degreeProgram || '', { after: 2160, size: 32 }),
+    centered('Training Duration:', { after: 120, size: 32 }),
+    centered(data.trainingDuration || '', { after: 1200, size: 32 }),
+    centered('Submitted by:', { after: 120, size: 32 }),
+    centered(data.studentName || '', { bold: true, after: 120, size: 32 }),
+    centered(`${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`, { after: 1440, size: 32 }),
+    centered('Submitted to:', { after: 120, size: 32 }),
+    centered(data.submittedToName || '', { bold: true, after: 120, size: 32 }),
+    centered(data.submittedToTitle || '', { after: 0, size: 32 }),
+  ];
+}
+
+function buildTemplateTableOfContents(data: any): any[] {
+  const schoolEnabled = data.schoolPlacement?.enabled;
+  const rows: [string, string][] = [
+    ['Acknowledgement', 'i'],
+    ['Table of Contents', 'ii'],
+    ['List of Table/Figures', 'iii'],
+    ['I. ' + String(data.trainingOrganization || 'TRAINING ORGANIZATION').toUpperCase(), ''],
+    ['Introduction', '1'],
+    ['Organization/Company Analysis', '4'],
+    ['Tasks and Duties', '6'],
+    ['Case Analysis', '7'],
+    ['Reflections', '8'],
+  ];
+  if (schoolEnabled) {
+    rows.push(
+      ['II. ' + String(data.schoolPlacement?.trainingOrganization || 'SECOND OJT PLACEMENT').toUpperCase(), ''],
+      ['Introduction', '9'],
+      ['Organization/Company Analysis', '12'],
+      ['Tasks and Duties', '14'],
+      ['Case Analysis', '15'],
+      ['Reflections', '16'],
+      ['Appendices', '17'],
+    );
+  } else {
+    rows.push(['Appendices', '9']);
+  }
+
+  return rows.map(([title, page]) => new Paragraph({
+    spacing: { after: 60, line: 360, lineRule: 'auto' },
+    children: [
+      new TextRun({ text: `${title}${page ? ' ' + '-'.repeat(Math.max(8, 82 - title.length)) : ''}`, size: 24, font: 'Times New Roman', bold: /^(I\.|II\.|Organization\/Company Analysis|Tasks and Duties|Case Analysis|Reflections)/.test(title) }),
+      ...(page ? [
+        new TextRun({ text: `  ${page}`, size: 24, font: 'Times New Roman' }),
+      ] : []),
+    ],
+  }));
+}
+
+function buildTemplateDailyJournal(appendices: AppendicesData | undefined): Paragraph[] {
+  if (!appendices?.dailyJournal?.length) return [];
+  const children: Paragraph[] = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 240, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: 'APPENDICES', bold: true, size: 24, font: 'Times New Roman' })],
+    }),
+  ];
+
+  appendices.dailyJournal.forEach((week, index) => {
+    children.push(
+      new Paragraph({
+        pageBreakBefore: index > 0,
+        spacing: { before: 120, after: 120, line: 360, lineRule: 'auto' },
+        children: [new TextRun({ text: `Week ${week.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+      }),
+      buildCurrentWeeklyTable(week.activities, week.totalHours),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 120, after: 120, line: 360, lineRule: 'auto' },
+        children: [new TextRun({ text: `Table ${week.weekNumber}: Journal Week ${week.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 120, line: 360, lineRule: 'auto' },
+        children: [new TextRun({ text: week.narrative || 'No narrative provided.', size: 24, font: 'Times New Roman' })],
+      }),
+    );
+
+    const images = (week.currentLayoutImages || week.images || []).filter((image): image is string | AppendixImage => Boolean(image));
+    if (images.length > 0) {
+      children.push(buildImageGridTable(images));
+      images.forEach((image, imageIndex) => {
+        const detail = typeof image === 'string' ? '' : image.detail?.trim();
+        children.push(new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 60, after: 120, line: 360, lineRule: 'auto' },
+          children: [new TextRun({
+            text: `Figure ${imageIndex + 1}${detail ? `: ${detail}` : ''}`,
+            size: 24,
+            font: 'Times New Roman',
+          })],
+        }));
+      });
+    }
+  });
+
+  return children;
+}
+
+function buildTemplateOrganizationPages(label: string, source: any, romanLabel = '', figureNumber = 1): Paragraph[] {
   const children: Paragraph[] = [
     new Paragraph({
       pageBreakBefore: true,
       alignment: AlignmentType.CENTER,
       spacing: { after: 120, line: 360, lineRule: 'auto' },
-      children: [new TextRun({ text: String(label || 'TRAINING ORGANIZATION').toUpperCase(), bold: true, size: 24, font: 'Times New Roman' })],
+      children: [new TextRun({ text: `${romanLabel}${romanLabel ? '. ' : ''}${String(label || 'TRAINING ORGANIZATION').toUpperCase()}`, bold: true, size: 24, font: 'Times New Roman' })],
     }),
   ];
 
@@ -368,6 +509,11 @@ function buildTemplateOrganizationPages(label: string, source: any): Paragraph[]
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [new ImageRun({ type: 'png', data: imageBuffer, transformation: { width: 520, height: 360 } })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 60, after: 120, line: 360, lineRule: 'auto' },
+        children: [new TextRun({ text: `Figure ${figureNumber}: Organizational Chart`, size: 24, font: 'Times New Roman' })],
       }),
     );
   }
@@ -425,18 +571,24 @@ function buildTemplateOrganizationPages(label: string, source: any): Paragraph[]
 
 function buildDocxTemplateSections(data: any, reportFooterChildren: any[]): any[] {
   const children: Paragraph[] = [
-    ...buildCoverPage(data),
+    ...buildTemplateCoverPage(data),
     new Paragraph({ pageBreakBefore: true }),
     ...buildAcknowledgementPage(data, false, 360),
     new Paragraph({ pageBreakBefore: true }),
     ...templateParagraph('TABLE OF CONTENTS', { alignment: AlignmentType.CENTER, bold: true, after: 180 }),
-    ...buildTableOfContentsPage(data, false, 360),
+    ...buildTemplateTableOfContents(data),
     new Paragraph({ pageBreakBefore: true }),
     ...templateParagraph('LIST OF TABLES / FIGURES', { alignment: AlignmentType.CENTER, bold: true, after: 180 }),
     ...templateParagraph('LIST OF TABLES', { bold: true, after: 60 }),
-    ...templateParagraph('Table 1: Journal Week 1', {}),
-    ...templateParagraph('LIST OF FIGURES', { bold: true, before: 120, after: 60 }),
   ];
+
+  (data.appendices?.dailyJournal || []).forEach((week: DailyJournalWeek, index: number) => {
+    children.push(...templateParagraph(`Table ${index + 1}: Journal Week ${week.weekNumber}`, {}));
+  });
+
+  children.push(
+    ...templateParagraph('LIST OF FIGURES', { bold: true, before: 120, after: 60 }),
+  );
 
   if (data.organizationStructureImage) {
     children.push(...templateParagraph('Figure 1: Organizational Chart', {}));
@@ -444,13 +596,22 @@ function buildDocxTemplateSections(data: any, reportFooterChildren: any[]): any[
   if (data.schoolPlacement?.enabled && data.schoolPlacement.organizationStructureImage) {
     children.push(...templateParagraph('Figure 2: School Placement Organizational Chart', {}));
   }
-
-  children.push(...buildTemplateOrganizationPages(data.trainingOrganization, data));
-  if (data.schoolPlacement?.enabled) {
-    children.push(...buildTemplateOrganizationPages(data.schoolPlacement.trainingOrganization || 'SCHOOL OJT / SECOND PLACEMENT', data.schoolPlacement));
+  const hasJournalPhotos = (data.appendices?.dailyJournal || []).some((week: DailyJournalWeek) =>
+    (week.currentLayoutImages || week.images || []).some((image) => Boolean(image)),
+  );
+  if (hasJournalPhotos) {
+    children.push(...templateParagraph('Figure 3: Weekly documentation photos', {}));
+  }
+  if (data.appendices?.primeReportImages?.length) {
+    children.push(...templateParagraph('Figure 4: PRIME report photos', {}));
   }
 
-  const journalChildren = buildDailyJournalAppendixPage(data.appendices);
+  children.push(...buildTemplateOrganizationPages(data.trainingOrganization, data, 'I', 1));
+  if (data.schoolPlacement?.enabled) {
+    children.push(...buildTemplateOrganizationPages(data.schoolPlacement.trainingOrganization || 'SCHOOL OJT / SECOND PLACEMENT', data.schoolPlacement, 'II', 2));
+  }
+
+  const journalChildren = buildTemplateDailyJournal(data.appendices);
   if (journalChildren.length > 0) {
     children.push(new Paragraph({ pageBreakBefore: true }), ...journalChildren);
   }
