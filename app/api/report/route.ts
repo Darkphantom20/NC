@@ -412,8 +412,30 @@ function buildTemplateDailyJournal(appendices: AppendicesData | undefined): (Par
       children: [new TextRun({ text: 'APPENDICES', bold: true, size: 24, font: 'Times New Roman' })],
     }),
   ];
+  const layout = appendices.dailyJournalLayout === 'no-photo'
+    ? 'no-photo'
+    : appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
 
   appendices.dailyJournal.forEach((week, index) => {
+    if (layout === 'report') {
+      const reportImages = week.reportLayoutImages || week.images || [];
+      children.push(
+        new Paragraph({
+          pageBreakBefore: index > 0,
+          spacing: { before: 120, after: 120, line: 360, lineRule: 'auto' },
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: `WEEK ${week.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 60, after: 120, line: 360, lineRule: 'auto' },
+          children: [new TextRun({ text: 'WEEKLY ACCOMPLISHMENT REPORT', bold: true, size: 24, font: 'Times New Roman' })],
+        }),
+        buildDailyReportTable(week.activities, reportImages),
+      );
+      return;
+    }
+
     children.push(
       new Paragraph({
         pageBreakBefore: index > 0,
@@ -421,7 +443,11 @@ function buildTemplateDailyJournal(appendices: AppendicesData | undefined): (Par
         children: [new TextRun({ text: `Week ${week.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
       }),
       buildCurrentWeeklyTable(week.activities, week.totalHours),
-      new Paragraph({
+    );
+
+    if (layout === 'current') {
+      children.push(
+        new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { before: 120, after: 120, line: 360, lineRule: 'auto' },
         children: [new TextRun({ text: `Table ${week.weekNumber}: Journal Week ${week.weekNumber}`, bold: true, size: 24, font: 'Times New Roman' })],
@@ -431,23 +457,26 @@ function buildTemplateDailyJournal(appendices: AppendicesData | undefined): (Par
         spacing: { after: 120, line: 360, lineRule: 'auto' },
         children: [new TextRun({ text: week.narrative || 'No narrative provided.', size: 24, font: 'Times New Roman' })],
       }),
-    );
+      );
+    }
 
-    const images = (week.currentLayoutImages || week.images || []).filter((image): image is string | AppendixImage => Boolean(image));
-    if (images.length > 0) {
-      children.push(buildImageGridTable(images));
-      images.forEach((image, imageIndex) => {
-        const detail = typeof image === 'string' ? '' : image.detail?.trim();
-        children.push(new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 120, line: 360, lineRule: 'auto' },
-          children: [new TextRun({
-            text: `Figure ${imageIndex + 1}${detail ? `: ${detail}` : ''}`,
-            size: 24,
-            font: 'Times New Roman',
-          })],
-        }));
-      });
+    if (layout === 'current') {
+      const images = (week.currentLayoutImages || week.images || []).filter((image): image is string | AppendixImage => Boolean(image));
+      if (images.length > 0) {
+        children.push(buildImageGridTable(images));
+        images.forEach((image, imageIndex) => {
+          const detail = typeof image === 'string' ? '' : image.detail?.trim();
+          children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 60, after: 120, line: 360, lineRule: 'auto' },
+            children: [new TextRun({
+              text: `Figure ${imageIndex + 1}${detail ? `: ${detail}` : ''}`,
+              size: 24,
+              font: 'Times New Roman',
+            })],
+          }));
+        });
+      }
     }
   });
 
@@ -1850,7 +1879,8 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
       children: [
         new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DATE', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 18, type: WidthType.PERCENTAGE } }),
         new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'ACCOMPLISHMENT', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 34, type: WidthType.PERCENTAGE } }),
-        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 48, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'HOURS', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 10, type: WidthType.PERCENTAGE } }),
+        new TableCell({ margins: { top: 18, bottom: 18, left: 24, right: 24 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'DOCUMENTATION', bold: true, size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], width: { size: 38, type: WidthType.PERCENTAGE } }),
       ],
     }),
   ];
@@ -1911,6 +1941,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
               );
             })()
           }),
+          new TableCell({ margins: { top: 12, bottom: 12, left: 18, right: 18 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: String(act.hours ?? ''), size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })], verticalAlign: 'center' }),
           new TableCell({ margins: { top: 12, bottom: 12, left: 18, right: 18 }, children: imageCellChildren.length > 0 ? imageCellChildren : [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: '', size: TABLE_TEXT_SIZE, font: 'Times New Roman' })] })] }),
         ],
       })
@@ -1922,7 +1953,7 @@ function buildDailyReportTable(activities: DailyActivity[], images: (string | Ap
     alignment: AlignmentType.CENTER,
     width: { size: 94, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
-    columnWidths: [1800, 3500, 4700],
+    columnWidths: [1700, 3300, 1000, 4000],
     borders: {
       top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
