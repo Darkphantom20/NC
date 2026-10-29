@@ -276,7 +276,7 @@ export async function POST(request: Request) {
 }
 
 function templateParagraph(text: string, options: {
-  alignment?: AlignmentType;
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   bold?: boolean;
   size?: number;
   before?: number;
