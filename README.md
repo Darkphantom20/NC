@@ -14,6 +14,25 @@ npm install
 npm run dev
 ```
 
+## AI text generation
+
+Set a server-only Gemini API key before starting the app:
+
+```bash
+GEMINI_API_KEY=your_new_api_key npm run dev
+```
+
+On Windows PowerShell, use:
+
+```powershell
+$env:GEMINI_API_KEY="your_new_api_key"
+npm run dev
+```
+
+For deployment, add `GEMINI_API_KEY` as an environment variable in your hosting provider. Do not put the key in `NEXT_PUBLIC_*` variables or in browser-side code.
+
+The API key shared in chat has been exposed and should be revoked and replaced immediately. Generated text is based on the current report form and can be edited before DOCX generation.
+
 ## Deploy to Vercel
 
 1. Push this project to GitHub.
