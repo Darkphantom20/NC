@@ -2220,6 +2220,7 @@ export default function Home() {
                     </div>
                     <PlacementNarrativeFields
                       placement={form.schoolPlacement}
+                      reportTemplate={form.reportTemplate}
                       updateField={updateSchoolPlacementField}
                       onOrganizationImageUpload={handleSchoolOrganizationStructureUpload}
                       onRemoveOrganizationImage={() => updateSchoolPlacementField('organizationStructureImage', '')}
@@ -2876,11 +2877,13 @@ function ExpandableTextarea({
 
 function PlacementNarrativeFields({
   placement,
+  reportTemplate,
   updateField,
   onOrganizationImageUpload,
   onRemoveOrganizationImage,
 }: {
   placement: typeof defaultForm.schoolPlacement;
+  reportTemplate: typeof defaultForm.reportTemplate;
   updateField: (key: keyof typeof defaultForm.schoolPlacement, value: string) => void;
   onOrganizationImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveOrganizationImage: () => void;
@@ -2914,10 +2917,10 @@ function PlacementNarrativeFields({
             </label>
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">
-                {form.reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
+                {reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
               </span>
               <ExpandableTextarea
-                title={form.reportTemplate === 'docx-template' ? 'School OJT Products and Services Offered' : 'School OJT Services'}
+                title={reportTemplate === 'docx-template' ? 'School OJT Products and Services Offered' : 'School OJT Services'}
                 value={placement.services}
                 onChange={(value) => updateField('services', value)}
                 rows={3}
@@ -3003,10 +3006,10 @@ function PlacementNarrativeFields({
           </label>
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">
-              {form.reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
+              {reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
             </span>
             <ExpandableTextarea
-              title={form.reportTemplate === 'docx-template' ? 'School OJT Relevancy of the Organization' : 'School OJT Relevancy to Course & Goals'}
+              title={reportTemplate === 'docx-template' ? 'School OJT Relevancy of the Organization' : 'School OJT Relevancy to Course & Goals'}
               value={placement.relevancy}
               onChange={(value) => updateField('relevancy', value)}
               rows={4}
