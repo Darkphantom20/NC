@@ -555,7 +555,7 @@ const fileInputClass =
 
 async function resizeImageDataUrl(dataUrl: string, maxWidth: number, quality: number): Promise<string> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const scale = Math.min(1, maxWidth / Math.max(img.width, img.height));
