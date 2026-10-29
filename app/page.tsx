@@ -1061,8 +1061,8 @@ export default function Home() {
     currentText: string,
     instructions = '',
     topic = '',
-  ) => {
-    if (aiGenerating) return;
+  ): Promise<string | null> => {
+    if (aiGenerating) return null;
     setAiGenerating(String(key));
     setStatus(`Generating ${title} with AI...`);
     try {
@@ -1081,18 +1081,19 @@ export default function Home() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not generate text.');
-      updateField(key, result.text);
       setStatus(`${title} generated and aligned`);
+      return String(result.text || '').trim() || null;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not generate text.');
+      return null;
     } finally {
       setAiGenerating('');
     }
   };
 
-  const generateWeeklyNarrative = async (weekIndex: number, topic = '') => {
+  const generateWeeklyNarrative = async (weekIndex: number, topic = ''): Promise<string | null> => {
     const week = form.appendices.dailyJournal[weekIndex];
-    if (!week || aiGenerating) return;
+    if (!week || aiGenerating) return null;
     setAiGenerating(`weekly-${weekIndex}`);
     setStatus(`Generating Week ${week.weekNumber} narrative with AI...`);
     try {
@@ -1111,18 +1112,11 @@ export default function Home() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not generate the weekly narrative.');
-      setForm((prev) => ({
-        ...prev,
-        appendices: {
-          ...prev.appendices,
-          dailyJournal: prev.appendices.dailyJournal.map((item, index) =>
-            index === weekIndex ? { ...item, narrative: result.text } : item
-          ),
-        },
-      }));
       setStatus(`Week ${week.weekNumber} narrative generated and aligned`);
+      return String(result.text || '').trim() || null;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not generate the weekly narrative.');
+      return null;
     } finally {
       setAiGenerating('');
     }
@@ -2911,7 +2905,7 @@ function ExpandableTextarea({
   rows?: number;
   placeholder?: string;
   className?: string;
-  onGenerate?: (topic?: string) => void;
+  onGenerate?: (topic?: string) => Promise<string | null> | void;
   generating?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -2998,7 +2992,10 @@ function ExpandableTextarea({
                 {onGenerate && (
                   <button
                     type="button"
-                    onClick={() => onGenerate(generationTopic)}
+                    onClick={async () => {
+                      const generatedText = await onGenerate(generationTopic);
+                      if (generatedText) setDraft(generatedText);
+                    }}
                     disabled={generating}
                     className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:min-w-36"
                   >
