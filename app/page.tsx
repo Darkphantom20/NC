@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
 import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText } from 'lucide-react';
+import JSZip from 'jszip';
 import { renderAsync } from 'docx-preview';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
@@ -172,7 +173,40 @@ const defaultForm = {
   }
 };
 
-type NarrativeForm = typeof defaultForm;
+type NarrativeDailyActivity = {
+  day: string;
+  date: string;
+  accomplishment: string;
+  hours: number | string;
+};
+
+type JournalPhoto = { base64: string; detail: string };
+
+type NarrativeJournalWeek = {
+  weekNumber: number;
+  totalHours: number | string;
+  narrative: string;
+  activities: NarrativeDailyActivity[];
+  images?: (JournalPhoto | null)[];
+  currentLayoutImages?: (JournalPhoto | null)[];
+  reportLayoutImages?: (JournalPhoto | null)[];
+};
+
+type NarrativeForm = Omit<typeof defaultForm, 'appendices'> & {
+  appendices: Omit<typeof defaultForm.appendices, 'dailyJournal'> & {
+    dailyJournal: NarrativeJournalWeek[];
+  };
+};
+
+type ParsedJournalImport = {
+  fileName: string;
+  weeks: NarrativeJournalWeek[];
+  activityCount: number;
+  imageCount: number;
+  daysWithoutImages: number;
+  rowsWithMultipleImages: number;
+  hoursImported: boolean;
+};
 
 type NarrativeDraft = {
   id: string;
@@ -291,6 +325,218 @@ function mergeNarrativeForm(parsedForm: Record<string, unknown>): NarrativeForm 
 
 function createDefaultNarrativeForm(): NarrativeForm {
   return structuredClone(defaultForm);
+}
+
+const wordProcessingNamespace = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const officeRelationshipsNamespace = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const packageRelationshipsNamespace = 'http://schemas.openxmlformats.org/package/2006/relationships';
+const drawingNamespace = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+const vmlNamespace = 'urn:schemas-microsoft-com:vml';
+
+function getWordChildren(element: Element, localName: string): Element[] {
+  return Array.from(element.children).filter((child) => (
+    child.localName === localName && child.namespaceURI === wordProcessingNamespace
+  ));
+}
+
+function getWordCellText(cell: Element): string {
+  return Array.from(cell.getElementsByTagNameNS(wordProcessingNamespace, 'p'))
+    .map((paragraph) => Array.from(paragraph.getElementsByTagNameNS(wordProcessingNamespace, 't'))
+      .map((text) => text.textContent || '')
+      .join(''))
+    .filter((text) => text.trim())
+    .join('\n')
+    .trim();
+}
+
+function normalizeJournalHeader(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function resolveDocxPath(target: string): string {
+  const path = target.replace(/\\/g, '/');
+  const segments = path.startsWith('/') ? [] : ['word'];
+  for (const segment of path.split('/')) {
+    if (!segment || segment === '.') continue;
+    if (segment === '..') {
+      segments.pop();
+    } else {
+      segments.push(segment);
+    }
+  }
+  return segments.join('/');
+}
+
+function imageMimeType(fileName: string): string {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    bmp: 'image/bmp',
+    gif: 'image/gif',
+    jpeg: 'image/jpeg',
+    jpg: 'image/jpeg',
+    png: 'image/png',
+    svg: 'image/svg+xml',
+    tif: 'image/tiff',
+    tiff: 'image/tiff',
+    webp: 'image/webp'
+  };
+  return extension ? mimeTypes[extension] || 'application/octet-stream' : 'application/octet-stream';
+}
+
+function getCellImageRelationshipIds(cell: Element): string[] {
+  const ids = new Set<string>();
+  const imageElements = [
+    ...Array.from(cell.getElementsByTagNameNS(drawingNamespace, 'blip')),
+    ...Array.from(cell.getElementsByTagNameNS(vmlNamespace, 'imagedata'))
+  ];
+  for (const imageElement of imageElements) {
+    const id = imageElement.getAttributeNS(officeRelationshipsNamespace, 'embed')
+      || imageElement.getAttributeNS(officeRelationshipsNamespace, 'id');
+    if (id) ids.add(id);
+  }
+  return Array.from(ids);
+}
+
+async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
+  const archive = await JSZip.loadAsync(await file.arrayBuffer());
+  const documentEntry = archive.file('word/document.xml');
+  const relationshipEntry = archive.file('word/_rels/document.xml.rels');
+  if (!documentEntry || !relationshipEntry) {
+    throw new Error('This DOCX does not contain a readable Word document.');
+  }
+
+  const parser = new DOMParser();
+  const documentXml = parser.parseFromString(await documentEntry.async('string'), 'application/xml');
+  const relationshipsXml = parser.parseFromString(await relationshipEntry.async('string'), 'application/xml');
+  if (
+    documentXml.getElementsByTagName('parsererror').length > 0
+    || relationshipsXml.getElementsByTagName('parsererror').length > 0
+  ) {
+    throw new Error('The DOCX contains invalid document data.');
+  }
+
+  const relationships = new Map<string, string>();
+  for (const relationship of Array.from(relationshipsXml.getElementsByTagNameNS(packageRelationshipsNamespace, 'Relationship'))) {
+    const id = relationship.getAttribute('Id');
+    const target = relationship.getAttribute('Target');
+    const relationshipType = relationship.getAttribute('Type') || '';
+    if (id && target && relationshipType.endsWith('/image') && relationship.getAttribute('TargetMode') !== 'External') {
+      relationships.set(id, resolveDocxPath(target));
+    }
+  }
+
+  const tables = Array.from(documentXml.getElementsByTagNameNS(wordProcessingNamespace, 'tbl'));
+  const weeks: NarrativeJournalWeek[] = [];
+  const imageCache = new Map<string, Promise<{ base64: string; detail: string }>>();
+  let activityCount = 0;
+  let imageCount = 0;
+  let daysWithoutImages = 0;
+  let rowsWithMultipleImages = 0;
+  let hoursImported = false;
+
+  const loadImage = (relationshipId: string): Promise<{ base64: string; detail: string }> => {
+    const cachedImage = imageCache.get(relationshipId);
+    if (cachedImage) return cachedImage;
+
+    const imagePath = relationships.get(relationshipId);
+    const imageEntry = imagePath ? archive.file(imagePath) : null;
+    if (!imagePath || !imageEntry) {
+      return Promise.reject(new Error('A photo referenced in the journal table could not be found in the DOCX.'));
+    }
+
+    const imagePromise = imageEntry.async('blob').then(async (blob) => {
+      const fileImage = new File([blob], imagePath.split('/').pop() || 'journal-image', {
+        type: imageMimeType(imagePath)
+      });
+      return {
+        base64: await compressImageDataUrl(fileImage, 1200, 0.7),
+        detail: 'Imported daily journal documentation'
+      };
+    });
+    imageCache.set(relationshipId, imagePromise);
+    return imagePromise;
+  };
+
+  for (const table of tables) {
+    const rows = getWordChildren(table, 'tr');
+    if (rows.length < 2) continue;
+
+    const headerCells = getWordChildren(rows[0], 'tc');
+    const headers = headerCells.map((cell) => normalizeJournalHeader(getWordCellText(cell)));
+    const dateColumn = headers.findIndex((header) => header.split(' ').includes('date'));
+    const dayColumn = headers.findIndex((header) => /^(day|day number|day no|day #)$/.test(header));
+    const accomplishmentColumn = headers.findIndex((header) => (
+      /accomplishment|activities|activity|tasks|duties|work done/.test(header)
+    ));
+    const documentationColumn = headers.findIndex((header) => /documentation|photos?|pictures?|images?|evidence/.test(header));
+    const hoursColumn = headers.findIndex((header) => /\bhours?\b/.test(header));
+
+    if (dateColumn < 0 || accomplishmentColumn < 0) continue;
+    if (hoursColumn >= 0) hoursImported = true;
+
+    const activities: NarrativeDailyActivity[] = [];
+    const currentLayoutImages: (JournalPhoto | null)[] = [];
+    const reportLayoutImages: (JournalPhoto | null)[] = [];
+
+    for (const row of rows.slice(1)) {
+      const cells = getWordChildren(row, 'tc');
+      const date = cells[dateColumn] ? getWordCellText(cells[dateColumn]) : '';
+      const accomplishment = cells[accomplishmentColumn] ? getWordCellText(cells[accomplishmentColumn]) : '';
+      const importedDay = dayColumn >= 0 && cells[dayColumn]
+        ? getWordCellText(cells[dayColumn])
+        : '';
+      const hoursText = hoursColumn >= 0 && cells[hoursColumn] ? getWordCellText(cells[hoursColumn]) : '';
+      const rowText = date + accomplishment + hoursText + importedDay;
+      if (!rowText.trim()) continue;
+      const day = importedDay || `Day ${activities.length + 1}`;
+
+      const relationshipIds = documentationColumn >= 0 && cells[documentationColumn]
+        ? getCellImageRelationshipIds(cells[documentationColumn])
+        : [];
+      if (relationshipIds.length > 1) rowsWithMultipleImages += 1;
+      const photo = relationshipIds.length > 0 ? await loadImage(relationshipIds[0]) : null;
+      if (photo) imageCount += 1;
+      const hoursValue = hoursText.match(/\d+(?:\.\d+)?/)?.[0] || '';
+
+      activities.push({
+        day,
+        date,
+        accomplishment,
+        hours: hoursValue ? Number(hoursValue) : ''
+      });
+      currentLayoutImages.push(photo);
+      reportLayoutImages.push(photo);
+    }
+
+    if (activities.length === 0) continue;
+    const weekHours = hoursColumn >= 0
+      ? activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0)
+      : '';
+    weeks.push({
+      weekNumber: weeks.length + 1,
+      totalHours: weekHours,
+      narrative: '',
+      activities,
+      images: currentLayoutImages,
+      currentLayoutImages,
+      reportLayoutImages
+    });
+    activityCount += activities.length;
+  }
+
+  if (weeks.length === 0) {
+    throw new Error('No Daily Journal tables found. The DOCX needs DATE, ACCOMPLISHMENT, and DOCUMENTATION columns.');
+  }
+
+  return {
+    fileName: file.name,
+    weeks,
+    activityCount,
+    imageCount,
+    daysWithoutImages,
+    rowsWithMultipleImages,
+    hoursImported
+  };
 }
 
 const fieldClass =
@@ -475,6 +721,9 @@ export default function Home() {
   const [activeDraftId, setActiveDraftId] = useState('');
   const [showNewDraftDialog, setShowNewDraftDialog] = useState(false);
   const [newDraftTitle, setNewDraftTitle] = useState('');
+  const [pendingJournalImport, setPendingJournalImport] = useState<ParsedJournalImport | null>(null);
+  const [journalImportError, setJournalImportError] = useState('');
+  const [isImportingJournal, setIsImportingJournal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('Draft ready');
   
@@ -497,6 +746,7 @@ export default function Home() {
   const previewRequestRef = useRef<AbortController | null>(null);
   const previewCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
   const draftSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const journalImportFileRef = useRef<HTMLInputElement>(null);
 
   const isMobileAccomplishmentEditorOpen = mobileAccomplishmentEditor !== null;
 
@@ -824,6 +1074,47 @@ export default function Home() {
       ...prev,
       appendices: { ...prev.appendices, dailyJournalLayout: layout }
     }));
+  };
+
+  const handleDailyJournalDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setPendingJournalImport(null);
+    setJournalImportError('');
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      setJournalImportError('Choose a Word .docx file.');
+      return;
+    }
+
+    setIsImportingJournal(true);
+    setStatus('Reading Daily Journal tables...');
+    try {
+      const importedJournal = await parseDailyJournalDocx(file);
+      setPendingJournalImport(importedJournal);
+      setStatus('Review imported Daily Journal');
+    } catch (error) {
+      console.error('Error importing Daily Journal DOCX:', error);
+      const message = error instanceof Error ? error.message : 'Could not read the DOCX file.';
+      setJournalImportError(message);
+      setStatus('Daily Journal import failed');
+    } finally {
+      setIsImportingJournal(false);
+    }
+  };
+
+  const confirmDailyJournalImport = () => {
+    if (!pendingJournalImport) return;
+    setForm((prev) => ({
+      ...prev,
+      appendices: {
+        ...prev.appendices,
+        dailyJournal: pendingJournalImport.weeks
+      }
+    }));
+    setStatus(`Imported ${pendingJournalImport.activityCount} journal days`);
+    setPendingJournalImport(null);
   };
 
   const addWeek = () => {
@@ -1261,6 +1552,92 @@ export default function Home() {
                 Create narrative
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {pendingJournalImport && (
+        <div
+          className="fixed inset-0 z-[1500] flex items-center justify-center bg-slate-950/85 p-2 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="journal-import-title"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setPendingJournalImport(null);
+          }}
+        >
+          <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:rounded-3xl">
+            <header className="border-b border-slate-800 p-4 sm:p-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300">Daily Journal Import</p>
+              <h2 id="journal-import-title" className="mt-1 break-words text-xl font-bold text-white">{pendingJournalImport.fileName}</h2>
+              <p className="mt-2 text-sm text-slate-300">
+                Found {pendingJournalImport.weeks.length} weeks, {pendingJournalImport.activityCount} days, and {pendingJournalImport.imageCount} day photos.
+                {!pendingJournalImport.hoursImported && ' No hours column was found, so hours will be left blank.'}
+              </p>
+              {pendingJournalImport.daysWithoutImages > 0 && (
+                <p className="mt-2 text-xs text-amber-200">
+                  {pendingJournalImport.daysWithoutImages} day{pendingJournalImport.daysWithoutImages === 1 ? '' : 's'} have no photo; those entries will stay without an attachment.
+                </p>
+              )}
+              {pendingJournalImport.rowsWithMultipleImages > 0 && (
+                <p className="mt-2 text-xs text-amber-200">
+                  {pendingJournalImport.rowsWithMultipleImages} day rows contain multiple photos. The importer keeps the first photo in each row, matching the current one-photo-per-day editor.
+                </p>
+              )}
+              <p className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.06] p-3 text-xs text-cyan-100">
+                Confirming replaces only the Daily Journal entries. Your selected journal output layout and other report sections will stay unchanged.
+              </p>
+            </header>
+
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+              {pendingJournalImport.weeks.map((week) => (
+                <section key={week.weekNumber} className="overflow-hidden rounded-xl border border-slate-700">
+                  <h3 className="border-b border-slate-700 bg-slate-950/70 px-3 py-2 text-sm font-bold text-cyan-200">
+                    Week {week.weekNumber} · {week.activities.length} days
+                  </h3>
+                  <div className="divide-y divide-slate-800">
+                    {week.activities.map((activity, dayIndex) => {
+                      const photo = week.currentLayoutImages?.[dayIndex];
+                      return (
+                        <div key={`${week.weekNumber}-${dayIndex}`} className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_112px] sm:items-center">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-300">{activity.day} · {activity.date || 'No date'}</p>
+                            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-100">{activity.accomplishment || 'No accomplishment text'}</p>
+                            {activity.hours !== '' && <p className="mt-1 text-xs text-slate-400">{activity.hours} hours</p>}
+                          </div>
+                          {photo ? (
+                            <img
+                              src={photo.base64}
+                              alt={`Imported documentation for ${activity.date || activity.day}`}
+                              className="h-24 w-full rounded-lg border border-slate-700 object-cover sm:h-20"
+                            />
+                          ) : (
+                            <span className="self-center text-xs text-slate-500">No photo</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            <footer className="flex flex-col-reverse gap-3 border-t border-slate-800 p-4 sm:flex-row sm:justify-end sm:p-5">
+              <button
+                type="button"
+                onClick={() => setPendingJournalImport(null)}
+                className="min-h-11 rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDailyJournalImport}
+                className="min-h-11 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950"
+              >
+                Import Daily Journal
+              </button>
+            </footer>
           </div>
         </div>
       )}
@@ -1789,10 +2166,37 @@ export default function Home() {
                   <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-4">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="text-lg font-bold text-cyan-300">Daily Journal</h3>
-                      <button type="button" onClick={addWeek} className="rounded-xl bg-cyan-500/20 px-3 sm:px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 transition active:scale-95 whitespace-nowrap">
-                        + Add Week
-                      </button>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <input
+                          ref={journalImportFileRef}
+                          type="file"
+                          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          onChange={handleDailyJournalDocxUpload}
+                          className="hidden"
+                          aria-label="Choose a Daily Journal DOCX file"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => journalImportFileRef.current?.click()}
+                          disabled={isImportingJournal}
+                          className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-wait disabled:opacity-60"
+                        >
+                          <FileText size={15} aria-hidden="true" />
+                          {isImportingJournal ? 'Reading DOCX...' : 'Import DOCX'}
+                        </button>
+                        <button type="button" onClick={addWeek} className="rounded-xl bg-cyan-500/20 px-3 sm:px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 transition active:scale-95 whitespace-nowrap">
+                          + Add Week
+                        </button>
+                      </div>
                     </div>
+                    <p className="text-xs text-slate-400">
+                      Import a Word journal table. Day text and photos are matched by their table row; you can review before applying the import.
+                    </p>
+                    {journalImportError && (
+                      <p role="alert" className="rounded-lg border border-rose-400/30 bg-rose-950/40 p-3 text-xs text-rose-200">
+                        {journalImportError}
+                      </p>
+                    )}
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                       <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Layout</span>
                       <div className="flex flex-wrap gap-2 sm:gap-3">
