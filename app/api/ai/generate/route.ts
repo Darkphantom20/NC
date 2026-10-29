@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       `Section: ${title}`,
       'Use the complete report data supplied below as the source of truth: the organization details, student and placement information, daily journal activities, weekly narratives, SWOT data, assigned tasks, case-analysis details, and all other relevant report fields.',
       'Analyze relationships across the entire report so the generated section is consistent with the student, organization, OJT placement, dates, accomplishments, and professional context.',
+      'For acknowledgements and organization-specific sections, identify the exact active placement from the report data (for example, a named office such as MISO) and refer to it by its exact name. Do not replace it with a generic term such as "the front page," university, office, or organization unless that exact term is present elsewhere.',
       'Write natural, humanized, formal, and specific academic prose suitable for direct insertion into a Word document. Use varied sentence structure and a confident, professional tone.',
       'Do not make the text generic, repetitive, promotional, or obviously AI-generated. Do not invent names, organizations, dates, duties, achievements, skills, statistics, or results.',
       'Preserve facts exactly when they are explicit. Connect only facts that are logically supported by the supplied data. Prefer concrete workplace details over vague language.',
