@@ -1561,6 +1561,17 @@ export default function Home() {
               aria-label="Accomplishment details"
             />
             <footer className="flex gap-3 border-t border-slate-800 bg-slate-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
+              {onGenerate && (
+                <button
+                  type="button"
+                  onClick={onGenerate}
+                  disabled={generating}
+                  className="min-h-11 flex items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-sm font-semibold text-violet-200 disabled:cursor-wait disabled:opacity-60 sm:min-w-36"
+                >
+                  <Sparkles size={14} aria-hidden="true" />
+                  {generating ? 'Generating...' : 'Generate with AI'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setMobileAccomplishmentEditor(null)}
@@ -2880,6 +2891,10 @@ function ExpandableTextarea({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen) setDraft(value);
+  }, [value, isOpen]);
+
   const openEditor = () => {
     setDraft(value);
     setIsOpen(true);
@@ -2945,16 +2960,29 @@ function ExpandableTextarea({
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onChange(draft);
-                  setIsOpen(false);
-                }}
-                className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
-              >
-                Save
-              </button>
+              <div className="ml-auto flex flex-1 gap-2 sm:flex-none">
+                {onGenerate && (
+                  <button
+                    type="button"
+                    onClick={onGenerate}
+                    disabled={generating}
+                    className="min-h-11 flex flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:min-w-36 sm:text-sm"
+                  >
+                    <Sparkles size={14} aria-hidden="true" />
+                    {generating ? 'Generating...' : 'Generate with AI'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(draft);
+                    setIsOpen(false);
+                  }}
+                  className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
+                >
+                  Save
+                </button>
+              </div>
             </footer>
           </div>
         </div>
