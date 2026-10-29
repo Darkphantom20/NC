@@ -408,9 +408,9 @@ function buildTemplateTableOfContents(data: any): any[] {
   }));
 }
 
-function buildTemplateDailyJournal(appendices: AppendicesData | undefined): Paragraph[] {
+function buildTemplateDailyJournal(appendices: AppendicesData | undefined): (Paragraph | Table)[] {
   if (!appendices?.dailyJournal?.length) return [];
-  const children: Paragraph[] = [
+  const children: (Paragraph | Table)[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 120, after: 240, line: 360, lineRule: 'auto' },
@@ -582,7 +582,7 @@ function buildTemplateOrganizationPages(label: string, source: any, romanLabel =
 }
 
 function buildDocxTemplateSections(data: any, reportFooterChildren: any[]): any[] {
-  const children: Paragraph[] = [
+  const children: (Paragraph | Table)[] = [
     ...buildTemplateCoverPage(data),
     new Paragraph({ pageBreakBefore: true }),
     ...buildAcknowledgementPage(data, false, 360),
