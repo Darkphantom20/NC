@@ -199,6 +199,18 @@ type NarrativeJournalWeek = {
   reportLayoutImages?: (JournalPhoto | null)[];
 };
 
+function normalizeDailyJournalDays(journal: NarrativeJournalWeek[]): NarrativeJournalWeek[] {
+  let dayNumber = 1;
+  return journal.map((week, index) => ({
+    ...week,
+    weekNumber: index + 1,
+    activities: week.activities.map((activity) => ({
+      ...activity,
+      day: `Day ${dayNumber++}`
+    }))
+  }));
+}
+
 type NarrativeForm = Omit<typeof defaultForm, 'appendices'> & {
   appendices: Omit<typeof defaultForm.appendices, 'dailyJournal'> & {
     dailyJournal: NarrativeJournalWeek[];
@@ -441,6 +453,7 @@ async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
   let daysWithoutImages = 0;
   let rowsWithMultipleImages = 0;
   let hoursImported = false;
+  let dayNumber = 1;
 
   const loadImage = (relationshipId: string): Promise<{ base64: string; detail: string }> => {
     const cachedImage = imageCache.get(relationshipId);
@@ -458,7 +471,7 @@ async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
       });
       return {
         base64: await compressImageDataUrl(fileImage, 1200, 0.7),
-        detail: 'Imported daily journal documentation'
+        detail: ''
       };
     });
     imageCache.set(relationshipId, imagePromise);
@@ -472,7 +485,6 @@ async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
     const headerCells = getWordChildren(rows[0], 'tc');
     const headers = headerCells.map((cell) => normalizeJournalHeader(getWordCellText(cell)));
     const dateColumn = headers.findIndex((header) => header.split(' ').includes('date'));
-    const dayColumn = headers.findIndex((header) => /^(day|day number|day no|day #)$/.test(header));
     const accomplishmentColumn = headers.findIndex((header) => (
       /accomplishment|activities|activity|tasks|duties|work done/.test(header)
     ));
@@ -490,19 +502,17 @@ async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
       const cells = getWordChildren(row, 'tc');
       const date = cells[dateColumn] ? getWordCellText(cells[dateColumn]) : '';
       const accomplishment = cells[accomplishmentColumn] ? getWordCellText(cells[accomplishmentColumn]) : '';
-      const importedDay = dayColumn >= 0 && cells[dayColumn]
-        ? getWordCellText(cells[dayColumn])
-        : '';
       const hoursText = hoursColumn >= 0 && cells[hoursColumn] ? getWordCellText(cells[hoursColumn]) : '';
-      const rowText = date + accomplishment + hoursText + importedDay;
+      const rowText = date + accomplishment + hoursText;
       if (!rowText.trim()) continue;
-      const day = importedDay || `Day ${activities.length + 1}`;
+      const day = `Day ${dayNumber++}`;
 
       const relationshipIds = documentationColumn >= 0 && cells[documentationColumn]
         ? getCellImageRelationshipIds(cells[documentationColumn])
         : [];
       if (relationshipIds.length > 1) rowsWithMultipleImages += 1;
-      const photo = relationshipIds.length > 0 ? await loadImage(relationshipIds[0]) : null;
+      const loadedPhoto = relationshipIds.length > 0 ? await loadImage(relationshipIds[0]) : null;
+      const photo = loadedPhoto ? { ...loadedPhoto, detail: day } : null;
       if (photo) imageCount += 1;
       const hoursValue = hoursText.match(/\d+(?:\.\d+)?/)?.[0] || '';
 
@@ -1120,7 +1130,7 @@ export default function Home() {
       ...prev,
       appendices: {
         ...prev.appendices,
-        dailyJournal: pendingJournalImport.weeks
+        dailyJournal: normalizeDailyJournalDays(pendingJournalImport.weeks) as typeof prev.appendices.dailyJournal
       }
     }));
     setStatus(`Imported ${pendingJournalImport.activityCount} journal days`);
@@ -1158,7 +1168,13 @@ export default function Home() {
   const removeWeek = (weekIndex: number) => {
     setForm((prev) => {
       const updated = prev.appendices.dailyJournal.filter((_, idx) => idx !== weekIndex);
-      return { ...prev, appendices: { ...prev.appendices, dailyJournal: updated } };
+      return {
+        ...prev,
+        appendices: {
+          ...prev.appendices,
+          dailyJournal: normalizeDailyJournalDays(updated as NarrativeJournalWeek[]) as typeof prev.appendices.dailyJournal
+        }
+      };
     });
   };
 
@@ -1189,7 +1205,14 @@ export default function Home() {
       activities[dayIndex] = { ...activities[dayIndex], [key]: value };
       journal[weekIndex].activities = activities;
       journal[weekIndex].totalHours = activities.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0);
-      return { ...prev, appendices: { ...prev.appendices, dailyJournal: journal } };
+      const normalized = normalizeDailyJournalDays(journal as NarrativeJournalWeek[]);
+      return {
+        ...prev,
+        appendices: {
+          ...prev.appendices,
+          dailyJournal: normalized as typeof prev.appendices.dailyJournal
+        }
+      };
     });
   };
 
