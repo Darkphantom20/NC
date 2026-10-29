@@ -1,13 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Joyride, STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText, Sparkles } from 'lucide-react';
-import JSZip from 'jszip';
-import { renderAsync } from 'docx-preview';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { STATUS, type EventData, type Step } from 'react-joyride';
+import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText } from 'lucide-react';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
 import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
+
+const Joyride = dynamic(() => import('react-joyride').then((module) => module.Joyride), {
+  ssr: false,
+});
 
 const sectionOrder = [
   'Cover Page',
@@ -401,6 +405,7 @@ function getCellImageRelationshipIds(cell: Element): string[] {
 }
 
 async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
+  const { default: JSZip } = await import('jszip');
   const archive = await JSZip.loadAsync(await file.arrayBuffer());
   const documentEntry = archive.file('word/document.xml');
   const relationshipEntry = archive.file('word/_rels/document.xml.rels');
@@ -655,10 +660,12 @@ function GuideTooltip({ step, tooltipProps, primaryProps }: any) {
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start">
         {/* Guide Character Image - Minimized */}
         <div className="relative overflow-hidden rounded-[16px] ring-1 ring-cyan-500/20 flex-shrink-0 mx-auto sm:mx-0">
-          <img
-            src={guideScene.src}
+          <Image
+            src={guideScene}
             alt="Guide illustration"
             className="h-28 w-28 sm:h-32 sm:w-32 object-cover brightness-105 contrast-110"
+            sizes="128px"
+            priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
         </div>
@@ -729,7 +736,6 @@ export default function Home() {
   const [isImportingJournal, setIsImportingJournal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('Draft ready');
-  const [aiGenerating, setAiGenerating] = useState('');
   
   // Tour State
   const [runTour, setRunTour] = useState(false);
@@ -1038,72 +1044,6 @@ export default function Home() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const generateFieldWithAI = async (
-    key: keyof typeof defaultForm,
-    title: string,
-    currentText: string,
-    instructions = '',
-  ) => {
-    if (aiGenerating) return;
-    setAiGenerating(String(key));
-    setStatus(`Generating ${title} with AI...`);
-    try {
-      const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          context: form,
-          currentText,
-          instructions,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Could not generate text.');
-      updateField(key, result.text);
-      setStatus(`${title} generated and aligned`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not generate text.');
-    } finally {
-      setAiGenerating('');
-    }
-  };
-
-  const generateWeeklyNarrative = async (weekIndex: number) => {
-    const week = form.appendices.dailyJournal[weekIndex];
-    if (!week || aiGenerating) return;
-    setAiGenerating(`weekly-${weekIndex}`);
-    setStatus(`Generating Week ${week.weekNumber} narrative with AI...`);
-    try {
-      const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `Week ${week.weekNumber} Daily Journal Narrative`,
-          context: { report: form, week },
-          currentText: week.narrative,
-          instructions: 'Summarize the listed activities and total hours into one coherent weekly OJT narrative. Do not invent activities, dates, hours, or skills.',
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Could not generate the weekly narrative.');
-      setForm((prev) => ({
-        ...prev,
-        appendices: {
-          ...prev.appendices,
-          dailyJournal: prev.appendices.dailyJournal.map((item, index) =>
-            index === weekIndex ? { ...item, narrative: result.text } : item
-          ),
-        },
-      }));
-      setStatus(`Week ${week.weekNumber} narrative generated and aligned`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not generate the weekly narrative.');
-    } finally {
-      setAiGenerating('');
-    }
-  };
-
   const updateSchoolPlacementField = (key: keyof typeof defaultForm.schoolPlacement, value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -1266,39 +1206,6 @@ export default function Home() {
       mobileAccomplishmentEditor.draft
     );
     setMobileAccomplishmentEditor(null);
-  };
-
-  const generateMobileAccomplishmentAI = async () => {
-    if (!mobileAccomplishmentEditor || aiGenerating) return;
-    const { weekIndex, dayIndex, draft } = mobileAccomplishmentEditor;
-    const week = form.appendices.dailyJournal[weekIndex];
-    const day = week?.activities[dayIndex];
-    if (!week || !day) return;
-
-    setAiGenerating(`mobile-accomplishment-${weekIndex}-${dayIndex}`);
-    setStatus('Generating accomplishment with AI...');
-    try {
-      const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `Week ${week.weekNumber} - ${day.day} Accomplishment`,
-          context: { report: form, week, day },
-          currentText: draft,
-          instructions: 'Write a polished first-person accomplishment paragraph. Use only listed activities, hours, and actual report data. Do not invent tasks, skills, dates, or outcomes.',
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Could not generate text.');
-      setMobileAccomplishmentEditor((current) => current
-        ? { ...current, draft: result.text }
-        : current);
-      setStatus('Accomplishment generated and ready to edit');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not generate text.');
-    } finally {
-      setAiGenerating('');
-    }
   };
 
   const removeDay = (weekIndex: number, dayIndex: number) => {
@@ -1502,22 +1409,25 @@ export default function Home() {
     container.replaceChildren();
     setPreviewLoading(true);
 
-    renderAsync(previewBlob, container, container, {
-      className: 'report-docx',
-      breakPages: true,
-      ignoreWidth: false,
-      ignoreHeight: false,
-      ignoreLastRenderedPageBreak: false,
-      renderHeaders: true,
-      renderFooters: true,
-      useBase64URL: true,
-    }).catch((error: unknown) => {
-      if (!cancelled) {
-        setPreviewError(error instanceof Error ? error.message : 'Could not render the document preview.');
-      }
-    }).finally(() => {
-      if (!cancelled) setPreviewLoading(false);
-    });
+    void import('docx-preview')
+      .then(({ renderAsync }) => renderAsync(previewBlob, container, container, {
+        className: 'report-docx',
+        breakPages: true,
+        ignoreWidth: false,
+        ignoreHeight: false,
+        ignoreLastRenderedPageBreak: false,
+        renderHeaders: true,
+        renderFooters: true,
+        useBase64URL: true,
+      }))
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setPreviewError(error instanceof Error ? error.message : 'Could not render the document preview.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -1601,24 +1511,13 @@ export default function Home() {
               >
                 Cancel
               </button>
-              <div className="ml-auto flex flex-1 gap-2 sm:flex-none">
-                <button
-                  type="button"
-                  onClick={generateMobileAccomplishmentAI}
-                  disabled={Boolean(aiGenerating)}
-                  className="min-h-11 flex flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-xs font-semibold text-violet-200 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:min-w-36 sm:text-sm"
-                >
-                  <Sparkles size={14} aria-hidden="true" />
-                  {aiGenerating.startsWith('mobile-accomplishment-') ? 'Generating...' : 'Generate with AI'}
-                </button>
-                <button
-                  type="button"
-                  onClick={saveMobileAccomplishment}
-                  className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
-                >
-                  Save
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={saveMobileAccomplishment}
+                className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
+              >
+                Save
+              </button>
             </footer>
           </div>
         </div>
@@ -1834,10 +1733,10 @@ export default function Home() {
                   style={{ transform: `translateX(-${completionSlideIndex * 100}%)` }}
                 >
                   <div className="min-w-full">
-                    <img src={memeScene.src} alt="Meme completion slide" className="h-72 w-full object-cover" />
+                    <Image src={memeScene} alt="Meme completion slide" className="h-72 w-full object-cover" sizes="100vw" />
                   </div>
                   <div className="min-w-full">
-                    <img src={completionScene.src} alt="Completion celebration slide" className="h-72 w-full object-cover" />
+                    <Image src={completionScene} alt="Completion celebration slide" className="h-72 w-full object-cover" sizes="100vw" />
                   </div>
                 </div>
               </div>
@@ -2108,7 +2007,7 @@ export default function Home() {
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Acknowledgement</span>
-                  <ExpandableTextarea title="Acknowledgement" value={form.acknowledgement} onChange={(value) => updateField('acknowledgement', value)} rows={4} onGenerate={() => generateFieldWithAI('acknowledgement', 'Acknowledgement', form.acknowledgement, 'Write a sincere formal acknowledgement paragraph naming the organization, adviser, faculty, university, and internship benefits supported by the report data.')} generating={aiGenerating === 'acknowledgement'} />
+                  <ExpandableTextarea title="Acknowledgement" value={form.acknowledgement} onChange={(value) => updateField('acknowledgement', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -2142,26 +2041,26 @@ export default function Home() {
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Background</span>
-                  <ExpandableTextarea title="Background" value={form.background} onChange={(value) => updateField('background', value)} rows={4} onGenerate={() => generateFieldWithAI('background', 'Background of the Organization', form.background, 'Write an organized background paragraph describing the organization and its relevance to the training.')} generating={aiGenerating === 'background'} />
+                  <ExpandableTextarea title="Background" value={form.background} onChange={(value) => updateField('background', value)} rows={4} />
                 </label>
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Vision</span>
-                    <ExpandableTextarea title="Vision" value={form.vision} onChange={(value) => updateField('vision', value)} rows={3} onGenerate={() => generateFieldWithAI('vision', 'Vision', form.vision, 'Write a concise official-style vision based on the organization data.')} generating={aiGenerating === 'vision'} />
+                    <ExpandableTextarea title="Vision" value={form.vision} onChange={(value) => updateField('vision', value)} rows={3} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Mission</span>
-                    <ExpandableTextarea title="Mission" value={form.mission} onChange={(value) => updateField('mission', value)} rows={3} onGenerate={() => generateFieldWithAI('mission', 'Mission', form.mission, 'Write a concise official-style mission based on the organization data.')} generating={aiGenerating === 'mission'} />
+                    <ExpandableTextarea title="Mission" value={form.mission} onChange={(value) => updateField('mission', value)} rows={3} />
                   </label>
                 </div>
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-3">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Objectives</span>
-                    <ExpandableTextarea title="Objectives" value={form.objectives} onChange={(value) => updateField('objectives', value)} rows={3} onGenerate={() => generateFieldWithAI('objectives', 'Objectives', form.objectives, 'Write specific objectives as separate concise lines without labels or headings.')} generating={aiGenerating === 'objectives'} />
+                    <ExpandableTextarea title="Objectives" value={form.objectives} onChange={(value) => updateField('objectives', value)} rows={3} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Core Values</span>
-                    <ExpandableTextarea title="Core Values" value={form.coreValues} onChange={(value) => updateField('coreValues', value)} rows={3} onGenerate={() => generateFieldWithAI('coreValues', 'Core Values', form.coreValues, 'Write concise core values aligned with the organization and public service data.')} generating={aiGenerating === 'coreValues'} />
+                    <ExpandableTextarea title="Core Values" value={form.coreValues} onChange={(value) => updateField('coreValues', value)} rows={3} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">
@@ -2172,8 +2071,6 @@ export default function Home() {
                       value={form.services}
                       onChange={(value) => updateField('services', value)}
                       rows={3}
-                      onGenerate={() => generateFieldWithAI('services', 'Products and Services Offered', form.services, 'Write a clear paragraph describing organization products and services.')}
-                      generating={aiGenerating === 'services'}
                     />
                   </label>
                 </div>
@@ -2222,24 +2119,24 @@ export default function Home() {
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">✓ Strengths</span>
-                    <ExpandableTextarea title="Strengths" value={form.strengths} onChange={(value) => updateField('strengths', value)} rows={4} onGenerate={() => generateFieldWithAI('strengths', 'Strengths', form.strengths, 'Write an analytical paragraph identifying organizational strengths supported by the report data.')} generating={aiGenerating === 'strengths'} />
+                    <ExpandableTextarea title="Strengths" value={form.strengths} onChange={(value) => updateField('strengths', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">✗ Weaknesses</span>
-                    <ExpandableTextarea title="Weaknesses" value={form.weaknesses} onChange={(value) => updateField('weaknesses', value)} rows={4} onGenerate={() => generateFieldWithAI('weaknesses', 'Weaknesses', form.weaknesses, 'Write an objective organizational weakness analysis without exaggeration.')} generating={aiGenerating === 'weaknesses'} />
+                    <ExpandableTextarea title="Weaknesses" value={form.weaknesses} onChange={(value) => updateField('weaknesses', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">◆ Opportunities</span>
-                    <ExpandableTextarea title="Opportunities" value={form.opportunities} onChange={(value) => updateField('opportunities', value)} rows={4} onGenerate={() => generateFieldWithAI('opportunities', 'Opportunities', form.opportunities, 'Write an analytical paragraph about realistic opportunities.')} generating={aiGenerating === 'opportunities'} />
+                    <ExpandableTextarea title="Opportunities" value={form.opportunities} onChange={(value) => updateField('opportunities', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">⚠ Threats</span>
-                    <ExpandableTextarea title="Threats" value={form.threats} onChange={(value) => updateField('threats', value)} rows={4} onGenerate={() => generateFieldWithAI('threats', 'Threats', form.threats, 'Write an objective organizational risk analysis.')} generating={aiGenerating === 'threats'} />
+                    <ExpandableTextarea title="Threats" value={form.threats} onChange={(value) => updateField('threats', value)} rows={4} />
                   </label>
                 </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Recommendations</span>
-                  <ExpandableTextarea title="Recommendations" value={form.recommendations} onChange={(value) => updateField('recommendations', value)} rows={4} onGenerate={() => generateFieldWithAI('recommendations', 'Recommendations for Improvement', form.recommendations, 'Write practical recommendations aligned with the SWOT findings.')} generating={aiGenerating === 'recommendations'} />
+                  <ExpandableTextarea title="Recommendations" value={form.recommendations} onChange={(value) => updateField('recommendations', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -2248,11 +2145,11 @@ export default function Home() {
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Assigned Tasks</span>
-                  <ExpandableTextarea title="Assigned Tasks" value={form.tasks} onChange={(value) => updateField('tasks', value)} rows={4} onGenerate={() => generateFieldWithAI('tasks', 'Assigned Tasks and Responsibilities', form.tasks, 'Write a formal paragraph describing assigned tasks and learning value.')} generating={aiGenerating === 'tasks'} />
+                  <ExpandableTextarea title="Assigned Tasks" value={form.tasks} onChange={(value) => updateField('tasks', value)} rows={4} />
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-blue-300/70 text-[10px] uppercase tracking-wider block mb-1">Procedures Conformed</span>
-                  <ExpandableTextarea title="Procedures Conformed" value={form.procedures} onChange={(value) => updateField('procedures', value)} rows={4} onGenerate={() => generateFieldWithAI('procedures', 'Duties and Procedures Conformed', form.procedures, 'Write a formal paragraph about procedures, standards, and conduct followed.')} generating={aiGenerating === 'procedures'} />
+                  <ExpandableTextarea title="Procedures Conformed" value={form.procedures} onChange={(value) => updateField('procedures', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -2262,24 +2159,24 @@ export default function Home() {
                 <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">Problem 1</span>
-                    <ExpandableTextarea title="Problem 1" value={form.issue1} onChange={(value) => updateField('issue1', value)} rows={4} onGenerate={() => generateFieldWithAI('issue1', 'Issue / Problem 1', form.issue1, 'Write a clear narrative describing the first issue and its impact.')} generating={aiGenerating === 'issue1'} />
+                    <ExpandableTextarea title="Problem 1" value={form.issue1} onChange={(value) => updateField('issue1', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Solution 1</span>
-                    <ExpandableTextarea title="Solution 1" value={form.issue1Action} onChange={(value) => updateField('issue1Action', value)} rows={4} onGenerate={() => generateFieldWithAI('issue1Action', 'Strategy / Action for Problem 1', form.issue1Action, 'Write the strategy or actions taken for the first problem.')} generating={aiGenerating === 'issue1Action'} />
+                    <ExpandableTextarea title="Solution 1" value={form.issue1Action} onChange={(value) => updateField('issue1Action', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-rose-300/70 text-[10px] uppercase tracking-wider block mb-1">Problem 2</span>
-                    <ExpandableTextarea title="Problem 2" value={form.issue2} onChange={(value) => updateField('issue2', value)} rows={4} onGenerate={() => generateFieldWithAI('issue2', 'Issue / Problem 2', form.issue2, 'Write a clear narrative describing the second issue and its impact.')} generating={aiGenerating === 'issue2'} />
+                    <ExpandableTextarea title="Problem 2" value={form.issue2} onChange={(value) => updateField('issue2', value)} rows={4} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-emerald-300/70 text-[10px] uppercase tracking-wider block mb-1">Solution 2</span>
-                    <ExpandableTextarea title="Solution 2" value={form.issue2Action} onChange={(value) => updateField('issue2Action', value)} rows={4} onGenerate={() => generateFieldWithAI('issue2Action', 'Strategy / Action for Problem 2', form.issue2Action, 'Write the strategy or actions taken for the second problem.')} generating={aiGenerating === 'issue2Action'} />
+                    <ExpandableTextarea title="Solution 2" value={form.issue2Action} onChange={(value) => updateField('issue2Action', value)} rows={4} />
                   </label>
                 </div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-yellow-300/70 text-[10px] uppercase tracking-wider block mb-1">Lessons Learned</span>
-                  <ExpandableTextarea title="Lessons Learned" value={form.lessons} onChange={(value) => updateField('lessons', value)} rows={4} onGenerate={() => generateFieldWithAI('lessons', 'Lessons Learned', form.lessons, 'Write what the student learned and why those lessons matter.')} generating={aiGenerating === 'lessons'} />
+                  <ExpandableTextarea title="Lessons Learned" value={form.lessons} onChange={(value) => updateField('lessons', value)} rows={4} />
                 </label>
               </div>
             </SectionBlock>
@@ -2288,7 +2185,7 @@ export default function Home() {
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Self-Evaluation</span>
-                  <ExpandableTextarea title="Self-Evaluation" value={form.selfEvaluation} onChange={(value) => updateField('selfEvaluation', value)} rows={4} onGenerate={() => generateFieldWithAI('selfEvaluation', 'Self-Evaluation', form.selfEvaluation, 'Write a sincere first-person reflection on growth, skills, and improvement areas.')} generating={aiGenerating === 'selfEvaluation'} />
+                  <ExpandableTextarea title="Self-Evaluation" value={form.selfEvaluation} onChange={(value) => updateField('selfEvaluation', value)} rows={4} />
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">
@@ -2299,8 +2196,6 @@ export default function Home() {
                     value={form.relevancy}
                     onChange={(value) => updateField('relevancy', value)}
                     rows={4}
-                    onGenerate={() => generateFieldWithAI('relevancy', 'Relevancy of the Organization', form.relevancy, 'Write how the experience is relevant to the degree program, career goals, and professional development.')}
-                    generating={aiGenerating === 'relevancy'}
                   />
                 </label>
               </div>
@@ -2678,7 +2573,7 @@ export default function Home() {
                                 const newJournal = [...form.appendices.dailyJournal];
                                 newJournal[weekIdx].narrative = value;
                                 setForm((prev) => ({ ...prev, appendices: { ...prev.appendices, dailyJournal: newJournal } }));
-                              }} rows={2} className={fieldClass} onGenerate={() => generateWeeklyNarrative(weekIdx)} generating={aiGenerating === `weekly-${weekIdx}`} />
+                              }} rows={2} className={fieldClass} />
                           </label>
                           <div className="pt-2">
                             <label className="block text-sm font-medium text-slate-200">
@@ -2899,8 +2794,6 @@ function ExpandableTextarea({
   rows = 4,
   placeholder,
   className = fieldClass,
-  onGenerate,
-  generating = false,
 }: {
   title: string;
   value: string;
@@ -2908,8 +2801,6 @@ function ExpandableTextarea({
   rows?: number;
   placeholder?: string;
   className?: string;
-  onGenerate?: () => void;
-  generating?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -2924,10 +2815,6 @@ function ExpandableTextarea({
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen) setDraft(value);
-  }, [value, isOpen]);
-
   const openEditor = () => {
     setDraft(value);
     setIsOpen(true);
@@ -2935,31 +2822,18 @@ function ExpandableTextarea({
 
   return (
     <>
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={openEditor}
-          aria-label={`Edit ${title}`}
-          aria-haspopup="dialog"
-          className={`${className} group relative flex min-h-24 w-full cursor-pointer items-start justify-between gap-3 text-left`}
-        >
-          <span className={`line-clamp-3 min-w-0 flex-1 whitespace-pre-wrap break-words ${value ? 'text-slate-100' : 'text-slate-500'}`}>
-            {value || placeholder || `Click to add ${title.toLowerCase()}`}
-          </span>
-          <Maximize2 size={16} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
-        </button>
-        {onGenerate && (
-          <button
-            type="button"
-            onClick={onGenerate}
-            disabled={generating}
-            className="inline-flex items-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60"
-          >
-            <Sparkles size={14} aria-hidden="true" />
-            {generating ? 'Generating...' : 'Generate with AI'}
-          </button>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={openEditor}
+        aria-label={`Edit ${title}`}
+        aria-haspopup="dialog"
+        className={`${className} group relative flex min-h-24 w-full cursor-pointer items-start justify-between gap-3 text-left`}
+      >
+        <span className={`line-clamp-3 min-w-0 flex-1 whitespace-pre-wrap break-words ${value ? 'text-slate-100' : 'text-slate-500'}`}>
+          {value || placeholder || `Click to add ${title.toLowerCase()}`}
+        </span>
+        <Maximize2 size={16} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
+      </button>
 
       {isOpen && (
         <div
@@ -2993,29 +2867,16 @@ function ExpandableTextarea({
               >
                 Cancel
               </button>
-              <div className="ml-auto flex flex-1 gap-2 sm:flex-none">
-                {onGenerate && (
-                  <button
-                    type="button"
-                    onClick={onGenerate}
-                    disabled={generating}
-                    className="min-h-11 flex flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:min-w-36 sm:text-sm"
-                  >
-                    <Sparkles size={14} aria-hidden="true" />
-                    {generating ? 'Generating...' : 'Generate with AI'}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(draft);
-                    setIsOpen(false);
-                  }}
-                  className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
-                >
-                  Save
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(draft);
+                  setIsOpen(false);
+                }}
+                className="min-h-11 flex-1 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 sm:flex-none sm:min-w-28"
+              >
+                Save
+              </button>
             </footer>
           </div>
         </div>
