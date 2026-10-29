@@ -1831,7 +1831,7 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-5">
+        <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 lg:flex-row lg:items-end lg:justify-between sm:p-5">
           <label className="block min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-cyan-300/80">
             Current narrative
             <select
@@ -1847,6 +1847,21 @@ export default function Home() {
             </select>
             <span className="mt-2 block text-xs font-normal normal-case tracking-normal text-slate-400">
               {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved in this browser. Changes save automatically.
+            </span>
+          </label>
+          <label className="block min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-cyan-300/80">
+            Report template
+            <select
+              value={form.reportTemplate}
+              onChange={(event) => updateField('reportTemplate', event.target.value)}
+              className={`${fieldClass} mt-2 normal-case tracking-normal`}
+              aria-label="Choose report template"
+            >
+              <option value="current">Current System Layout</option>
+              <option value="docx-template">narrative-report.docx Layout</option>
+            </select>
+            <span className="mt-2 block text-xs font-normal normal-case tracking-normal text-slate-400">
+              Choose the structure used for the generated Word report.
             </span>
           </label>
           <button
@@ -1907,45 +1922,6 @@ export default function Home() {
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Title/Position</span>
                     <input value={form.submittedToTitle} onChange={(e) => updateField('submittedToTitle', e.target.value)} className={fieldClass} />
                   </label>
-                </div>
-              </div>
-            </SectionBlock>
-
-            <SectionBlock title="Report Template">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
-                <p className="mb-3 text-xs text-slate-300">
-                  Choose the structure used for the generated Word report.
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <div className="w-full sm:flex-1">
-                    <label htmlFor="report-template-select" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                      Current layout
-                    </label>
-                    <select
-                      id="report-template-select"
-                      value={form.reportTemplate}
-                      onChange={(event) => updateField('reportTemplate', event.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
-                    >
-                      <option value="current">Current System Layout</option>
-                      <option value="docx-template">narrative-report.docx Layout</option>
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const selector = document.getElementById('report-template-select') as HTMLSelectElement | null;
-                      if (!selector) return;
-                      if (typeof selector.showPicker === 'function') {
-                        selector.showPicker();
-                      } else {
-                        selector.focus();
-                      }
-                    }}
-                    className="shrink-0 rounded-lg bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-400/20 transition hover:bg-cyan-300"
-                  >
-                    + Choose layout
-                  </button>
                 </div>
               </div>
             </SectionBlock>
