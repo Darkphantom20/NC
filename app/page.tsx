@@ -85,6 +85,7 @@ const defaultForm = {
   acknowledgement: 'With deepest gratitude and appreciation, I humbly extend my sincere thanks to all who contributed to my OJT experience and helped me grow in both technical and professional knowledge.',
   tableOfContents: '1. Introduction\n1.1 Background of the Organization\n1.2 Vision\n1.3 Mission\n1.4 Objectives\n1.5 Core Values\n1.6 Products and Services Offered\n2. Organization / Company Analysis\n2.1 Strengths\n2.2 Weaknesses\n2.3 Opportunities\n2.4 Threats\n2.5 Recommendations for Improvement\n3. Tasks and Duties\n3.1 Assigned Tasks and Responsibilities\n3.2 Duties and Procedures Conformed\n4. Case Analysis\n4.1 Issue / Problem 1\n4.2 Strategy/Action Undertaken for Problem 1\n4.3 Issue / Problem 2\n4.4 Strategy/Action Undertaken for Problem 2\n4.5 Lessons Learned from the Situations\n5. Reflections\n5.1 Self-Evaluation\n5.2 Relevancy of the Organization\n6. Appendices',
   sectionLayout: 'compact',
+  reportTemplate: 'current',
   acknowledgementLineSpacing: 'single',
   background: 'The Management Information Systems Office (MISO) serves as the core technological backbone, responsible for managing, maintaining, and securing the digital infrastructure, information systems, and network communications of the institution.',
   vision: 'To be a premier provider of innovative, reliable, and secure technological solutions and digital services.',
@@ -1905,6 +1906,36 @@ export default function Home() {
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Title/Position</span>
                     <input value={form.submittedToTitle} onChange={(e) => updateField('submittedToTitle', e.target.value)} className={fieldClass} />
+                  </label>
+                </div>
+              </div>
+            </SectionBlock>
+
+            <SectionBlock title="Report Template">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
+                <p className="mb-3 text-xs text-slate-300">
+                  Choose the structure used for the generated Word report.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
+                    <input
+                      type="radio"
+                      name="report-template"
+                      checked={form.reportTemplate === 'current'}
+                      onChange={() => updateField('reportTemplate', 'current')}
+                      className="accent-cyan-400"
+                    />
+                    Current System Layout
+                  </label>
+                  <label className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">
+                    <input
+                      type="radio"
+                      name="report-template"
+                      checked={form.reportTemplate === 'docx-template'}
+                      onChange={() => updateField('reportTemplate', 'docx-template')}
+                      className="accent-cyan-400"
+                    />
+                    narrative-report.docx Layout
                   </label>
                 </div>
               </div>

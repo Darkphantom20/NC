@@ -247,6 +247,14 @@ export async function POST(request: Request) {
       });
     }
 
+    if (data.reportTemplate === 'docx-template') {
+      documentSections.splice(
+        0,
+        documentSections.length,
+        ...buildDocxTemplateSections(data, reportFooterChildren),
+      );
+    }
+
     const doc = new Document({
       sections: documentSections,
     });
@@ -265,6 +273,209 @@ export async function POST(request: Request) {
     console.error(error);
     return new Response(JSON.stringify({ error: 'Something went wrong while generating the report.' }), { status: 500 });
   }
+}
+
+function templateParagraph(text: string, options: {
+  alignment?: AlignmentType;
+  bold?: boolean;
+  size?: number;
+  before?: number;
+  after?: number;
+  pageBreakBefore?: boolean;
+  justified?: boolean;
+  bullet?: boolean;
+} = {}): Paragraph[] {
+  const paragraph = new Paragraph({
+    alignment: options.alignment ?? (options.justified ? AlignmentType.JUSTIFIED : AlignmentType.LEFT),
+    pageBreakBefore: options.pageBreakBefore,
+    spacing: {
+      before: options.before ?? 0,
+      after: options.after ?? 0,
+      line: 360,
+      lineRule: 'auto',
+    },
+    indent: options.bullet ? { left: 720 } : undefined,
+    bullet: options.bullet ? { level: 0 } : undefined,
+    children: [new TextRun({
+      text,
+      bold: options.bold ?? false,
+      size: options.size ?? 24,
+      font: 'Times New Roman',
+    })],
+  });
+  return [paragraph];
+}
+
+function buildTemplateOrganizationPages(label: string, source: any): Paragraph[] {
+  const children: Paragraph[] = [
+    new Paragraph({
+      pageBreakBefore: true,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120, line: 360, lineRule: 'auto' },
+      children: [new TextRun({ text: String(label || 'TRAINING ORGANIZATION').toUpperCase(), bold: true, size: 24, font: 'Times New Roman' })],
+    }),
+  ];
+
+  const addPageHeading = (text: string) => {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 180, line: 360, lineRule: 'auto' },
+        children: [new TextRun({ text, bold: true, size: 24, font: 'Times New Roman' })],
+      }),
+    );
+  };
+  const addSubheading = (text: string) => {
+    children.push(
+      new Paragraph({
+        spacing: { before: 60, after: 60, line: 360, lineRule: 'auto' },
+        children: [new TextRun({ text: `${text}:`, bold: true, size: 24, font: 'Times New Roman' })],
+      }),
+    );
+  };
+  const addText = (text: string, bullet = false) => {
+    const lines = ensureArray(text);
+    if (!lines.length) return;
+    lines.forEach((line) => children.push(
+      new Paragraph({
+        alignment: bullet ? AlignmentType.LEFT : AlignmentType.JUSTIFIED,
+        indent: bullet ? { left: 720 } : undefined,
+        bullet: bullet ? { level: 0 } : undefined,
+        spacing: { before: 0, after: 0, line: 360, lineRule: 'auto' },
+        children: [new TextRun({ text: line, size: 24, font: 'Times New Roman' })],
+      }),
+    ));
+  };
+
+  addPageHeading('INTRODUCTION');
+  addSubheading('Background of the Organization');
+  addText(source.background);
+  addSubheading('Vision');
+  addText(source.vision);
+  addSubheading('Mission');
+  addText(source.mission);
+  addSubheading('Objectives');
+  addText(source.objectives, true);
+  addSubheading('Core Values');
+  addText(source.coreValues, true);
+  addSubheading('Products and Services Offered');
+  addText(source.services, true);
+
+  const imageBuffer = parseBase64Image(source.organizationStructureImage || '');
+  if (imageBuffer) {
+    children.push(
+      ...templateParagraph('Organization Structure', { alignment: AlignmentType.CENTER, bold: true, before: 120 }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new ImageRun({ type: 'png', data: imageBuffer, transformation: { width: 520, height: 360 } })],
+      }),
+    );
+  }
+
+  children.push(
+    new Paragraph({ pageBreakBefore: true }),
+    ...templateParagraph('ORGANIZATION / COMPANY ANALYSIS', { alignment: AlignmentType.CENTER, bold: true }),
+  );
+  addSubheading('Strengths');
+  addText(source.strengths, true);
+  addSubheading('Weaknesses');
+  addText(source.weaknesses, true);
+  addSubheading('Opportunities');
+  addText(source.opportunities, true);
+  addSubheading('Threats');
+  addText(source.threats, true);
+  addSubheading('Recommendations for Improvement');
+  addText(source.recommendations, true);
+
+  children.push(
+    new Paragraph({ pageBreakBefore: true }),
+    ...templateParagraph('TASKS AND DUTIES', { alignment: AlignmentType.CENTER, bold: true }),
+  );
+  addSubheading('Assigned Tasks and Responsibilities');
+  addText(source.tasks, true);
+  addSubheading('Duties and Procedures Conformed');
+  addText(source.procedures, true);
+
+  children.push(
+    new Paragraph({ pageBreakBefore: true }),
+    ...templateParagraph('CASE ANALYSIS', { alignment: AlignmentType.CENTER, bold: true }),
+  );
+  addSubheading('Issue / Problem 1');
+  addText(source.issue1);
+  addSubheading('Strategy/Action Undertaken for Problem 1');
+  addText(source.issue1Action);
+  addSubheading('Issue / Problem 2');
+  addText(source.issue2);
+  addSubheading('Strategy/Action Undertaken for Problem 2');
+  addText(source.issue2Action);
+  addSubheading('Lessons Learned from the Situations');
+  addText(source.lessons);
+
+  children.push(
+    new Paragraph({ pageBreakBefore: true }),
+    ...templateParagraph('REFLECTIONS', { alignment: AlignmentType.CENTER, bold: true }),
+  );
+  addSubheading('Self-Evaluation');
+  addText(source.selfEvaluation);
+  addSubheading('Relevancy of the Organization');
+  addText(source.relevancy);
+
+  return children;
+}
+
+function buildDocxTemplateSections(data: any, reportFooterChildren: any[]): any[] {
+  const children: Paragraph[] = [
+    ...buildCoverPage(data),
+    new Paragraph({ pageBreakBefore: true }),
+    ...buildAcknowledgementPage(data, false, 360),
+    new Paragraph({ pageBreakBefore: true }),
+    ...templateParagraph('TABLE OF CONTENTS', { alignment: AlignmentType.CENTER, bold: true, after: 180 }),
+    ...buildTableOfContentsPage(data, false, 360),
+    new Paragraph({ pageBreakBefore: true }),
+    ...templateParagraph('LIST OF TABLES / FIGURES', { alignment: AlignmentType.CENTER, bold: true, after: 180 }),
+    ...templateParagraph('LIST OF TABLES', { bold: true, after: 60 }),
+    ...templateParagraph('Table 1: Journal Week 1', {}),
+    ...templateParagraph('LIST OF FIGURES', { bold: true, before: 120, after: 60 }),
+  ];
+
+  if (data.organizationStructureImage) {
+    children.push(...templateParagraph('Figure 1: Organizational Chart', {}));
+  }
+  if (data.schoolPlacement?.enabled && data.schoolPlacement.organizationStructureImage) {
+    children.push(...templateParagraph('Figure 2: School Placement Organizational Chart', {}));
+  }
+
+  children.push(...buildTemplateOrganizationPages(data.trainingOrganization, data));
+  if (data.schoolPlacement?.enabled) {
+    children.push(...buildTemplateOrganizationPages(data.schoolPlacement.trainingOrganization || 'SCHOOL OJT / SECOND PLACEMENT', data.schoolPlacement));
+  }
+
+  const journalChildren = buildDailyJournalAppendixPage(data.appendices);
+  if (journalChildren.length > 0) {
+    children.push(new Paragraph({ pageBreakBefore: true }), ...journalChildren);
+  }
+  const otherAppendices = buildOtherAppendixPages(data.appendices);
+  if (otherAppendices.length > 0) {
+    children.push(...otherAppendices);
+  }
+
+  return [{
+    properties: {
+      page: {
+        size: { width: 12242, height: 20163 },
+        margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 709, footer: 709 },
+      },
+    },
+    headers: {
+      default: new Header({
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() })],
+      }),
+    },
+    footers: reportFooterChildren.length > 0
+      ? { default: new Footer({ children: reportFooterChildren }) }
+      : undefined,
+    children,
+  }];
 }
 
 function buildCoverPage(data: any): Paragraph[] {
