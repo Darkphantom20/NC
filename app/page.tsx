@@ -1950,6 +1950,7 @@ export default function Home() {
               </div>
             </SectionBlock>
 
+            {form.reportTemplate !== 'docx-template' && (
             <SectionBlock title="Page Layout Style" className="tour-page-layout">
               <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
                   <p className="mb-3 text-xs text-slate-300">
@@ -1979,6 +1980,7 @@ export default function Home() {
                 </div>
               </div>
             </SectionBlock>
+            )}
 
             <SectionBlock title="1. Acknowledgement" className="tour-acknowledgement">
               <div className="space-y-4 sm:space-y-5">
@@ -2003,12 +2005,25 @@ export default function Home() {
             <SectionBlock title="2. Table of Contents" className="tour-table-of-contents">
               <div className="space-y-4 sm:space-y-5">
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
-                  <p className="mb-3 text-xs text-slate-300">This section appears immediately after the acknowledgement in the generated report and helps outline the main narrative sections.</p>
+                  <p className="mb-3 text-xs text-slate-300">
+                    {form.reportTemplate === 'docx-template'
+                      ? 'The DOCX template layout generates this section automatically from the selected organizations, sections, appendices, and school placement.'
+                      : 'This section appears immediately after the acknowledgement in the generated report and helps outline the main narrative sections.'}
+                  </p>
                 </div>
+                {form.reportTemplate === 'docx-template' ? (
+                  <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 text-sm text-slate-300">
+                    <span className="block font-semibold text-cyan-200">Automatic table of contents</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">
+                      ACKNOWLEDGEMENT, TABLE OF CONTENTS, LIST OF TABLES / FIGURES, Introduction, Organization / Company Analysis, Tasks and Duties, Case Analysis, Reflections, and Appendices.
+                    </span>
+                  </div>
+                ) : (
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Table of Contents</span>
                   <ExpandableTextarea title="Table of Contents" value={form.tableOfContents} onChange={(value) => updateField('tableOfContents', value)} rows={6} />
                 </label>
+                )}
               </div>
             </SectionBlock>
 
@@ -2038,8 +2053,15 @@ export default function Home() {
                     <ExpandableTextarea title="Core Values" value={form.coreValues} onChange={(value) => updateField('coreValues', value)} rows={3} />
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
-                    <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">Services</span>
-                    <ExpandableTextarea title="Services" value={form.services} onChange={(value) => updateField('services', value)} rows={3} />
+                    <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">
+                      {form.reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
+                    </span>
+                    <ExpandableTextarea
+                      title={form.reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
+                      value={form.services}
+                      onChange={(value) => updateField('services', value)}
+                      rows={3}
+                    />
                   </label>
                 </div>
                 <div className="tour-organization-structure rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
@@ -2156,8 +2178,15 @@ export default function Home() {
                   <ExpandableTextarea title="Self-Evaluation" value={form.selfEvaluation} onChange={(value) => updateField('selfEvaluation', value)} rows={4} />
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
-                  <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Relevancy to Course & Goals</span>
-                  <ExpandableTextarea title="Relevancy to Course & Goals" value={form.relevancy} onChange={(value) => updateField('relevancy', value)} rows={4} />
+                  <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">
+                    {form.reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
+                  </span>
+                  <ExpandableTextarea
+                    title={form.reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
+                    value={form.relevancy}
+                    onChange={(value) => updateField('relevancy', value)}
+                    rows={4}
+                  />
                 </label>
               </div>
             </SectionBlock>
@@ -2884,8 +2913,15 @@ function PlacementNarrativeFields({
               <ExpandableTextarea title="School OJT Core Values" value={placement.coreValues} onChange={(value) => updateField('coreValues', value)} rows={3} />
             </label>
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
-              <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">Services</span>
-              <ExpandableTextarea title="School OJT Services" value={placement.services} onChange={(value) => updateField('services', value)} rows={3} />
+              <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">
+                {form.reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
+              </span>
+              <ExpandableTextarea
+                title={form.reportTemplate === 'docx-template' ? 'School OJT Products and Services Offered' : 'School OJT Services'}
+                value={placement.services}
+                onChange={(value) => updateField('services', value)}
+                rows={3}
+              />
             </label>
           </div>
           <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 sm:p-5">
@@ -2966,8 +3002,15 @@ function PlacementNarrativeFields({
             <ExpandableTextarea title="School OJT Self-Evaluation" value={placement.selfEvaluation} onChange={(value) => updateField('selfEvaluation', value)} rows={4} />
           </label>
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
-            <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">Relevancy to Course & Goals</span>
-            <ExpandableTextarea title="School OJT Relevancy to Course & Goals" value={placement.relevancy} onChange={(value) => updateField('relevancy', value)} rows={4} />
+            <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">
+              {form.reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
+            </span>
+            <ExpandableTextarea
+              title={form.reportTemplate === 'docx-template' ? 'School OJT Relevancy of the Organization' : 'School OJT Relevancy to Course & Goals'}
+              value={placement.relevancy}
+              onChange={(value) => updateField('relevancy', value)}
+              rows={4}
+            />
           </label>
         </div>
       </SectionBlock>
