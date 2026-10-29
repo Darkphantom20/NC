@@ -609,7 +609,7 @@ async function transformReportPayload(
   return value;
 }
 
-async function createReportRequestBody(form: typeof defaultForm): Promise<string> {
+async function createReportRequestBody(form: NarrativeForm): Promise<string> {
   const layout = form.appendices.dailyJournalLayout === 'no-photo'
     ? 'no-photo'
     : form.appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
