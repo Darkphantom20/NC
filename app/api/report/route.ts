@@ -69,6 +69,75 @@ interface SectionData {
   isBullet?: boolean;
 }
 
+const SCANNED_APPENDIX_DEFINITIONS = [
+  { letter: 'A', title: 'Journal', imageKey: null },
+  { letter: 'B', title: 'Certificate of Participation of Prime Seminar', imageKey: 'certParticipation' },
+  { letter: 'C', title: 'One-Page Narrative Report of PRIME', imageKey: null },
+  { letter: 'D', title: 'Resume and Application Letter', imageKey: 'resume' },
+  { letter: 'E', title: 'Evaluation of Grades from the Registrar', imageKey: 'grades' },
+  { letter: 'F', title: 'Validated Enrollment Form', imageKey: 'grades' },
+  { letter: 'G', title: 'Medical Certificate', imageKey: 'medicalWaiver' },
+  { letter: 'H', title: 'Parent’s Waiver', imageKey: 'medicalWaiver' },
+  { letter: 'I', title: 'Letter of Acceptance', imageKey: 'letterAcceptance' },
+  { letter: 'J', title: 'Daily Time Record (Number of Hours Rendered)', imageKey: 'dtr' },
+  { letter: 'K', title: 'Student’s Intern Rating Sheet', imageKey: 'ratingSheet' },
+  { letter: 'L', title: 'Performance Evaluation', imageKey: 'ratingSheet' },
+  { letter: 'M', title: 'Certificate of Completion', imageKey: 'certCompletion' },
+  { letter: 'N', title: 'Memorandum of Agreement', imageKey: 'certCompletion' },
+] as const;
+
+type ScannedAppendixLetter = typeof SCANNED_APPENDIX_DEFINITIONS[number]['letter'];
+
+function getScannedJournalWeeks(data: any): DailyJournalWeek[] {
+  if (!Array.isArray(data.appendices?.dailyJournal)) return [];
+  return data.appendices.dailyJournal.filter((week: DailyJournalWeek) => {
+    const activities = Array.isArray(week.activities) ? week.activities : [];
+    const hasActivityData = activities.some((activity) =>
+      Boolean(
+        String(activity.date || '').trim()
+        || String(activity.accomplishment || '').trim()
+        || (Number(activity.hours) || 0) > 0,
+      ),
+    );
+    const hasPhoto = [week.currentLayoutImages, week.images, week.reportLayoutImages]
+      .some((images) => Array.isArray(images) && images.some((image) => Boolean(
+        typeof image === 'string' ? image.trim() : image?.base64?.trim(),
+      )));
+    return hasActivityData || hasPhoto;
+  });
+}
+
+function getScannedAppendixImages(data: any, letter: ScannedAppendixLetter): (string | AppendixImage)[] {
+  const definition = SCANNED_APPENDIX_DEFINITIONS.find((entry) => entry.letter === letter);
+  if (!definition) return [];
+  const value = letter === 'C'
+    ? data.appendices?.primeReportImages
+    : definition.imageKey ? data.appendices?.[definition.imageKey] : null;
+  const candidates = Array.isArray(value) ? value : value ? [value] : [];
+  return candidates.filter((image): image is string | AppendixImage => Boolean(
+    typeof image === 'string' ? image.trim() : image && typeof image.base64 === 'string' && image.base64.trim(),
+  ));
+}
+
+function getScannedAppendixAvailability(data: any): { letter: ScannedAppendixLetter; title: string; hasContent: boolean }[] {
+  return SCANNED_APPENDIX_DEFINITIONS.map((entry) => {
+    let hasContent = false;
+    if (entry.letter === 'A') {
+      hasContent = getScannedJournalWeeks(data).length > 0;
+    } else if (entry.letter === 'C') {
+      const narrative = typeof data.appendices?.primeNarrative === 'string'
+        ? data.appendices.primeNarrative.trim()
+        : '';
+      const images = getScannedAppendixImages(data, entry.letter);
+      hasContent = Boolean(narrative) || images.some((image) => Boolean(getScannedImageData(image, `Appendix ${entry.letter}`)));
+    } else {
+      const images = getScannedAppendixImages(data, entry.letter);
+      hasContent = images.some((image) => Boolean(getScannedImageData(image, `Appendix ${entry.letter}`)));
+    }
+    return { letter: entry.letter, title: entry.title, hasContent };
+  });
+}
+
 function buildHeaderImage(headerImage: Buffer | null = HEADER_IMAGE, width = 624, height = 125) {
   if (!headerImage) return [];
   return [
@@ -174,31 +243,17 @@ function buildScannedTableOfContents(data: any): { title: string; page: string; 
     );
   }
 
-  entries.push({ title: 'Appendices', page: String(appendicesStart), level: 0 });
-
-  const appendixEntries = [
-    'Journal',
-    'Certificate of Participation of Prime Seminar',
-    'One-Page Narrative Report of PRIME',
-    'Resume and Application Letter',
-    'Evaluation of Grades from the Registrar',
-    'Validated Enrollment Form',
-    'Medical Certificate',
-    'Parent’s Waiver',
-    'Letter of Acceptance',
-    'Daily Time Record (Number of Hours Rendered)',
-    'Student’s Intern Rating Sheet',
-    'Performance Evaluation',
-    'Certificate of Completion',
-    'Memorandum of Agreement',
-  ];
-  appendixEntries.forEach((title, index) => {
-    entries.push({
-      title: `Appendix ${String.fromCharCode(65 + index)}: ${title}`,
-      page: String(appendicesStart + 1 + index),
-      level: 1,
+  const availableAppendices = getScannedAppendixAvailability(data).filter((entry) => entry.hasContent);
+  if (availableAppendices.length > 0) {
+    entries.push({ title: 'Appendices', page: String(appendicesStart), level: 0 });
+    availableAppendices.forEach((entry, index) => {
+      entries.push({
+        title: `Appendix ${entry.letter}: ${entry.title}`,
+        page: String(appendicesStart + 1 + index),
+        level: 1,
+      });
     });
-  });
+  }
 
   return entries;
 }
@@ -254,6 +309,41 @@ function replaceScannedTableOfContents(xml: string, data: any): string {
       return paragraph;
     }
     return '';
+  });
+}
+
+function replaceScannedJournalList(xml: string, data: any): string {
+  const weeks = getScannedJournalWeeks(data);
+  const generatedEntries = weeks.map((week, index) =>
+    `<w:p><w:pPr><w:pStyle w:val="Caption"/><w:keepNext/></w:pPr><w:r><w:t xml:space="preserve">Table ${index + 1}: Journal Week ${escapeXml(week.weekNumber || index + 1)}</w:t></w:r></w:p>`,
+  ).join('');
+  const paragraphs = Array.from(xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), (match) => ({
+    paragraph: match[0],
+    text: getScannedParagraphText(match[0]),
+  }));
+  const tablesHeadingIndex = paragraphs.findIndex((entry) => /^List of Tables$/i.test(entry.text));
+  if (tablesHeadingIndex < 0) return xml;
+  const figuresHeadingIndex = paragraphs.findIndex((entry, index) =>
+    index > tablesHeadingIndex && /^List of Figures$/i.test(entry.text),
+  );
+  if (figuresHeadingIndex < 0) return xml;
+
+  let currentIndex = -1;
+  let insideList = false;
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    const text = getScannedParagraphText(paragraph);
+    if (/^List of Tables$/i.test(text) && !insideList) {
+      insideList = true;
+      currentIndex = tablesHeadingIndex;
+      return paragraph + generatedEntries;
+    }
+    if (insideList && /^List of Figures$/i.test(text)) {
+      insideList = false;
+      return paragraph;
+    }
+    if (!insideList) return paragraph;
+    currentIndex += 1;
+    return currentIndex < figuresHeadingIndex ? '' : paragraph;
   });
 }
 
@@ -318,25 +408,23 @@ function sizeScannedHeaderImage(xml: string): string {
   );
 }
 
-function getScannedJournalImage(week: DailyJournalWeek): { data: Buffer; extension: string; width: number; height: number } | null {
-  const image = [week.currentLayoutImages, week.images, week.reportLayoutImages]
-    .find((images) => images?.some(Boolean))
-    ?.find(Boolean);
-  if (!image) return null;
-
+function getScannedImageData(
+  image: string | AppendixImage,
+  context: string,
+): { data: Buffer; extension: string; width: number; height: number } {
   const dataUrl = typeof image === 'string' ? image : image.base64;
-  if (typeof dataUrl !== 'string') {
-    throw new Error(`The journal image for week ${week.weekNumber} is invalid.`);
+  if (typeof dataUrl !== 'string' || !dataUrl.trim()) {
+    throw new Error(`The image for ${context} is invalid.`);
   }
   const match = dataUrl.match(/^data:image\/(jpeg|jpg|png);base64,([\s\S]+)$/i);
   if (!match) {
-    throw new Error(`The journal image for week ${week.weekNumber} must be a PNG or JPEG image.`);
+    throw new Error(`The image for ${context} must be a PNG or JPEG image.`);
   }
 
   const extension = match[1].toLowerCase() === 'png' ? 'png' : 'jpg';
   const data = Buffer.from(match[2], 'base64');
   if (data.length === 0) {
-    throw new Error(`The journal image for week ${week.weekNumber} is empty.`);
+    throw new Error(`The image for ${context} is empty.`);
   }
 
   let width = 0;
@@ -370,10 +458,20 @@ function getScannedJournalImage(week: DailyJournalWeek): { data: Buffer; extensi
   }
 
   if (!width || !height) {
-    throw new Error(`The journal image for week ${week.weekNumber} could not be read.`);
+    throw new Error(`The image for ${context} could not be read.`);
   }
 
   return { data, extension, width, height };
+}
+
+function getScannedJournalImage(week: DailyJournalWeek): { data: Buffer; extension: string; width: number; height: number } | null {
+  const image = [week.currentLayoutImages, week.images, week.reportLayoutImages]
+    .flatMap((images) => images || [])
+    .find((candidate) => Boolean(
+      typeof candidate === 'string' ? candidate.trim() : candidate?.base64?.trim(),
+    ));
+  if (!image) return null;
+  return getScannedImageData(image, `journal week ${week.weekNumber}`);
 }
 
 function buildScannedJournalImageRun(
@@ -381,9 +479,9 @@ function buildScannedJournalImageRun(
   relationshipId: string,
   drawingId: number,
   name: string,
+  maxWidth = 1.45 * 914400,
+  maxHeight = 0.9 * 914400,
 ): string {
-  const maxWidth = 1.45 * 914400;
-  const maxHeight = 0.9 * 914400;
   const scale = Math.min(maxWidth / image.width, maxHeight / image.height);
   const width = Math.max(1, Math.round(image.width * scale));
   const height = Math.max(1, Math.round(image.height * scale));
@@ -391,14 +489,209 @@ function buildScannedJournalImageRun(
   return `<w:r><w:drawing xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${drawingId}" name="${escapeXml(name)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${drawingId}" name="${escapeXml(name)}"/><pic:cNvPicPr><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${width}" cy="${height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
 }
 
+function getScannedParagraphText(paragraph: string): string {
+  let text = '';
+  paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+    text += decodeXmlText(encodedText);
+    return _match;
+  });
+  return text.trim();
+}
+
+function scannedAppendixTextParagraph(text: string, centered = false): string {
+  return `<w:p><w:pPr><w:jc w:val="${centered ? 'center' : 'both'}"/><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:color w:val="000000"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
+}
+
+function formatScannedAppendixParagraphs(xml: string): string {
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let formatted = paragraph.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/, (_match, properties) => {
+      const spacing = '<w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>';
+      const updatedProperties = /<w:spacing\b[^>]*\/>/.test(properties)
+        ? properties.replace(/<w:spacing\b[^>]*\/>/, spacing)
+        : `${spacing}${properties}`;
+      return `<w:pPr>${updatedProperties}</w:pPr>`;
+    });
+    if (!/<w:pPr>/.test(formatted)) {
+      formatted = formatted.replace(/<w:p\b[^>]*>/, (openingTag) =>
+        `${openingTag}<w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>`,
+      );
+    }
+
+    return formatted.replace(/<w:r\b[^>]*>[\s\S]*?<\/w:r>/g, (run) => {
+      const properties = run.match(/<w:rPr>([\s\S]*?)<\/w:rPr>/)?.[1] || '';
+      const boldProperties = [...properties.matchAll(/<w:b(?:\s[^>]*)?\/?>/g)]
+        .map(([boldProperty]) => boldProperty)
+        .join('');
+      const runProperties =
+        '<w:rPr>' +
+          '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/>' +
+          '<w:color w:val="000000"/><w:sz w:val="24"/><w:szCs w:val="24"/>' +
+          boldProperties +
+        '</w:rPr>';
+      return /<w:rPr>[\s\S]*?<\/w:rPr>/.test(run)
+        ? run.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/, runProperties)
+        : run.replace(/<w:r\b[^>]*>/, (openingTag) => `${openingTag}${runProperties}`);
+    });
+  });
+}
+
+function replaceScannedAppendixSections(
+  xml: string,
+  relationshipsXml: string,
+  data: any,
+  existingPaths: string[],
+): { xml: string; relationshipsXml: string; images: { path: string; data: Buffer }[] } {
+  const availability = getScannedAppendixAvailability(data);
+  const availableLetters = new Set(availability.filter((entry) => entry.hasContent).map((entry) => entry.letter));
+  const headings = Array.from(xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), (match) => ({
+    start: match.index ?? 0,
+    paragraph: match[0],
+    text: getScannedParagraphText(match[0]),
+  })).filter((paragraph) => (
+    /^Appendix [A-N]:/.test(paragraph.text)
+    && /<w:pStyle\b[^>]*w:val="Heading2"/.test(paragraph.paragraph)
+  ));
+
+  const relationshipIds = Array.from(relationshipsXml.matchAll(/\bId="rId(\d+)"/g), (match) => Number(match[1]));
+  let nextRelationshipId = Math.max(0, ...relationshipIds) + 1;
+  const drawingIds = Array.from(xml.matchAll(/<wp:docPr\b[^>]*\bid="(\d+)"/g), (match) => Number(match[1]));
+  let nextDrawingId = Math.max(0, ...drawingIds) + 1;
+  const existingImagePaths = new Set(existingPaths);
+  const newRelationships: string[] = [];
+  const images: { path: string; data: Buffer }[] = [];
+
+  const addAppendixImage = (image: string | AppendixImage, letter: ScannedAppendixLetter, index: number): string => {
+    const imageData = getScannedImageData(image, `Appendix ${letter}`);
+    const basePath = `word/media/scanned-appendix-${letter}-${index + 1}`;
+    let imagePath = `${basePath}.${imageData.extension}`;
+    let suffix = 1;
+    while (existingImagePaths.has(imagePath)) {
+      imagePath = `${basePath}-${suffix}.${imageData.extension}`;
+      suffix += 1;
+    }
+    existingImagePaths.add(imagePath);
+
+    const relationshipId = `rId${nextRelationshipId}`;
+    nextRelationshipId += 1;
+    newRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${imagePath.replace('word/', '')}"/>`);
+    images.push({ path: imagePath, data: imageData.data });
+
+    const drawing = buildScannedJournalImageRun(
+      imageData,
+      relationshipId,
+      nextDrawingId,
+      `Appendix ${letter} image ${index + 1}`,
+      6.5 * 914400,
+      9 * 914400,
+    );
+    nextDrawingId += 1;
+    const imageParagraph = `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="120" w:line="240" w:lineRule="auto"/></w:pPr>${drawing}</w:p>`;
+    const detail = typeof image === 'string' ? '' : image.detail?.trim() || '';
+    return imageParagraph + (detail ? scannedAppendixTextParagraph(detail, true) : '');
+  };
+
+  let updatedXml = xml;
+  const bodyEnd = xml.lastIndexOf('</w:body>');
+  const sectionPropertiesStart = xml.lastIndexOf('<w:sectPr', bodyEnd);
+  const finalAppendixEnd = sectionPropertiesStart >= 0 ? sectionPropertiesStart : bodyEnd;
+
+  for (let index = headings.length - 1; index >= 0; index -= 1) {
+    const heading = headings[index];
+    const letter = heading.text.match(/^Appendix ([A-N]):/)?.[1] as ScannedAppendixLetter;
+    const start = heading.start;
+    const end = headings[index + 1]?.start ?? finalAppendixEnd;
+    if (!availableLetters.has(letter)) {
+      updatedXml = updatedXml.slice(0, start) + updatedXml.slice(end);
+      continue;
+    }
+
+    let section = updatedXml.slice(start, end);
+    if (letter !== 'A') {
+      const bodyParts: string[] = [];
+      if (letter === 'C') {
+        const narrative = typeof data.appendices?.primeNarrative === 'string'
+          ? data.appendices.primeNarrative.trim()
+          : '';
+        bodyParts.push(...narrative.split(/\r?\n/).map((line: string) => line.trim()).filter(Boolean).map((line: string) => scannedAppendixTextParagraph(line)));
+      }
+      getScannedAppendixImages(data, letter).forEach((image, imageIndex) => {
+        bodyParts.push(addAppendixImage(image, letter, imageIndex));
+      });
+
+      let bodyReplaced = false;
+      section = section.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+        if (bodyReplaced || !/^\[Insert or scan\b/i.test(getScannedParagraphText(paragraph))) return paragraph;
+        bodyReplaced = true;
+        return bodyParts.join('');
+      });
+      if (!bodyReplaced) {
+        throw new Error(`The scanned-template content placeholder for Appendix ${letter} is missing.`);
+      }
+    }
+    section = formatScannedAppendixParagraphs(section);
+    updatedXml = updatedXml.slice(0, start) + section + updatedXml.slice(end);
+  }
+
+  const listParagraphs = Array.from(updatedXml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), (match) => ({
+    start: match.index ?? 0,
+    paragraph: match[0],
+    text: getScannedParagraphText(match[0]),
+  }));
+  const appendixListHeadingIndex = listParagraphs.findIndex((entry, index) =>
+    entry.text === 'Appendices' && /^A\.\s/.test(listParagraphs[index + 1]?.text || ''),
+  );
+  if (appendixListHeadingIndex >= 0) {
+    const listItems = [];
+    for (let index = appendixListHeadingIndex + 1; index < listParagraphs.length && /^[A-N]\.\s/.test(listParagraphs[index].text); index += 1) {
+      listItems.push(listParagraphs[index]);
+    }
+    const listIsEmpty = availableLetters.size === 0;
+    const removals = [
+      ...(listIsEmpty ? [listParagraphs[appendixListHeadingIndex]] : []),
+      ...listItems.filter((item) => !availableLetters.has(item.text[0] as ScannedAppendixLetter)),
+    ];
+    for (const item of removals.reverse()) {
+      updatedXml = updatedXml.slice(0, item.start) + updatedXml.slice(item.start + item.paragraph.length);
+    }
+  }
+
+  const remainingListParagraphs = Array.from(updatedXml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), (match) => ({
+    start: match.index ?? 0,
+    paragraph: match[0],
+    text: getScannedParagraphText(match[0]),
+  }));
+  const remainingListHeadingIndex = remainingListParagraphs.findIndex((entry, index) =>
+    entry.text === 'Appendices' && /^[A-N]\.\s/.test(remainingListParagraphs[index + 1]?.text || ''),
+  );
+  if (remainingListHeadingIndex >= 0) {
+    let listEndIndex = remainingListHeadingIndex + 1;
+    while (listEndIndex + 1 < remainingListParagraphs.length && /^[A-N]\.\s/.test(remainingListParagraphs[listEndIndex + 1].text)) {
+      listEndIndex += 1;
+    }
+    const listStart = remainingListParagraphs[remainingListHeadingIndex].start;
+    const lastListParagraph = remainingListParagraphs[listEndIndex];
+    const listEnd = lastListParagraph.start + lastListParagraph.paragraph.length;
+    updatedXml = updatedXml.slice(0, listStart)
+      + formatScannedAppendixParagraphs(updatedXml.slice(listStart, listEnd))
+      + updatedXml.slice(listEnd);
+  }
+
+  if (newRelationships.length > 0) {
+    if (!relationshipsXml.includes('</Relationships>')) {
+      throw new Error('The scanned-template image relationships are invalid.');
+    }
+    relationshipsXml = relationshipsXml.replace('</Relationships>', `${newRelationships.join('')}</Relationships>`);
+  }
+
+  return { xml: updatedXml, relationshipsXml, images };
+}
+
 function replaceScannedJournalTable(
   xml: string,
   relationshipsXml: string,
   data: any,
 ): { xml: string; relationshipsXml: string; images: { path: string; data: Buffer }[] } {
-  const weeks: DailyJournalWeek[] = Array.isArray(data.appendices?.dailyJournal)
-    ? data.appendices.dailyJournal
-    : [];
+  const weeks = getScannedJournalWeeks(data);
   const images: { path: string; data: Buffer }[] = [];
   const newRelationships: string[] = [];
   const relationshipIds = Array.from(relationshipsXml.matchAll(/\bId="rId(\d+)"/g), (match) => Number(match[1]));
@@ -609,6 +902,11 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
       documentRelationshipsXml = journalTable.relationshipsXml;
       journalImages.push(...journalTable.images);
       xml = replaceScannedTableOfContents(xml, data);
+      xml = replaceScannedJournalList(xml, data);
+      const appendixSections = replaceScannedAppendixSections(xml, documentRelationshipsXml, data, Object.keys(zip.files));
+      xml = appendixSections.xml;
+      documentRelationshipsXml = appendixSections.relationshipsXml;
+      journalImages.push(...appendixSections.images);
     }
     if (/^word\/header\d+\.xml$/.test(name)) {
       xml = sizeScannedHeaderImage(xml);

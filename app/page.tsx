@@ -78,7 +78,59 @@ function syncSchoolPlacementTOC(contents: string, enabled: boolean): string {
   return withoutSchoolEntries.join('\n');
 }
 
-function buildScannedTemplateTOC(trainingOrganization: string, schoolPlacement: typeof defaultForm.schoolPlacement) {
+function hasScannedTemplateImage(image: string | { base64: string } | null | undefined): boolean {
+  const dataUrl = typeof image === 'string' ? image : image?.base64;
+  return Boolean(dataUrl?.startsWith('data:image/') && dataUrl.split(',')[1]?.trim());
+}
+
+function getScannedTemplateAppendices(appendices: typeof defaultForm.appendices) {
+  const isDefaultJournal = JSON.stringify(appendices.dailyJournal) === JSON.stringify(defaultForm.appendices.dailyJournal);
+  const journalEntries = isDefaultJournal ? [] : appendices.dailyJournal;
+  const primeNarrative = appendices.primeNarrative === defaultForm.appendices.primeNarrative
+    ? ''
+    : appendices.primeNarrative;
+  const journalHasContent = journalEntries.some((week) => (
+    (week.activities || []).some((activity) => (
+      Boolean(String(activity.date || '').trim() || String(activity.accomplishment || '').trim() || (Number(activity.hours) || 0) > 0)
+    ))
+    || [week.currentLayoutImages, week.images, week.reportLayoutImages].some((images) => images?.some(hasScannedTemplateImage))
+  ));
+  const primeNarrativeHasContent = Boolean(String(primeNarrative || '').trim());
+  const primeImagesExist = (appendices.primeReportImages || []).some(hasScannedTemplateImage);
+  const attachmentsExist = {
+    certParticipation: hasScannedTemplateImage(appendices.certParticipation),
+    resume: hasScannedTemplateImage(appendices.resume),
+    grades: hasScannedTemplateImage(appendices.grades),
+    medicalWaiver: hasScannedTemplateImage(appendices.medicalWaiver),
+    letterAcceptance: hasScannedTemplateImage(appendices.letterAcceptance),
+    dtr: hasScannedTemplateImage(appendices.dtr),
+    ratingSheet: hasScannedTemplateImage(appendices.ratingSheet),
+    certCompletion: hasScannedTemplateImage(appendices.certCompletion),
+  };
+
+  return [
+    { letter: 'A', title: 'Journal', hasContent: journalHasContent },
+    { letter: 'B', title: 'Certificate of Participation of Prime Seminar', hasContent: attachmentsExist.certParticipation },
+    { letter: 'C', title: 'One-Page Narrative Report of PRIME', hasContent: primeNarrativeHasContent || primeImagesExist },
+    { letter: 'D', title: 'Resume and Application Letter', hasContent: attachmentsExist.resume },
+    { letter: 'E', title: 'Evaluation of Grades from the Registrar', hasContent: attachmentsExist.grades },
+    { letter: 'F', title: 'Validated Enrollment Form', hasContent: attachmentsExist.grades },
+    { letter: 'G', title: 'Medical Certificate', hasContent: attachmentsExist.medicalWaiver },
+    { letter: 'H', title: 'Parent’s Waiver', hasContent: attachmentsExist.medicalWaiver },
+    { letter: 'I', title: 'Letter of Acceptance', hasContent: attachmentsExist.letterAcceptance },
+    { letter: 'J', title: 'Daily Time Record (Number of Hours Rendered)', hasContent: attachmentsExist.dtr },
+    { letter: 'K', title: 'Student’s Intern Rating Sheet', hasContent: attachmentsExist.ratingSheet },
+    { letter: 'L', title: 'Performance Evaluation', hasContent: attachmentsExist.ratingSheet },
+    { letter: 'M', title: 'Certificate of Completion', hasContent: attachmentsExist.certCompletion },
+    { letter: 'N', title: 'Memorandum of Agreement', hasContent: attachmentsExist.certCompletion },
+  ].filter((entry) => entry.hasContent);
+}
+
+function buildScannedTemplateTOC(
+  trainingOrganization: string,
+  schoolPlacement: typeof defaultForm.schoolPlacement,
+  appendices: typeof defaultForm.appendices,
+) {
   const entries: { title: string; page: string; level: 0 | 1 | 2 }[] = [
     { title: 'Acknowledgement', page: 'i', level: 0 },
     { title: 'Table of Contents', page: 'ii', level: 0 },
@@ -131,25 +183,13 @@ function buildScannedTemplateTOC(trainingOrganization: string, schoolPlacement: 
     );
   }
 
-  entries.push({ title: 'Appendices', page: String(appendicesStart), level: 0 });
-  [
-    'Journal',
-    'Certificate of Participation of Prime Seminar',
-    'One-Page Narrative Report of PRIME',
-    'Resume and Application Letter',
-    'Evaluation of Grades from the Registrar',
-    'Validated Enrollment Form',
-    'Medical Certificate',
-    'Parent’s Waiver',
-    'Letter of Acceptance',
-    'Daily Time Record (Number of Hours Rendered)',
-    'Student’s Intern Rating Sheet',
-    'Performance Evaluation',
-    'Certificate of Completion',
-    'Memorandum of Agreement',
-  ].forEach((title, index) => {
+  const availableAppendices = getScannedTemplateAppendices(appendices);
+  if (availableAppendices.length > 0) {
+    entries.push({ title: 'Appendices', page: String(appendicesStart), level: 0 });
+  }
+  availableAppendices.forEach((appendix, index) => {
     entries.push({
-      title: `Appendix ${String.fromCharCode(65 + index)}: ${title}`,
+      title: `Appendix ${appendix.letter}: ${appendix.title}`,
       page: String(appendicesStart + index + 1),
       level: 1,
     });
@@ -698,18 +738,32 @@ async function transformReportPayload(
 }
 
 async function createReportRequestBody(form: NarrativeForm): Promise<string> {
-  const layout = form.appendices.dailyJournalLayout === 'no-photo'
+  const reportForm = form.reportTemplate === 'scanned-template'
+    ? {
+      ...form,
+      appendices: {
+        ...form.appendices,
+        dailyJournal: JSON.stringify(form.appendices.dailyJournal) === JSON.stringify(defaultForm.appendices.dailyJournal)
+          ? []
+          : form.appendices.dailyJournal,
+        primeNarrative: form.appendices.primeNarrative === defaultForm.appendices.primeNarrative
+          ? ''
+          : form.appendices.primeNarrative,
+      },
+    }
+    : form;
+  const layout = reportForm.appendices.dailyJournalLayout === 'no-photo'
     ? 'no-photo'
-    : form.appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
+    : reportForm.appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
   const maxRequestBytes = 4 * 1024 * 1024;
-  let body = JSON.stringify(await transformReportPayload(form, layout));
+  let body = JSON.stringify(await transformReportPayload(reportForm, layout));
   if (new Blob([body]).size <= maxRequestBytes) return body;
 
   let maxWidth = 1400;
   let quality = 0.75;
 
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    body = JSON.stringify(await transformReportPayload(form, layout, { maxWidth, quality }));
+    body = JSON.stringify(await transformReportPayload(reportForm, layout, { maxWidth, quality }));
     if (new Blob([body]).size <= maxRequestBytes) return body;
 
     maxWidth = Math.max(320, Math.floor(maxWidth * 0.8));
@@ -2165,7 +2219,7 @@ export default function Home() {
                           </tr>
                         </thead>
                         <tbody>
-                          {buildScannedTemplateTOC(form.trainingOrganization, form.schoolPlacement).map((entry, index) => (
+                          {buildScannedTemplateTOC(form.trainingOrganization, form.schoolPlacement, form.appendices).map((entry, index) => (
                             <tr key={`${index}-${entry.title}`} className={entry.level === 0 ? 'border-t border-slate-700/70 font-semibold text-white' : 'border-t border-slate-800/50'}>
                               <td className="py-1.5 pr-3" style={{ paddingLeft: `${16 + entry.level * 16}px` }}>{entry.title}</td>
                               <td className="whitespace-nowrap px-4 py-1.5 text-right tabular-nums">{entry.page}</td>
