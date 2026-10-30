@@ -8,6 +8,8 @@ export const runtime = 'nodejs';
 const OUTPUT_FILE_NAME = process.env.OUTPUT_FILE_NAME || 'JRMSU_Narrative_Report.docx';
 const HEADER_IMAGE_PATH = path.join(process.cwd(), 'public', 'Picture1.png');
 const HEADER_IMAGE = fs.existsSync(HEADER_IMAGE_PATH) ? fs.readFileSync(HEADER_IMAGE_PATH) : null;
+const SCANNED_TEMPLATE_HEADER_PATH = path.join(process.cwd(), 'public', 'Untitled.png');
+const SCANNED_TEMPLATE_HEADER = fs.existsSync(SCANNED_TEMPLATE_HEADER_PATH) ? fs.readFileSync(SCANNED_TEMPLATE_HEADER_PATH) : null;
 
 interface AppendixImage {
   base64: string;
@@ -64,13 +66,13 @@ interface SectionData {
   isBullet?: boolean;
 }
 
-function buildHeaderImage() {
-  if (!HEADER_IMAGE) return [];
+function buildHeaderImage(headerImage: Buffer | null = HEADER_IMAGE, width = 624, height = 125) {
+  if (!headerImage) return [];
   return [
     new ImageRun({
-      data: HEADER_IMAGE,
+      data: headerImage,
       type: 'png',
-      transformation: { width: 624, height: 125 },
+      transformation: { width, height },
     }),
   ];
 }
@@ -247,6 +249,14 @@ export async function POST(request: Request) {
         0,
         documentSections.length,
         ...buildDocxTemplateSections(data),
+      );
+    }
+
+    if (data.reportTemplate === 'scanned-template') {
+      documentSections.splice(
+        0,
+        documentSections.length,
+        ...buildDocxTemplateSections(data, SCANNED_TEMPLATE_HEADER, true),
       );
     }
 
@@ -605,7 +615,11 @@ function buildTemplateOrganizationPages(label: string, source: any, romanLabel =
   return children;
 }
 
-function buildDocxTemplateSections(data: any): any[] {
+function buildDocxTemplateSections(
+  data: any,
+  headerImage: Buffer | null = HEADER_IMAGE,
+  scannedTemplate = false,
+): any[] {
   const children: (Paragraph | Table)[] = [
     ...buildTemplateCoverPage(data),
     new Paragraph({ pageBreakBefore: true }),
@@ -659,13 +673,24 @@ function buildDocxTemplateSections(data: any): any[] {
   return [{
     properties: {
       page: {
-        size: { width: 12242, height: 20163 },
-        margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 709, footer: 709 },
+        size: scannedTemplate
+          ? { width: 12240, height: 20160 }
+          : { width: 12242, height: 20163 },
+        margin: scannedTemplate
+          ? { top: 762000, bottom: 914400, left: 914400, right: 914400, header: 449580, footer: 449580 }
+          : { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 709, footer: 709 },
       },
     },
     headers: {
       default: new Header({
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() })],
+        children: [new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: buildHeaderImage(
+            headerImage,
+            scannedTemplate ? 624 : 624,
+            scannedTemplate ? 234 : 125,
+          ),
+        })],
       }),
     },
     children,
