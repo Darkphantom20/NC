@@ -190,6 +190,135 @@ function styleScannedAcknowledgementPage(xml: string, data: any): string {
   });
 }
 
+function buildScannedTableOfContents(data: any): { title: string; page: string; level: number }[] {
+  const secondPlacement = Boolean(data.schoolPlacement?.enabled);
+  const org1 = data.trainingOrganization || 'TRAINING ORGANIZATION';
+  const org2 = data.schoolPlacement?.trainingOrganization || 'SCHOOL TRAINING ORGANIZATION';
+  const appendicesStart = secondPlacement ? 11 : 6;
+  const appendix = data.appendices || {};
+
+  const entries: { title: string; page: string; level: number }[] = [
+    { title: 'Acknowledgement', page: 'i', level: 0 },
+    { title: 'Table of Contents', page: 'ii', level: 0 },
+    { title: 'List of Tables / Figures', page: 'iv', level: 0 },
+    { title: `I. ${org1.toUpperCase()}`, page: '1', level: 0 },
+    { title: 'Introduction', page: '1', level: 1 },
+    { title: 'Background of the Organization', page: '1', level: 2 },
+    { title: 'Vision, Mission, and Objectives', page: '1', level: 2 },
+    { title: 'Organizational Structure', page: '1', level: 2 },
+    { title: 'The Products and Services Offered', page: '1', level: 2 },
+    { title: 'Organization / Company Analysis', page: '2', level: 1 },
+    { title: 'Strengths and Weaknesses of the Organization', page: '2', level: 2 },
+    { title: 'Opportunities and Threats of the Organization', page: '2', level: 2 },
+    { title: 'Recommendations for Improvement', page: '2', level: 2 },
+    { title: 'Tasks and Duties', page: '3', level: 1 },
+    { title: 'Tasks and Responsibilities Assigned', page: '3', level: 2 },
+    { title: 'Duties and Procedures Conformed', page: '3', level: 2 },
+    { title: 'Case Analysis', page: '4', level: 1 },
+    { title: 'Identified Issues / Problems', page: '4', level: 2 },
+    { title: 'Strategies Undertaken', page: '4', level: 2 },
+    { title: 'Lessons Learned', page: '4', level: 2 },
+    { title: 'Reflections', page: '5', level: 1 },
+    { title: 'Self-Evaluation', page: '5', level: 2 },
+    { title: 'Relevance to Course and Goals', page: '5', level: 2 },
+  ];
+
+  if (secondPlacement) {
+    entries.push(
+      { title: `II. ${org2.toUpperCase()}`, page: '6', level: 0 },
+      { title: 'Introduction', page: '6', level: 1 },
+      { title: 'Background of the Organization', page: '6', level: 2 },
+      { title: 'Vision, Mission, and Objectives', page: '6', level: 2 },
+      { title: 'Organizational Structure', page: '6', level: 2 },
+      { title: 'The Products and Services Offered', page: '6', level: 2 },
+      { title: 'Organization / Company Analysis', page: '7', level: 1 },
+      { title: 'Strengths and Weaknesses of the Organization', page: '7', level: 2 },
+      { title: 'Opportunities and Threats of the Organization', page: '7', level: 2 },
+      { title: 'Recommendations for Improvement', page: '7', level: 2 },
+      { title: 'Tasks and Duties', page: '8', level: 1 },
+      { title: 'Tasks and Responsibilities Assigned', page: '8', level: 2 },
+      { title: 'Duties and Procedures Conformed', page: '8', level: 2 },
+      { title: 'Case Analysis', page: '9', level: 1 },
+      { title: 'Lessons Learned', page: '9', level: 2 },
+      { title: 'Reflections', page: '10', level: 1 },
+      { title: 'Self-Evaluation', page: '10', level: 2 },
+      { title: 'Relevance to Course and Goals', page: '10', level: 2 },
+    );
+  }
+
+  entries.push({ title: 'Appendices', page: String(appendicesStart), level: 0 });
+
+  const appendixDefinitions: { label: string; hasContent: boolean }[] = [
+    { label: 'Journal', hasContent: Array.isArray(appendix.dailyJournal) && appendix.dailyJournal.length > 0 },
+    { label: 'Certificate of Participation of Prime Seminar', hasContent: Boolean(appendix.certParticipation) },
+    { label: 'One-Page Narrative Report of PRIME', hasContent: Boolean(appendix.primeNarrative) },
+    { label: 'Resume and Application Letter', hasContent: Boolean(appendix.resume) },
+    { label: 'Evaluation of Grades from the Registrar', hasContent: Boolean(appendix.grades) },
+    { label: 'Validated Enrollment Form', hasContent: true },
+    { label: 'Medical Certificate', hasContent: Boolean(appendix.medicalWaiver) },
+    { label: 'Parent’s Waiver', hasContent: Boolean(appendix.medicalWaiver) },
+    { label: 'Letter of Acceptance', hasContent: Boolean(appendix.letterAcceptance) },
+    { label: 'Daily Time Record (Number of Hours Rendered)', hasContent: Boolean(appendix.dtr) },
+    { label: 'Student’s Intern Rating Sheet', hasContent: Boolean(appendix.ratingSheet) },
+    { label: 'Performance Evaluation', hasContent: true },
+    { label: 'Certificate of Completion', hasContent: Boolean(appendix.certCompletion) },
+    { label: 'Memorandum of Agreement', hasContent: true },
+  ];
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let page = appendicesStart + 1;
+  appendixDefinitions.forEach((item, index) => {
+    if (!item.hasContent) return;
+    entries.push({ title: `Appendix ${letters[index]}: ${item.label}`, page: String(page), level: 1 });
+    page += index === 0 && Array.isArray(appendix.dailyJournal)
+      ? Math.max(1, Math.ceil(appendix.dailyJournal.length / 4))
+      : 1;
+  });
+
+  return entries;
+}
+
+function replaceScannedTableOfContents(xml: string, data: any): string {
+  const entries = buildScannedTableOfContents(data);
+  const generatedParagraphs = entries.map((entry) => {
+    const indent = entry.level === 1 ? 360 : entry.level === 2 ? 720 : 0;
+    const bold = entry.level === 0 ? '<w:b/><w:bCs/>' : '';
+    const size = entry.level === 0 ? '18' : '16';
+    return `<w:p><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9360"/></w:tabs><w:ind w:left="${indent}" w:right="0"/><w:spacing w:before="0" w:after="20" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="000000"/>${bold}</w:rPr><w:t xml:space="preserve">${escapeXml(entry.title)}</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:tab/><w:t xml:space="preserve">${escapeXml(entry.page)}</w:t></w:r></w:p>`;
+  }).join('');
+
+  let inTableOfContents = false;
+  let inserted = false;
+  let sawContentsHeading = false;
+
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+      text += decodeXmlText(encodedText);
+      return _match;
+    });
+
+    const trimmed = text.trim();
+    if (/^Table of Contents$/i.test(trimmed) && !sawContentsHeading) {
+      sawContentsHeading = true;
+      inTableOfContents = true;
+      return paragraph;
+    }
+    if (!inTableOfContents) return paragraph;
+    if (/^List of Tables\s*\/\s*Figures$/i.test(trimmed)) {
+      inTableOfContents = false;
+      return inserted ? paragraph : generatedParagraphs + paragraph;
+    }
+    if (/^Acknowledgementi$|^Table of Contentsii$|^List of Tables\s*\/\s*Figuresiv$|^(?:I|II)\.\s|^Introduction\d*$|^Background of the Organization\d*$|^Vision, Mission, and Objectives\d*$|^Organizational Structure\d*$|^The Products and Services Offered\d*$|^Organization\s*\/\s*Company Analysis\d*$|^Strengths and Weaknesses|^Opportunities and Threats|^Recommendations for Improvement\d*$|^Tasks and Duties\d*$|^Tasks and Responsibilities Assigned\d*$|^Duties and Procedures Conformed\d*$|^Case Analysis\d*$|^Identified Issues\/Problems\d*$|^Strategies Undertaken\d*$|^Lessons Learned\d*$|^Reflections\d*$|^Self-Evaluation\d*$|^Relevance to Course and Goals\d*$|^Appendices\d*$|^Appendix [A-Z]:/i.test(trimmed)) {
+      if (!inserted) {
+        inserted = true;
+        return generatedParagraphs;
+      }
+      return '';
+    }
+    return paragraph;
+  });
+}
+
 function replaceTextAcrossRuns(xml: string, replacements: Record<string, string | string[]>): string {
   const repeatedReplacementIndexes: Record<string, number> = {};
   return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
@@ -396,6 +525,7 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     if (name === 'word/document.xml') {
       xml = styleScannedCoverPage(xml);
       xml = styleScannedAcknowledgementPage(xml, data);
+      xml = replaceScannedTableOfContents(xml, data);
     }
     zip.file(name, xml);
   }
