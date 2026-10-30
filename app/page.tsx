@@ -83,7 +83,7 @@ function hasScannedTemplateImage(image: string | { base64: string } | null | und
   return Boolean(dataUrl?.startsWith('data:image/') && dataUrl.split(',')[1]?.trim());
 }
 
-function getScannedTemplateAppendices(appendices: typeof defaultForm.appendices) {
+function getScannedTemplateAppendices(appendices: NarrativeForm['appendices']) {
   const isDefaultJournal = JSON.stringify(appendices.dailyJournal) === JSON.stringify(defaultForm.appendices.dailyJournal);
   const journalEntries = isDefaultJournal ? [] : appendices.dailyJournal;
   const primeNarrative = appendices.primeNarrative === defaultForm.appendices.primeNarrative
@@ -129,7 +129,7 @@ function getScannedTemplateAppendices(appendices: typeof defaultForm.appendices)
 function buildScannedTemplateTOC(
   trainingOrganization: string,
   schoolPlacement: typeof defaultForm.schoolPlacement,
-  appendices: typeof defaultForm.appendices,
+  appendices: NarrativeForm['appendices'],
 ) {
   const entries: { title: string; page: string; level: 0 | 1 | 2 }[] = [
     { title: 'Acknowledgement', page: 'i', level: 0 },
