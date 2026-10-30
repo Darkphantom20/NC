@@ -115,6 +115,81 @@ function decodeXmlText(value: string): string {
     .replace(/&apos;/g, "'");
 }
 
+function styleScannedAcknowledgementPage(xml: string, data: any): string {
+  let inAcknowledgement = false;
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+      text += decodeXmlText(encodedText);
+      return _match;
+    });
+
+    const trimmed = text.trim();
+    if (/^Acknowledgement$/i.test(trimmed)) {
+      inAcknowledgement = true;
+      let styled = paragraph.replace(/<w:jc\b[^>]*\/>/g, '');
+      styled = styled.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g,
+        '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="000000"/><w:b/><w:bCs/></w:rPr>');
+      styled = styled.replace(/<w:pPr>/, '<w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="360" w:line="360" w:lineRule="auto"/>');
+      if (!styled.includes('<w:pPr>')) {
+        styled = styled.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr><w:jc w:val="center"/></w:pPr>');
+      }
+      return styled;
+    }
+
+    if (!inAcknowledgement) return paragraph;
+    if (/^Table of Contents$/i.test(trimmed)) {
+      inAcknowledgement = false;
+      return paragraph;
+    }
+
+    if (!trimmed) return paragraph;
+
+    const isSignatureName = String(data.studentName || '').trim().length > 0
+      && trimmed === String(data.studentName).trim();
+    const isDegreeLine = /^.+\s+[-–]\s+.+Year$/i.test(trimmed)
+      || /^\[Program\]/.test(trimmed)
+      || /\bYear Level\b/i.test(trimmed);
+    const isCampusLine = /Jose Rizal Memorial State University/i.test(trimmed);
+
+    let size = '22';
+    let color = '666666';
+    let italic = true;
+    let bold = false;
+    let alignment = 'both';
+
+    if (isSignatureName) {
+      size = '20';
+      color = '000080';
+      italic = false;
+      bold = true;
+      alignment = 'right';
+    } else if (isDegreeLine || isCampusLine) {
+      size = '18';
+      color = '000000';
+      italic = false;
+      bold = isDegreeLine;
+      alignment = 'right';
+    } else {
+      size = '18';
+      color = '666666';
+      italic = true;
+      alignment = 'both';
+    }
+
+    const runProperties = `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="${color}"/>${bold ? '<w:b/><w:bCs/>' : ''}${italic ? '<w:i/><w:iCs/>': ''}</w:rPr>`;
+    let styled = paragraph.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, runProperties);
+    styled = styled.replace(/(<w:r\b[^>]*>)(?!<w:rPr>)/g, `$1${runProperties}`);
+    styled = styled.replace(/<w:jc\b[^>]*\/>/g, '');
+    if (styled.includes('<w:pPr>')) {
+      styled = styled.replace('<w:pPr>', `<w:pPr><w:jc w:val="${alignment}"/><w:spacing w:before="0" w:after="${isDegreeLine || isCampusLine ? '120' : '240'}" w:line="360" w:lineRule="auto"/>`);
+    } else {
+      styled = styled.replace(/^(<w:p\b[^>]*>)/, `$1<w:pPr><w:jc w:val="${alignment}"/></w:pPr>`);
+    }
+    return styled;
+  });
+}
+
 function replaceTextAcrossRuns(xml: string, replacements: Record<string, string | string[]>): string {
   const repeatedReplacementIndexes: Record<string, number> = {};
   return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
@@ -320,6 +395,7 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     xml = replaceTextAcrossRuns(xml, replacements);
     if (name === 'word/document.xml') {
       xml = styleScannedCoverPage(xml);
+      xml = styleScannedAcknowledgementPage(xml, data);
     }
     zip.file(name, xml);
   }
