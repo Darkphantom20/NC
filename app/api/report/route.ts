@@ -161,51 +161,6 @@ function replaceTextAcrossRuns(xml: string, replacements: Record<string, string 
   });
 }
 
-function normalizeFilledTemplateParagraphs(xml: string): string {
-  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
-    let text = '';
-    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
-      text += decodeXmlText(encodedText);
-      return _match;
-    });
-
-    if (!text.trim() && /<w:numPr\b/i.test(paragraph)) return '';
-    if (!text.trim()) return paragraph;
-
-    const isHeading = /<w:pStyle\b[^>]*w:val="(?:Heading|Title|Subtitle)/i.test(paragraph)
-      || /^(?:INTRODUCTION|ORGANIZATION\s*\/\s*COMPANY ANALYSIS|TASKS AND DUTIES|CASE ANALYSIS|REFLECTIONS|APPENDICES)$/i.test(text.trim());
-    if (isHeading) return paragraph;
-
-    const isLabel = /:\s*$/.test(text.trim())
-      && text.trim().length <= 60;
-    const isBullet = /<w:numPr\b/i.test(paragraph) || /^[\u2022•-]\s*/.test(text.trim());
-
-    let normalized = paragraph.replace(/<w:jc\b[^>]*\/>/g, '');
-    normalized = normalized.replace(/<w:spacing\b[^>]*\/>/g, '');
-    normalized = normalized.replace(
-      /<w:r\b([^>]*)>(?:<w:rPr>[\s\S]*?<\/w:rPr>)?/g,
-      (_match, attributes) =>       `<w:r${attributes}><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="000000"/>${isLabel ? '<w:b/><w:bCs/>' : ''}</w:rPr>`
-    );
-
-    if (!/<w:spacing\b/.test(normalized)) {
-      normalized = normalized.replace(
-        /<w:pPr>/,
-        '<w:pPr><w:spacing w:before="0" w:after="0" w:line="360" w:lineRule="auto"/>'
-      );
-      if (!/<w:pPr>/.test(normalized)) {
-        normalized = normalized.replace(/^(<w:p\b[^>]*>)/, `$1<w:pPr><w:spacing w:before="0" w:after="0" w:line="360" w:lineRule="auto"/></w:pPr>`);
-      }
-    }
-
-    if (!isBullet) {
-      normalized = normalized.replace(/<w:pPr>/, '<w:pPr><w:jc w:val="both"/>');
-      normalized = normalized.replace(/<w:pPr><\/w:pPr>/, '');
-    }
-
-    return normalized;
-  });
-}
-
 
 async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
@@ -286,7 +241,6 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     let xml = await zip.file(name)?.async('string');
     if (!xml) continue;
     xml = replaceTextAcrossRuns(xml, replacements);
-    xml = normalizeFilledTemplateParagraphs(xml);
     zip.file(name, xml);
   }
 
