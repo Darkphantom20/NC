@@ -250,6 +250,14 @@ export async function POST(request: Request) {
       );
     }
 
+    if (data.reportTemplate === 'modern-template') {
+      documentSections.splice(
+        0,
+        documentSections.length,
+        ...buildModernTemplateSections(data),
+      );
+    }
+
     const doc = new Document({
       sections: documentSections,
     });
@@ -603,6 +611,156 @@ function buildTemplateOrganizationPages(label: string, source: any, romanLabel =
   addText(source.relevancy);
 
   return children;
+}
+
+function buildModernTemplateCover(data: any): Paragraph[] {
+  const organization = data.trainingOrganization || '';
+  const location = data.trainingLocation || '';
+  const student = data.studentName || '';
+  const degree = data.degreeProgram || '';
+
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 720, after: 720 },
+      children: [new TextRun({
+        text: 'ON-THE-JOB TRAINING',
+        bold: true,
+        size: 18,
+        color: '2563EB',
+        font: 'Arial',
+      })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 180 },
+      children: [new TextRun({
+        text: 'NARRATIVE REPORT',
+        bold: true,
+        size: 40,
+        color: '0F172A',
+        font: 'Arial',
+      })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 1080 },
+      children: [new TextRun({
+        text: 'Prepared by ' + student,
+        size: 22,
+        color: '475569',
+        font: 'Arial',
+      })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 180 },
+      children: [new TextRun({ text: organization, bold: true, size: 24, color: '1D4ED8', font: 'Arial' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 1080 },
+      children: [new TextRun({ text: location, size: 20, color: '64748B', font: 'Arial' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [new TextRun({ text: degree, size: 22, color: '334155', font: 'Arial' })],
+    }),
+  ];
+}
+
+function buildModernTemplateSections(data: any): any[] {
+  const children: (Paragraph | Table)[] = [
+    ...buildModernTemplateCover(data),
+    new Paragraph({ pageBreakBefore: true }),
+    ...buildAcknowledgementPage(data, false, 300),
+    new Paragraph({ pageBreakBefore: true }),
+    ...templateParagraph('CONTENTS', { alignment: AlignmentType.CENTER, bold: true, size: 28, after: 240 }),
+    ...buildTemplateTableOfContents(data),
+  ];
+
+  const sections: { title: string; sections: SectionData[]; image?: string }[] = [
+    {
+      title: 'INTRODUCTION',
+      sections: [
+        { title: 'Background of the Organization', content: data.background },
+        { title: 'Vision', content: data.vision },
+        { title: 'Mission', content: data.mission },
+        { title: 'Objectives', content: data.objectives, isBullet: true },
+        { title: 'Core Values', content: data.coreValues, isBullet: true },
+        { title: 'Products and Services Offered', content: data.services },
+      ],
+      image: data.organizationStructureImage,
+    },
+    {
+      title: 'ORGANIZATION / COMPANY ANALYSIS',
+      sections: [
+        { title: 'Strengths', content: data.strengths, isBullet: true },
+        { title: 'Weaknesses', content: data.weaknesses, isBullet: true },
+        { title: 'Opportunities', content: data.opportunities, isBullet: true },
+        { title: 'Threats', content: data.threats, isBullet: true },
+        { title: 'Recommendations for Improvement', content: data.recommendations, isBullet: true },
+      ],
+    },
+    {
+      title: 'TASKS AND DUTIES',
+      sections: [
+        { title: 'Assigned Tasks and Responsibilities', content: data.tasks, isBullet: true },
+        { title: 'Duties and Procedures Conformed', content: data.procedures, isBullet: true },
+      ],
+    },
+    {
+      title: 'CASE ANALYSIS',
+      sections: [
+        { title: 'Issue / Problem 1', content: data.issue1 },
+        { title: 'Strategy/Action Undertaken for Problem 1', content: data.issue1Action },
+        { title: 'Issue / Problem 2', content: data.issue2 },
+        { title: 'Strategy/Action Undertaken for Problem 2', content: data.issue2Action },
+        { title: 'Lessons Learned from the Situations', content: data.lessons },
+      ],
+    },
+    {
+      title: 'REFLECTIONS',
+      sections: [
+        { title: 'Self-Evaluation', content: data.selfEvaluation },
+        { title: 'Relevancy of the Organization', content: data.relevancy },
+      ],
+    },
+  ];
+
+  sections.forEach((section) => {
+    children.push(new Paragraph({ pageBreakBefore: true }));
+    children.push(
+      ...buildSectionPage(section.title, section.sections, false, 300, section.image),
+    );
+  });
+
+  if (data.schoolPlacement?.enabled) {
+    children.push(
+      new Paragraph({ pageBreakBefore: true }),
+      ...buildSchoolPlacementPages(data.schoolPlacement, false, 300),
+    );
+  }
+
+  const dailyJournal = buildDailyJournalAppendixPage(data.appendices);
+  if (dailyJournal.length > 0) {
+    children.push(new Paragraph({ pageBreakBefore: true }), ...dailyJournal);
+  }
+  const otherAppendices = buildOtherAppendixPages(data.appendices);
+  if (otherAppendices.length > 0) {
+    children.push(...otherAppendices);
+  }
+
+  return [{
+    properties: {
+      page: {
+        size: { width: 12240, height: 20160 },
+        margin: { top: 1080, bottom: 1080, left: 1080, right: 1080, header: 360, footer: 360 },
+      },
+    },
+    children,
+  }];
 }
 
 function buildDocxTemplateSections(data: any): any[] {
