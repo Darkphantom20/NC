@@ -83,9 +83,28 @@ function hasScannedTemplateImage(image: string | { base64: string } | null | und
   return Boolean(dataUrl?.startsWith('data:image/') && dataUrl.split(',')[1]?.trim());
 }
 
+function getScannedTemplateJournal(appendices: NarrativeForm['appendices']): NarrativeJournalWeek[] {
+  const defaultWeek = defaultForm.appendices.dailyJournal[0];
+  return appendices.dailyJournal.map((week) => {
+    const activities = week.activities.filter((activity) => !defaultWeek.activities.some((sample) => (
+        activity.day === sample.day
+        && activity.date === sample.date
+        && activity.accomplishment === sample.accomplishment
+        && String(activity.hours ?? '') === String(sample.hours ?? '')
+      )));
+    return {
+      ...week,
+      activities,
+      totalHours: activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0),
+    };
+  });
+}
+
 function getScannedTemplateAppendices(appendices: NarrativeForm['appendices']) {
-  const isDefaultJournal = JSON.stringify(appendices.dailyJournal) === JSON.stringify(defaultForm.appendices.dailyJournal);
-  const journalEntries = isDefaultJournal ? [] : appendices.dailyJournal;
+  const journalEntries = getScannedTemplateJournal(appendices);
+  const journalLayout = appendices.dailyJournalLayout === 'no-photo'
+    ? 'no-photo'
+    : appendices.dailyJournalLayout === 'report' ? 'report' : 'current';
   const primeNarrative = appendices.primeNarrative === defaultForm.appendices.primeNarrative
     ? ''
     : appendices.primeNarrative;
@@ -93,7 +112,12 @@ function getScannedTemplateAppendices(appendices: NarrativeForm['appendices']) {
     (week.activities || []).some((activity) => (
       Boolean(String(activity.date || '').trim() || String(activity.accomplishment || '').trim() || (Number(activity.hours) || 0) > 0)
     ))
-    || [week.currentLayoutImages, week.images, week.reportLayoutImages].some((images) => images?.some(hasScannedTemplateImage))
+    || (journalLayout === 'current'
+      ? (week.currentLayoutImages || week.images || []).some(hasScannedTemplateImage)
+      : journalLayout === 'report'
+        ? (week.reportLayoutImages || week.images || []).some(hasScannedTemplateImage)
+        : false)
+    || (journalLayout === 'current' && Boolean(String(week.narrative || '').trim()))
   ));
   const primeNarrativeHasContent = Boolean(String(primeNarrative || '').trim());
   const primeImagesExist = (appendices.primeReportImages || []).some(hasScannedTemplateImage);
@@ -113,16 +137,12 @@ function getScannedTemplateAppendices(appendices: NarrativeForm['appendices']) {
     { letter: 'B', title: 'Certificate of Participation of Prime Seminar', hasContent: attachmentsExist.certParticipation },
     { letter: 'C', title: 'One-Page Narrative Report of PRIME', hasContent: primeNarrativeHasContent || primeImagesExist },
     { letter: 'D', title: 'Resume and Application Letter', hasContent: attachmentsExist.resume },
-    { letter: 'E', title: 'Evaluation of Grades from the Registrar', hasContent: attachmentsExist.grades },
-    { letter: 'F', title: 'Validated Enrollment Form', hasContent: attachmentsExist.grades },
-    { letter: 'G', title: 'Medical Certificate', hasContent: attachmentsExist.medicalWaiver },
-    { letter: 'H', title: 'Parent’s Waiver', hasContent: attachmentsExist.medicalWaiver },
+    { letter: 'E', title: 'Evaluation of Grades & Validated Enrolment Form', hasContent: attachmentsExist.grades },
+    { letter: 'G', title: 'Medical Certificate & Parent’s Waiver', hasContent: attachmentsExist.medicalWaiver },
     { letter: 'I', title: 'Letter of Acceptance', hasContent: attachmentsExist.letterAcceptance },
     { letter: 'J', title: 'Daily Time Record (Number of Hours Rendered)', hasContent: attachmentsExist.dtr },
-    { letter: 'K', title: 'Student’s Intern Rating Sheet', hasContent: attachmentsExist.ratingSheet },
-    { letter: 'L', title: 'Performance Evaluation', hasContent: attachmentsExist.ratingSheet },
-    { letter: 'M', title: 'Certificate of Completion', hasContent: attachmentsExist.certCompletion },
-    { letter: 'N', title: 'Memorandum of Agreement', hasContent: attachmentsExist.certCompletion },
+    { letter: 'K', title: 'Student’s Intern Rating Sheet & Performance Evaluation', hasContent: attachmentsExist.ratingSheet },
+    { letter: 'M', title: 'Certificate of Completion & Memorandum of Agreement', hasContent: attachmentsExist.certCompletion },
   ].filter((entry) => entry.hasContent);
 }
 
@@ -743,9 +763,7 @@ async function createReportRequestBody(form: NarrativeForm): Promise<string> {
       ...form,
       appendices: {
         ...form.appendices,
-        dailyJournal: JSON.stringify(form.appendices.dailyJournal) === JSON.stringify(defaultForm.appendices.dailyJournal)
-          ? []
-          : form.appendices.dailyJournal,
+        dailyJournal: getScannedTemplateJournal(form.appendices),
         primeNarrative: form.appendices.primeNarrative === defaultForm.appendices.primeNarrative
           ? ''
           : form.appendices.primeNarrative,

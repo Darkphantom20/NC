@@ -74,19 +74,31 @@ const SCANNED_APPENDIX_DEFINITIONS = [
   { letter: 'B', title: 'Certificate of Participation of Prime Seminar', imageKey: 'certParticipation' },
   { letter: 'C', title: 'One-Page Narrative Report of PRIME', imageKey: null },
   { letter: 'D', title: 'Resume and Application Letter', imageKey: 'resume' },
-  { letter: 'E', title: 'Evaluation of Grades from the Registrar', imageKey: 'grades' },
-  { letter: 'F', title: 'Validated Enrollment Form', imageKey: 'grades' },
-  { letter: 'G', title: 'Medical Certificate', imageKey: 'medicalWaiver' },
-  { letter: 'H', title: 'Parent’s Waiver', imageKey: 'medicalWaiver' },
+  { letter: 'E', title: 'Evaluation of Grades & Validated Enrolment Form', imageKey: 'grades' },
+  { letter: 'G', title: 'Medical Certificate & Parent’s Waiver', imageKey: 'medicalWaiver' },
   { letter: 'I', title: 'Letter of Acceptance', imageKey: 'letterAcceptance' },
   { letter: 'J', title: 'Daily Time Record (Number of Hours Rendered)', imageKey: 'dtr' },
-  { letter: 'K', title: 'Student’s Intern Rating Sheet', imageKey: 'ratingSheet' },
-  { letter: 'L', title: 'Performance Evaluation', imageKey: 'ratingSheet' },
-  { letter: 'M', title: 'Certificate of Completion', imageKey: 'certCompletion' },
-  { letter: 'N', title: 'Memorandum of Agreement', imageKey: 'certCompletion' },
+  { letter: 'K', title: 'Student’s Intern Rating Sheet & Performance Evaluation', imageKey: 'ratingSheet' },
+  { letter: 'M', title: 'Certificate of Completion & Memorandum of Agreement', imageKey: 'certCompletion' },
 ] as const;
 
 type ScannedAppendixLetter = typeof SCANNED_APPENDIX_DEFINITIONS[number]['letter'];
+
+function getScannedJournalImageCandidates(
+  week: DailyJournalWeek,
+  layout: AppendicesData['dailyJournalLayout'],
+): ((string | AppendixImage) | null | undefined)[] {
+  if (layout === 'no-photo') return [];
+  return layout === 'report'
+    ? week.reportLayoutImages || week.images || []
+    : week.currentLayoutImages || week.images || [];
+}
+
+function getScannedJournalImageSources(week: DailyJournalWeek, layout: AppendicesData['dailyJournalLayout']): (string | AppendixImage)[] {
+  return getScannedJournalImageCandidates(week, layout).filter((image): image is string | AppendixImage => Boolean(
+    typeof image === 'string' ? image.trim() : image?.base64?.trim(),
+  ));
+}
 
 function getScannedJournalWeeks(data: any): DailyJournalWeek[] {
   if (!Array.isArray(data.appendices?.dailyJournal)) return [];
@@ -99,12 +111,18 @@ function getScannedJournalWeeks(data: any): DailyJournalWeek[] {
         || (Number(activity.hours) || 0) > 0,
       ),
     );
-    const hasPhoto = [week.currentLayoutImages, week.images, week.reportLayoutImages]
-      .some((images) => Array.isArray(images) && images.some((image) => Boolean(
-        typeof image === 'string' ? image.trim() : image?.base64?.trim(),
-      )));
-    return hasActivityData || hasPhoto;
+    const hasPhoto = getScannedJournalImageSources(week, data.appendices?.dailyJournalLayout).length > 0;
+    const hasCurrentLayoutNarrative = data.appendices?.dailyJournalLayout !== 'report'
+      && data.appendices?.dailyJournalLayout !== 'no-photo'
+      && Boolean(String(week.narrative || '').trim());
+    return hasActivityData || hasPhoto || hasCurrentLayoutNarrative;
   });
+}
+
+function getScannedJournalCaption(layout: AppendicesData['dailyJournalLayout']): string {
+  if (layout === 'report') return 'Table 1: Daily Accomplishment Journal';
+  if (layout === 'no-photo') return 'Table 1: Daily Journal (No Pictures)';
+  return 'Table 1: Weekly Journal';
 }
 
 function getScannedAppendixImages(data: any, letter: ScannedAppendixLetter): (string | AppendixImage)[] {
@@ -314,9 +332,9 @@ function replaceScannedTableOfContents(xml: string, data: any): string {
 
 function replaceScannedJournalList(xml: string, data: any): string {
   const weeks = getScannedJournalWeeks(data);
-  const generatedEntries = weeks.map((week, index) =>
-    `<w:p><w:pPr><w:pStyle w:val="Caption"/><w:keepNext/></w:pPr><w:r><w:t xml:space="preserve">Table ${index + 1}: Journal Week ${escapeXml(week.weekNumber || index + 1)}</w:t></w:r></w:p>`,
-  ).join('');
+  const generatedEntries = weeks.length > 0
+    ? `<w:p><w:pPr><w:pStyle w:val="Caption"/><w:keepNext/></w:pPr><w:r><w:t xml:space="preserve">${escapeXml(getScannedJournalCaption(data.appendices?.dailyJournalLayout))}</w:t></w:r></w:p>`
+    : '';
   const paragraphs = Array.from(xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), (match) => ({
     paragraph: match[0],
     text: getScannedParagraphText(match[0]),
@@ -345,6 +363,63 @@ function replaceScannedJournalList(xml: string, data: any): string {
     currentIndex += 1;
     return currentIndex < figuresHeadingIndex ? '' : paragraph;
   });
+}
+
+function replaceScannedFigureList(xml: string, data: any): string {
+  const entries: { title: string; page: string }[] = [];
+  const appendicesStart = data.schoolPlacement?.enabled ? 11 : 6;
+  const availableAppendices = getScannedAppendixAvailability(data).filter((entry) => entry.hasContent);
+  if (data.organizationStructureImage) {
+    entries.push({
+      title: 'Figure 1: Organizational Chart of ' + (data.trainingOrganization || 'Training Organization'),
+      page: '1',
+    });
+  }
+  if (data.schoolPlacement?.enabled && data.schoolPlacement.organizationStructureImage) {
+    entries.push({
+      title: 'Figure 2: Organizational Chart of ' + (data.schoolPlacement.trainingOrganization || 'School Placement'),
+      page: '6',
+    });
+  }
+  if (getScannedJournalWeeks(data).some((week) => getScannedJournalImageSources(week, data.appendices?.dailyJournalLayout).length > 0)) {
+    entries.push({
+      title: 'Figure 3: Weekly documentation photos',
+      page: String(appendicesStart + 1),
+    });
+  }
+  const primeReportPageIndex = availableAppendices.findIndex((entry) => entry.letter === 'C');
+  if (primeReportPageIndex >= 0 && getScannedAppendixImages(data, 'C').length > 0) {
+    entries.push({
+      title: 'Figure 4: PRIME report photos',
+      page: String(appendicesStart + 1 + primeReportPageIndex),
+    });
+  }
+  const generatedEntries = entries.map((entry) =>
+    `<w:p><w:pPr><w:pStyle w:val="TableofFigures"/><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9360"/></w:tabs></w:pPr><w:r><w:t xml:space="preserve">${escapeXml(entry.title)}</w:t></w:r><w:r><w:tab/><w:t xml:space="preserve">${escapeXml(entry.page)}</w:t></w:r></w:p>`,
+  ).join('');
+  let inserted = false;
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    const text = getScannedParagraphText(paragraph);
+    if (/^List of Figures$/i.test(text) && !inserted) {
+      inserted = true;
+      return paragraph + generatedEntries;
+    }
+    if (/<w:pStyle\b[^>]*w:val="TableofFigures"/.test(paragraph)) return '';
+    return paragraph;
+  });
+}
+
+function removeScannedSchoolPlacementPages(xml: string, enabled: boolean): string {
+  if (enabled) return xml;
+  const headings = Array.from(xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), (match) => ({
+    start: match.index ?? 0,
+    paragraph: match[0],
+    text: getScannedParagraphText(match[0]),
+  })).filter((entry) => /<w:pStyle\b[^>]*w:val="Heading1"/.test(entry.paragraph));
+  const placementHeading = headings.find((entry) => /^II\.\s/.test(entry.text));
+  const appendicesHeading = headings.find((entry) => entry.start > (placementHeading?.start ?? -1) && /^Appendices$/i.test(entry.text));
+  if (!placementHeading || !appendicesHeading) return xml;
+  return xml.slice(0, placementHeading.start) + xml.slice(appendicesHeading.start);
 }
 
 function replaceTextAcrossRuns(xml: string, replacements: Record<string, string | string[]>): string {
@@ -464,16 +539,6 @@ function getScannedImageData(
   return { data, extension, width, height };
 }
 
-function getScannedJournalImage(week: DailyJournalWeek): { data: Buffer; extension: string; width: number; height: number } | null {
-  const image = [week.currentLayoutImages, week.images, week.reportLayoutImages]
-    .flatMap((images) => images || [])
-    .find((candidate) => Boolean(
-      typeof candidate === 'string' ? candidate.trim() : candidate?.base64?.trim(),
-    ));
-  if (!image) return null;
-  return getScannedImageData(image, `journal week ${week.weekNumber}`);
-}
-
 function buildScannedJournalImageRun(
   image: { width: number; height: number },
   relationshipId: string,
@@ -487,6 +552,68 @@ function buildScannedJournalImageRun(
   const height = Math.max(1, Math.round(image.height * scale));
 
   return `<w:r><w:drawing xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${drawingId}" name="${escapeXml(name)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${drawingId}" name="${escapeXml(name)}"/><pic:cNvPicPr><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${width}" cy="${height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+}
+
+function replaceScannedOrganizationCharts(
+  xml: string,
+  relationshipsXml: string,
+  data: any,
+  existingPaths: string[],
+): { xml: string; relationshipsXml: string; images: { path: string; data: Buffer }[] } {
+  const charts: (string | AppendixImage | null)[] = [
+    data.organizationStructureImage || null,
+    data.schoolPlacement?.enabled ? data.schoolPlacement.organizationStructureImage || null : null,
+  ];
+  const existingImagePaths = new Set(existingPaths);
+  const relationshipIds = Array.from(relationshipsXml.matchAll(/\bId="rId(\d+)"/g), (match) => Number(match[1]));
+  const drawingIds = Array.from(xml.matchAll(/<wp:docPr\b[^>]*\bid="(\d+)"/g), (match) => Number(match[1]));
+  let nextRelationshipId = Math.max(0, ...relationshipIds) + 1;
+  let nextDrawingId = Math.max(0, ...drawingIds) + 1;
+  const images: { path: string; data: Buffer }[] = [];
+  const newRelationships: string[] = [];
+  let chartIndex = 0;
+  let updatedXml = xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    const text = getScannedParagraphText(paragraph);
+    if (/^Figure [12]: Organizational Chart of/.test(text)
+      && /<w:pStyle\b[^>]*w:val="Caption"/.test(paragraph)
+      && !charts[Number(text.match(/^Figure ([12])/)?.[1]) - 1]) {
+      return '';
+    }
+    if (text !== '[Insert organizational chart here]') return paragraph;
+    const chartNumber = chartIndex++;
+    const source = charts[chartNumber];
+    if (!source) return '';
+
+    const image = getScannedImageData(source, `organization ${chartNumber + 1} chart`);
+    const basePath = `word/media/organization-chart-${chartNumber + 1}`;
+    let imagePath = `${basePath}.${image.extension}`;
+    let suffix = 1;
+    while (existingImagePaths.has(imagePath)) {
+      imagePath = `${basePath}-${suffix}.${image.extension}`;
+      suffix += 1;
+    }
+    existingImagePaths.add(imagePath);
+    const relationshipId = `rId${nextRelationshipId++}`;
+    newRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${imagePath.replace('word/', '')}"/>`);
+    images.push({ path: imagePath, data: image.data });
+    const drawing = buildScannedJournalImageRun(
+      image,
+      relationshipId,
+      nextDrawingId++,
+      `Organization ${chartNumber + 1} chart`,
+      6.5 * 914400,
+      5.5 * 914400,
+    );
+    return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${drawing}</w:p>`;
+  });
+
+  if (newRelationships.length > 0) {
+    if (!relationshipsXml.includes('</Relationships>')) {
+      throw new Error('The scanned-template image relationships are invalid.');
+    }
+    relationshipsXml = relationshipsXml.replace('</Relationships>', `${newRelationships.join('')}</Relationships>`);
+  }
+  return { xml: updatedXml, relationshipsXml, images };
 }
 
 function getScannedParagraphText(paragraph: string): string {
@@ -704,6 +831,13 @@ function replaceScannedJournalTable(
   const relationshipIds = Array.from(relationshipsXml.matchAll(/\bId="rId(\d+)"/g), (match) => Number(match[1]));
   let nextRelationshipId = Math.max(0, ...relationshipIds) + 1;
   let drawingId = 1000;
+  const layout = data.appendices?.dailyJournalLayout === 'report'
+    ? 'report'
+    : data.appendices?.dailyJournalLayout === 'no-photo' ? 'no-photo' : 'current';
+  const selectedColumns = layout === 'report' ? [1, 2, 4, 3] : layout === 'no-photo' ? [0, 1, 2, 4] : [0, 1, 2, 3, 4];
+  const columnWidths = layout === 'report'
+    ? [1500, 4200, 1000, 2660]
+    : layout === 'no-photo' ? [1300, 1500, 4900, 1660] : [];
 
   const replaceCellText = (cell: string, value: string) => {
     let firstTextNode = true;
@@ -714,10 +848,23 @@ function replaceScannedJournalTable(
     });
   };
 
-  const replaceCellImage = (cell: string, imageRun: string) => cell.replace(
+  const replaceCellImage = (cell: string, imageParagraphs: string) => cell.replace(
     /<w:p\b[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${imageRun}</w:p>`,
+    imageParagraphs,
   );
+  const setCellWidth = (cell: string, width: number, gridSpan?: number) => {
+    let updated = cell.replace(/<w:tcW\b[^>]*\/>/, `<w:tcW w:type="dxa" w:w="${width}"/>`);
+    if (gridSpan !== undefined) {
+      updated = updated.replace(/<w:gridSpan\b[^>]*\/>/, `<w:gridSpan w:val="${gridSpan}"/>`);
+    }
+    return updated;
+  };
+  const projectRowCells = (row: string, widths = columnWidths) => {
+    const cells = Array.from(row.matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g), (match) => match[0]);
+    return selectedColumns.map((columnIndex, index) => (
+      widths.length ? setCellWidth(cells[columnIndex], widths[index]) : cells[columnIndex]
+    ));
+  };
 
   const updatedXml = xml.replace(/<w:tbl\b[\s\S]*?<\/w:tbl>/g, (table) => {
     const rows = Array.from(table.matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g), (match) => match[0]);
@@ -739,68 +886,142 @@ function replaceScannedJournalTable(
     }
 
     const templateDataCells = rowCells[dataRowIndex];
-    const populatedRows = weeks.map((week, index) => {
+    const populatedRows: string[] = [];
+    weeks.forEach((week, weekIndex) => {
       const activities = Array.isArray(week.activities) ? week.activities : [];
-      const dates = activities.map((activity) => String(activity.date || '').trim()).filter(Boolean);
-      const dateRange = dates.length > 1 && dates[0] !== dates[dates.length - 1]
-        ? `${dates[0]} - ${dates[dates.length - 1]}`
-        : dates[0] || '';
-      const activitySummary = activities
-        .map((activity) => [String(activity.day || '').trim(), String(activity.accomplishment || '').trim()].filter(Boolean).join(': '))
-        .filter(Boolean)
-        .join('; ');
-      const activityHours = activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0);
-      const weeklyHours = activities.some((activity) => activity.hours !== '' && activity.hours !== null && activity.hours !== undefined)
-        ? activityHours
-        : Number(week.totalHours) || 0;
-      const formattedHours = String(Number(weeklyHours.toFixed(2)));
-      const cells = [...templateDataCells];
-      cells[0] = replaceCellText(cells[0], `Week ${week.weekNumber || index + 1}`);
-      cells[1] = replaceCellText(cells[1], dateRange);
-      cells[2] = replaceCellText(cells[2], activitySummary);
-      cells[4] = replaceCellText(cells[4], formattedHours);
+      const weekNumber = week.weekNumber || weekIndex + 1;
+      const candidates = getScannedJournalImageCandidates(week, layout);
+      const sources = getScannedJournalImageSources(week, layout);
+      const buildImageParagraphs = (selectedImages: (string | AppendixImage)[], nameSuffix: string) => selectedImages
+        .map((source, imageIndex) => {
+          const image = getScannedImageData(source, `journal week ${weekNumber} image ${imageIndex + 1}`);
+          const relationshipId = `rId${nextRelationshipId++}`;
+          const imagePath = `word/media/journal-week-${weekIndex + 1}-${nameSuffix}-${imageIndex + 1}.${image.extension}`;
+          const imageRun = buildScannedJournalImageRun(image, relationshipId, drawingId++, `Journal week ${weekNumber} image ${imageIndex + 1}`);
+          images.push({ path: imagePath, data: image.data });
+          newRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${imagePath.split('/').pop()}"/>`);
+          return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${imageRun}</w:p>`;
+        })
+        .join('');
+      const buildRow = (
+        rowValues: { week: string; date: string; activity: string; hours: string; images: (string | AppendixImage)[] },
+        imageSuffix: string,
+      ) => {
+        const cells = [...templateDataCells];
+        cells[0] = replaceCellText(cells[0], rowValues.week);
+        cells[1] = replaceCellText(cells[1], rowValues.date);
+        cells[2] = replaceCellText(cells[2], rowValues.activity);
+        cells[4] = replaceCellText(cells[4], rowValues.hours);
+        const imageParagraphs = buildImageParagraphs(rowValues.images, imageSuffix);
+        cells[3] = imageParagraphs
+          ? replaceCellImage(cells[3], imageParagraphs)
+          : replaceCellText(cells[3], '');
+        const selectedCells = selectedColumns.map((columnIndex, index) => (
+          columnWidths.length ? setCellWidth(cells[columnIndex], columnWidths[index]) : cells[columnIndex]
+        ));
+        return rows[dataRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => selectedCells.shift() || '');
+      };
 
-      const image = getScannedJournalImage(week);
-      if (image) {
-        const relationshipId = `rId${nextRelationshipId}`;
-        const imagePath = `word/media/journal-week-${index + 1}.${image.extension}`;
-        const imageRun = buildScannedJournalImageRun(image, relationshipId, drawingId, `Journal week ${week.weekNumber || index + 1}`);
-        drawingId += 1;
-        nextRelationshipId += 1;
-        images.push({ path: imagePath, data: image.data });
-        newRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/journal-week-${index + 1}.${image.extension}"/>`);
-        cells[3] = replaceCellImage(cells[3], imageRun);
-      } else {
-        cells[3] = replaceCellText(cells[3], '');
+      if (layout === 'current') {
+        const dates = activities.map((activity) => String(activity.date || '').trim()).filter(Boolean);
+        const dateRange = dates.length > 1 && dates[0] !== dates[dates.length - 1]
+          ? `${dates[0]} - ${dates[dates.length - 1]}`
+          : dates[0] || '';
+        const activitySummary = activities
+          .map((activity) => [String(activity.day || '').trim(), String(activity.accomplishment || '').trim()].filter(Boolean).join(': '))
+          .filter(Boolean)
+          .join('; ');
+        const narrative = String(week.narrative || '').trim();
+        const journalSummary = [activitySummary, narrative].filter(Boolean).join('; ');
+        const weeklyHours = activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0);
+        populatedRows.push(buildRow({
+          week: `Week ${weekNumber}`,
+          date: dateRange,
+          activity: journalSummary,
+          hours: String(Number(weeklyHours.toFixed(2))),
+          images: sources,
+        }, 'weekly'));
+        return;
       }
 
-      return rows[dataRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => cells.shift() || '');
+      const rowCount = layout === 'report' ? Math.max(activities.length, candidates.length) : activities.length;
+      for (let dayIndex = 0; dayIndex < rowCount; dayIndex += 1) {
+        const activity = activities[dayIndex];
+        const selectedImage = candidates[dayIndex];
+        const rowHasData = Boolean(
+          activity
+          && (String(activity.date || '').trim()
+            || String(activity.accomplishment || '').trim()
+            || (Number(activity.hours) || 0) > 0),
+        );
+        const image = selectedImage && (typeof selectedImage === 'string'
+          ? selectedImage.trim()
+          : selectedImage.base64.trim())
+          ? [selectedImage as string | AppendixImage]
+          : [];
+        if (!rowHasData && image.length === 0) continue;
+        populatedRows.push(buildRow({
+          week: layout === 'report'
+            ? `${String(activity?.day || `Day ${dayIndex + 1}`).trim()}${activity?.date ? ` - ${String(activity.date).trim()}` : ''}`
+            : `Week ${weekNumber} - ${String(activity?.day || `Day ${dayIndex + 1}`).trim()}`,
+          date: layout === 'report'
+            ? `Week ${weekNumber} - ${String(activity?.day || `Day ${dayIndex + 1}`).trim()}${activity?.date ? `, ${String(activity.date).trim()}` : ''}`
+            : '',
+          activity: String(activity?.accomplishment || '').trim(),
+          hours: String(Number(Number(activity?.hours || 0).toFixed(2))),
+          images: image,
+        }, `day-${dayIndex + 1}`));
+      }
     });
 
     const totalHours = weeks.reduce((total, week) => {
       const activities = Array.isArray(week.activities) ? week.activities : [];
-      const hasActivityHours = activities.some((activity) => activity.hours !== '' && activity.hours !== null && activity.hours !== undefined);
-      return total + (hasActivityHours
-        ? activities.reduce((weeklyTotal, activity) => weeklyTotal + (Number(activity.hours) || 0), 0)
-        : Number(week.totalHours) || 0);
+      return total + activities.reduce((weeklyTotal, activity) => weeklyTotal + (Number(activity.hours) || 0), 0);
     }, 0);
     const totalCells = [...rowCells[totalRowIndex]];
     totalCells[totalCells.length - 1] = replaceCellText(
       totalCells[totalCells.length - 1],
       String(Number(totalHours.toFixed(2))),
     );
-    const totalRow = rows[totalRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => totalCells.shift() || '');
+    const projectedTotalCells = layout === 'current'
+      ? totalCells
+      : [
+        setCellWidth(
+          totalCells[0].replace(/<w:gridSpan\b[^>]*\/>/, `<w:gridSpan w:val="${selectedColumns.length - 1}"/>`),
+          columnWidths.slice(0, -1).reduce((total, width) => total + width, 0),
+        ),
+        setCellWidth(totalCells[totalCells.length - 1], columnWidths[columnWidths.length - 1], 1),
+      ];
+    const totalRow = rows[totalRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => projectedTotalCells.shift() || '');
     const replacementRows = [
-      rows[headerIndex],
+      (() => {
+        const headerCells = projectRowCells(rows[headerIndex]);
+        const labels = layout === 'report'
+          ? ['Date', 'Accomplishment', 'Hours', 'Documentation']
+          : layout === 'no-photo' ? ['Day', 'Date', 'Accomplishment', 'Hours'] : [];
+        labels.forEach((label, index) => {
+          headerCells[index] = replaceCellText(headerCells[index], label);
+        });
+        return rows[headerIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => headerCells.shift() || '');
+      })(),
       ...populatedRows,
       totalRow,
     ].join('');
     let rowIndex = -1;
-    return table.replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, () => {
+    const updatedTable = table.replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, () => {
       rowIndex += 1;
       return rowIndex === 0 ? replacementRows : '';
     });
+    if (layout === 'current') return updatedTable;
+    const gridColumns = columnWidths.map((width) => `<w:gridCol w:w="${width}"/>`).join('');
+    return updatedTable.replace(/<w:tblGrid>[\s\S]*?<\/w:tblGrid>/, `<w:tblGrid>${gridColumns}</w:tblGrid>`);
   });
+  const captionUpdatedXml = updatedXml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => (
+    /<w:pStyle\b[^>]*w:val="Caption"/.test(paragraph)
+    && getScannedParagraphText(paragraph) === 'Table 1: Journal Week 1'
+      ? replaceCellText(paragraph, getScannedJournalCaption(layout))
+      : paragraph
+  ));
 
   if (newRelationships.length > 0) {
     if (!relationshipsXml.includes('</Relationships>')) {
@@ -809,7 +1030,7 @@ function replaceScannedJournalTable(
     relationshipsXml = relationshipsXml.replace('</Relationships>', `${newRelationships.join('')}</Relationships>`);
   }
 
-  return { xml: updatedXml, relationshipsXml, images };
+  return { xml: captionUpdatedXml, relationshipsXml, images };
 }
 
 async function fillReferenceTemplate(data: any): Promise<Buffer> {
@@ -824,16 +1045,14 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
   let documentRelationshipsXml = await documentRelationshipsFile.async('string');
   const journalImages: { path: string; data: Buffer }[] = [];
 
-  const objectives = splitTemplateItems(data.objectives);
-  const coreValues = splitTemplateItems(data.coreValues);
-  const services = splitTemplateItems(data.services);
-  const strengths = splitTemplateItems(data.strengths);
-  const weaknesses = splitTemplateItems(data.weaknesses);
-  const opportunities = splitTemplateItems(data.opportunities);
-  const threats = splitTemplateItems(data.threats);
-  const recommendations = splitTemplateItems(data.recommendations);
-  const procedures = splitTemplateItems(data.procedures);
-  const tasks = splitTemplateItems(data.tasks);
+  const schoolPlacement = data.schoolPlacement?.enabled ? data.schoolPlacement : null;
+  const perPlacement = (primary: any, secondary: any) => (
+    schoolPlacement ? [primary ?? '', secondary ?? ''] : [primary ?? '']
+  );
+  const perPlacementItem = (primary: any, secondary: any, index: number) => perPlacement(
+    splitTemplateItems(primary)[index],
+    splitTemplateItems(secondary)[index],
+  );
   const trainingDuration = data.trainingDuration || '[Month DD - Month DD, YYYY]  ([000] HRS)';
   const trainingYearMatch = String(trainingDuration).match(/(?:19|20)\d{2}/);
   const trainingMonthYear = trainingYearMatch ? trainingYearMatch[0] : String(new Date().getFullYear());
@@ -841,6 +1060,14 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const replacements: Record<string, string | string[]> = {
     '[ORGANIZATION 1 NAME]': data.trainingOrganization || '',
     '[ORGANIZATION 2 NAME]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingOrganization || '') : '',
+    '[Program] – [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
+    '[Degree Program] – [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
+    '[Organization 1]': data.trainingOrganization || '',
+    '[Organization 2]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingOrganization || '') : '',
+    'Evaluation of Grades from the Registrar': 'Evaluation of Grades & Validated Enrolment Form',
+    'Medical Certificate': 'Medical Certificate & Parent’s Waiver',
+    'Student’s Intern Rating Sheet': 'Student’s Intern Rating Sheet & Performance Evaluation',
+    'Certificate of Completion': 'Certificate of Completion & Memorandum of Agreement',
     '[Address / Location of Organization 1] and [Address / Location of Organization 2]':
       [data.trainingLocation, data.schoolPlacement?.enabled ? data.schoolPlacement.trainingLocation : ''].filter(Boolean).join(' and '),
     '[Address / Location of Organization 1]': data.trainingLocation || '',
@@ -852,50 +1079,58 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     '[Month DD — Month DD, YYYY]  ([000] HRS)': trainingDuration,
     '[Month YYYY]': trainingMonthYear,
     '[STUDENT FULL NAME]': data.studentName || '',
-    '[Program] � [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
     '[Program]': data.degreeProgram || '',
     '[Year Level]': data.studentYear || '',
     '[OJT COORDINATOR NAME]': data.submittedToName || '',
     '[Express your gratitude to the host organizations, supervisors, the faculty OJT coordinator, and everyone who supported your training.]': data.acknowledgement || '',
     '[Add a second paragraph to thank your family, classmates, and fellow trainees.]': '',
     '[Student Name]': data.studentName || '',
-    '[Degree Program] � [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
-    '[Describe the history, location, and nature of the organization in two to three paragraphs.]': data.background || '',
-    '[Insert the organization�s vision statement.]': data.vision || '',
-    '[Insert the organization�s mission statement.]': data.mission || '',
-    '[Objective 1]': objectives[0],
-    '[Objective 2]': objectives[1],
-    '[Objective 3]': objectives[2],
-    '[Value 1]': coreValues[0],
-    '[Value 2]': coreValues[1],
-    '[Value 3]': coreValues[2],
-    '[Product or service 1]': services[0],
-    '[Product or service 2]': services[1],
-    '[Product or service 3]': services[2],
-    '[Strength 1]': strengths[0],
-    '[Strength 2]': strengths[1],
-    '[Strength 3]': strengths[2],
-    '[Weakness 1]': weaknesses[0],
-    '[Weakness 2]': weaknesses[1],
-    '[Weakness 3]': weaknesses[2],
-    '[Opportunity 1]': opportunities[0],
-    '[Opportunity 2]': opportunities[1],
-    '[Opportunity 3]': opportunities[2],
-    '[Threat 1]': threats[0],
-    '[Threat 2]': threats[1],
-    '[Threat 3]': threats[2],
-    '[Recommendation 1]': recommendations[0],
-    '[Recommendation 2]': recommendations[1],
-    '[Recommendation 3]': recommendations[2],
-    '[Describe the tasks you were assigned during the training period.]': data.tasks || '',
-    '[Duty or procedure 1]': procedures[0],
-    '[Duty or procedure 2]': procedures[1],
-    '[Duty or procedure 3]': procedures[2],
-    '[Describe the issue you encountered.]': [data.issue1 || '', data.issue2 || ''],
-    '[Explain what was done to address the issue.]': [data.issue1Action || '', data.issue2Action || ''],
-    '[Summarize what you learned from these situations.]': data.lessons || '',
-    '[Reflect on your growth, strengths, and areas to improve.]': data.selfEvaluation || '',
-    '[Explain how the training relates to your degree program and career goals.]': data.relevancy || '',
+    '[Describe the history, location, and nature of the organization in two to three paragraphs.]': perPlacement(data.background, schoolPlacement?.background),
+    '[Insert the organization’s vision statement.]': perPlacement(data.vision, schoolPlacement?.vision),
+    '[Insert the organization’s mission statement.]': perPlacement(data.mission, schoolPlacement?.mission),
+    '[Objective 1]': perPlacementItem(data.objectives, schoolPlacement?.objectives, 0),
+    '[Objective 2]': perPlacementItem(data.objectives, schoolPlacement?.objectives, 1),
+    '[Objective 3]': perPlacementItem(data.objectives, schoolPlacement?.objectives, 2),
+    '[Value 1]': perPlacementItem(data.coreValues, schoolPlacement?.coreValues, 0),
+    '[Value 2]': perPlacementItem(data.coreValues, schoolPlacement?.coreValues, 1),
+    '[Value 3]': perPlacementItem(data.coreValues, schoolPlacement?.coreValues, 2),
+    '[Product or service 1]': perPlacementItem(data.services, schoolPlacement?.services, 0),
+    '[Product or service 2]': perPlacementItem(data.services, schoolPlacement?.services, 1),
+    '[Product or service 3]': perPlacementItem(data.services, schoolPlacement?.services, 2),
+    '[Strength 1]': perPlacementItem(data.strengths, schoolPlacement?.strengths, 0),
+    '[Strength 2]': perPlacementItem(data.strengths, schoolPlacement?.strengths, 1),
+    '[Strength 3]': perPlacementItem(data.strengths, schoolPlacement?.strengths, 2),
+    '[Weakness 1]': perPlacementItem(data.weaknesses, schoolPlacement?.weaknesses, 0),
+    '[Weakness 2]': perPlacementItem(data.weaknesses, schoolPlacement?.weaknesses, 1),
+    '[Weakness 3]': perPlacementItem(data.weaknesses, schoolPlacement?.weaknesses, 2),
+    '[Opportunity 1]': perPlacementItem(data.opportunities, schoolPlacement?.opportunities, 0),
+    '[Opportunity 2]': perPlacementItem(data.opportunities, schoolPlacement?.opportunities, 1),
+    '[Opportunity 3]': perPlacementItem(data.opportunities, schoolPlacement?.opportunities, 2),
+    '[Threat 1]': perPlacementItem(data.threats, schoolPlacement?.threats, 0),
+    '[Threat 2]': perPlacementItem(data.threats, schoolPlacement?.threats, 1),
+    '[Threat 3]': perPlacementItem(data.threats, schoolPlacement?.threats, 2),
+    '[Recommendation 1]': perPlacementItem(data.recommendations, schoolPlacement?.recommendations, 0),
+    '[Recommendation 2]': perPlacementItem(data.recommendations, schoolPlacement?.recommendations, 1),
+    '[Recommendation 3]': perPlacementItem(data.recommendations, schoolPlacement?.recommendations, 2),
+    '[Describe the tasks you were assigned during the training period.]': perPlacement(data.tasks, schoolPlacement?.tasks),
+    '[Briefly describe the hierarchy and where your assigned unit or office belongs.]': '',
+    '[Attach your weekly journal entries. Add one table per week using the format below.]': '',
+    '[Duty or procedure 1]': perPlacementItem(data.procedures, schoolPlacement?.procedures, 0),
+    '[Duty or procedure 2]': perPlacementItem(data.procedures, schoolPlacement?.procedures, 1),
+    '[Duty or procedure 3]': perPlacementItem(data.procedures, schoolPlacement?.procedures, 2),
+    '[Describe the issue you encountered.]': [
+      data.issue1 || '',
+      data.issue2 || '',
+      ...(schoolPlacement ? [schoolPlacement.issue1 || '', schoolPlacement.issue2 || ''] : []),
+    ],
+    '[Explain what was done to address the issue.]': [
+      data.issue1Action || '',
+      data.issue2Action || '',
+      ...(schoolPlacement ? [schoolPlacement.issue1Action || '', schoolPlacement.issue2Action || ''] : []),
+    ],
+    '[Summarize what you learned from these situations.]': perPlacement(data.lessons, schoolPlacement?.lessons),
+    '[Reflect on your growth, strengths, and areas to improve.]': perPlacement(data.selfEvaluation, schoolPlacement?.selfEvaluation),
+    '[Explain how the training relates to your degree program and career goals.]': perPlacement(data.relevancy, schoolPlacement?.relevancy),
   };
 
   for (const name of Object.keys(zip.files)) {
@@ -904,12 +1139,18 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     if (!xml) continue;
     xml = replaceTextAcrossRuns(xml, replacements);
     if (name === 'word/document.xml') {
+      const organizationCharts = replaceScannedOrganizationCharts(xml, documentRelationshipsXml, data, Object.keys(zip.files));
+      xml = organizationCharts.xml;
+      documentRelationshipsXml = organizationCharts.relationshipsXml;
+      journalImages.push(...organizationCharts.images);
+      xml = removeScannedSchoolPlacementPages(xml, Boolean(schoolPlacement));
       const journalTable = replaceScannedJournalTable(xml, documentRelationshipsXml, data);
       xml = journalTable.xml;
       documentRelationshipsXml = journalTable.relationshipsXml;
       journalImages.push(...journalTable.images);
       xml = replaceScannedTableOfContents(xml, data);
       xml = replaceScannedJournalList(xml, data);
+      xml = replaceScannedFigureList(xml, data);
       const appendixSections = replaceScannedAppendixSections(xml, documentRelationshipsXml, data, Object.keys(zip.files));
       xml = appendixSections.xml;
       documentRelationshipsXml = appendixSections.relationshipsXml;
@@ -928,8 +1169,15 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     ? fs.readFileSync(HD_TEMPLATE_HEADER_PATH)
     : null;
   if (scannedHeader) {
-    const mediaFiles = Object.keys(zip.files).filter((name) => /^word\/media\/.+\.(png|jpg|jpeg)$/i.test(name));
-    for (const mediaFile of mediaFiles) zip.file(mediaFile, scannedHeader);
+    const headerRelationshipFiles = Object.keys(zip.files).filter((name) => /^word\/_rels\/header\d+\.xml\.rels$/.test(name));
+    for (const relationshipFile of headerRelationshipFiles) {
+      const relationshipXml = await zip.file(relationshipFile)?.async('string');
+      if (!relationshipXml) continue;
+      for (const [, target] of relationshipXml.matchAll(/\bTarget="media\/([^"]+)"/g)) {
+        const headerImagePath = `word/media/${target}`;
+        if (zip.file(headerImagePath)) zip.file(headerImagePath, scannedHeader);
+      }
+    }
   }
 
   journalImages.forEach((image) => zip.file(image.path, image.data));
@@ -958,17 +1206,6 @@ export async function POST(request: Request) {
       return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 });
     }
 
-    if (data.reportTemplate === 'scanned-template') {
-      const filledTemplate = await fillReferenceTemplate(data);
-      return new Response(filledTemplate, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'Content-Disposition': `attachment; filename="${OUTPUT_FILE_NAME}"`,
-        },
-      });
-    }
-
     const isPreviewRequest = request.headers.get('x-report-preview') === 'true';
 
     if (hasSupabaseConfig && !isPreviewRequest) {
@@ -978,6 +1215,17 @@ export async function POST(request: Request) {
         appendices: JSON.stringify(data.appendices) || null,
       };
       await supabase.from('reports').insert([payload]);
+    }
+
+    if (data.reportTemplate === 'scanned-template') {
+      const filledTemplate = await fillReferenceTemplate(data);
+      return new Response(filledTemplate, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'Content-Disposition': `attachment; filename="${OUTPUT_FILE_NAME}"`,
+        },
+      });
     }
 
     const reportFooterChildren = data.appendices?.reportFooter
