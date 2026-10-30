@@ -11,6 +11,8 @@ const HEADER_IMAGE_PATH = path.join(process.cwd(), 'public', 'Picture1.png');
 const HEADER_IMAGE = fs.existsSync(HEADER_IMAGE_PATH) ? fs.readFileSync(HEADER_IMAGE_PATH) : null;
 const SCANNED_TEMPLATE_HEADER_PATH = path.join(process.cwd(), 'public', 'Untitled.png');
 const SCANNED_TEMPLATE_HEADER = fs.existsSync(SCANNED_TEMPLATE_HEADER_PATH) ? fs.readFileSync(SCANNED_TEMPLATE_HEADER_PATH) : null;
+const HD_TEMPLATE_HEADER_PATH = path.join(process.cwd(), 'public', 'hd.png');
+const HD_TEMPLATE_HEADER = fs.existsSync(HD_TEMPLATE_HEADER_PATH) ? fs.readFileSync(HD_TEMPLATE_HEADER_PATH) : null;
 
 interface AppendixImage {
   base64: string;
@@ -437,6 +439,19 @@ function styleScannedCoverPage(xml: string): string {
   });
 }
 
+function sizeScannedHeaderImage(xml: string): string {
+  const headerWidthEmu = 5943600;
+  const headerHeightEmu = 1485900;
+  let sized = xml
+    .replace(/<wp:extent\b[^>]*>/g, `<wp:extent cx="${headerWidthEmu}" cy="${headerHeightEmu}"/>`)
+    .replace(/<a:xfrm>\s*<a:off[^>]*\/>\s*<a:ext\b[^>]*\/>\s*<\/a:xfrm>/g,
+      `<a:xfrm><a:off x="0" y="0"/><a:ext cx="${headerWidthEmu}" cy="${headerHeightEmu}"/></a:xfrm>`);
+  return sized.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (block, properties) =>
+    /<w:jc\b/.test(properties)
+      ? block.replace(/<w:jc\b[^>]*\/>/, '<w:jc w:val="center"/>')
+      : `<w:pPr><w:jc w:val="center"/>${properties}</w:pPr>`,
+  );
+}
 
 async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
@@ -527,15 +542,18 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
       xml = styleScannedAcknowledgementPage(xml, data);
       xml = replaceScannedTableOfContents(xml, data);
     }
+    if (/^word\/header\d+\.xml$/.test(name)) {
+      xml = sizeScannedHeaderImage(xml);
+    }
     zip.file(name, xml);
   }
 
-  const standardHeader = fs.existsSync(HEADER_IMAGE_PATH)
-    ? fs.readFileSync(HEADER_IMAGE_PATH)
+  const scannedHeader = fs.existsSync(HD_TEMPLATE_HEADER_PATH)
+    ? fs.readFileSync(HD_TEMPLATE_HEADER_PATH)
     : null;
-  if (standardHeader) {
+  if (scannedHeader) {
     const mediaFiles = Object.keys(zip.files).filter((name) => /^word\/media\/.+\.(png|jpg|jpeg)$/i.test(name));
-    for (const mediaFile of mediaFiles) zip.file(mediaFile, standardHeader);
+    for (const mediaFile of mediaFiles) zip.file(mediaFile, scannedHeader);
   }
 
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
@@ -719,7 +737,7 @@ export async function POST(request: Request) {
       documentSections.splice(
         0,
         documentSections.length,
-        ...buildDocxTemplateSections(data, SCANNED_TEMPLATE_HEADER, true),
+        ...buildDocxTemplateSections(data, HD_TEMPLATE_HEADER, true),
       );
     }
 
