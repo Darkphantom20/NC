@@ -1403,13 +1403,11 @@ export default function Home() {
 
   useEffect(() => {
     if (!showPreview) return;
-
     const timeoutId = window.setTimeout(() => {
       void handlePreview();
     }, 500);
-
     return () => window.clearTimeout(timeoutId);
-  }, [showPreview, form]);
+  }, [form, showPreview]);
 
   useEffect(() => {
     const container = previewContainerRef.current;
@@ -1823,6 +1821,7 @@ export default function Home() {
       )}
 
       <div className="mx-auto min-w-0 max-w-7xl space-y-8 sm:space-y-12">
+<<<<<<< HEAD
         <header className="relative isolate min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-slate-900/80 shadow-[0_24px_80px_rgba(2,8,23,0.35)] backdrop-blur-xl sm:rounded-[32px]">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/80 to-transparent" />
           <div className="absolute -right-24 -top-32 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -1867,53 +1866,120 @@ export default function Home() {
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">System status</p>
                   <p className="mt-0.5 truncate text-sm font-bold text-white sm:text-base">{status}</p>
+=======
+        <header className="relative isolate min-w-0 overflow-hidden rounded-[28px] border border-white/[0.08] bg-slate-950/55 shadow-[0_28px_90px_rgba(2,8,23,0.48),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl sm:rounded-[36px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_15%,rgba(34,211,238,0.14),transparent_24%),radial-gradient(circle_at_88%_20%,rgba(139,92,246,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(15,23,42,0.72))]" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/90 to-transparent" />
+          <div className="absolute -right-20 -top-28 h-72 w-72 rounded-full border border-violet-300/10 bg-violet-400/[0.06] blur-2xl" />
+          <div className="absolute bottom-0 left-20 h-px w-1/2 bg-gradient-to-r from-cyan-400/25 to-transparent" />
+
+          <div className="relative grid gap-6 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-8 lg:p-10">
+            <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+              <div className="hidden h-16 w-16 shrink-0 items-center justify-center rounded-[20px] border border-cyan-200/15 bg-gradient-to-br from-cyan-300/20 via-sky-400/10 to-violet-400/20 text-cyan-100 shadow-[0_16px_38px_rgba(34,211,238,0.16),inset_0_1px_0_rgba(255,255,255,0.14)] sm:flex">
+                <FileText size={29} strokeWidth={1.8} aria-hidden="true" />
+              </div>
+              <div className="min-w-0 space-y-2.5">
+                <div className="flex w-fit items-center gap-2 rounded-full border border-cyan-300/10 bg-cyan-300/[0.07] px-3 py-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.95)]" />
+                  <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-200 sm:text-[10px]">
+                    Jose Rizal Memorial State University
+                  </p>
+                </div>
+                <h1 className="max-w-3xl text-[2rem] font-black leading-[1.02] tracking-[-0.035em] text-white sm:text-4xl lg:text-[3.25rem]">
+                  Narrative Report <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-300 bg-clip-text text-transparent">Generator</span>
+                </h1>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:min-w-[330px] lg:flex-col xl:min-w-[360px]">
+              <button
+                onClick={() => setRunTour(true)}
+                className="tour-start-btn group flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-cyan-300/20 bg-gradient-to-r from-cyan-400/15 to-sky-400/[0.08] px-5 text-sm font-bold text-cyan-100 shadow-[0_12px_30px_rgba(8,145,178,0.08),inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:from-cyan-400/20 hover:to-violet-400/10 hover:shadow-[0_16px_36px_rgba(34,211,238,0.12)] active:translate-y-0 active:scale-[0.98]"
+                type="button"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-cyan-300/15 bg-slate-950/30 transition group-hover:border-cyan-300/30 group-hover:bg-slate-950/50">
+                  <HelpCircle size={17} aria-hidden="true" />
+                </span>
+                <span>Show me how</span>
+              </button>
+
+              <div className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/[0.08] bg-slate-950/35 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:px-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-300/15 bg-emerald-400/[0.08]">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
+                  </span>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[10px]">System status</p>
+                  <p className="mt-1 truncate text-sm font-bold text-slate-100 sm:text-base">{status}</p>
+>>>>>>> origin/main
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 lg:flex-row lg:items-end lg:justify-between sm:p-5">
-          <label className="block min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-cyan-300/80">
-            Current narrative
-            <select
-              value={activeDraftId}
-              onChange={(event) => switchNarrative(event.target.value)}
+        <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-slate-950/45 p-4 shadow-[0_18px_50px_rgba(2,8,23,0.2),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl sm:p-5">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent" />
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-stretch">
+            <label className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-cyan-300/20 hover:bg-slate-900/90 sm:px-5">
+              <span className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_9px_rgba(103,232,249,0.8)]" />
+                Current narrative
+              </span>
+              <select
+                value={activeDraftId}
+                onChange={(event) => switchNarrative(event.target.value)}
+                disabled={!isMounted}
+                className={`${fieldClass} w-full border-white/[0.08] bg-slate-950/50 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`}
+                aria-label="Select a narrative to edit"
+              >
+                {drafts.map((draft) => (
+                  <option key={draft.id} value={draft.id}>{draft.title}</option>
+                ))}
+              </select>
+              <span className="mt-2.5 flex items-center gap-2 text-xs text-slate-400">
+                <span className="h-1 w-1 rounded-full bg-emerald-300" />
+                {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved. Changes save automatically.
+              </span>
+            </label>
+
+            <label className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-violet-300/20 hover:bg-slate-900/90 sm:px-5">
+              <span className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-violet-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-300 shadow-[0_0_9px_rgba(196,181,253,0.8)]" />
+                Report template
+              </span>
+              <select
+                value={form.reportTemplate}
+                onChange={(event) => updateField('reportTemplate', event.target.value)}
+                className={`${fieldClass} w-full border-white/[0.08] bg-slate-950/50 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`}
+                aria-label="Choose report template"
+              >
+                <option value="current">Current System Layout</option>
+                <option value="docx-template">narrative-report.docx Layout</option>
+                <option value="scanned-template">Scanned Narrative Template</option>
+              </select>
+              <span className="mt-2.5 block text-xs text-slate-400">
+                Choose the structure for your Word report.
+                {form.reportTemplate === 'scanned-template' && (
+                  <span className="mt-1 block text-cyan-300/80">Legal paper layout with the JRMSU header.</span>
+                )}
+              </span>
+            </label>
+
+            <button
+              type="button"
+              onClick={openNewDraftDialog}
               disabled={!isMounted}
-              className={`${fieldClass} mt-2 normal-case tracking-normal`}
-              aria-label="Select a narrative to edit"
+              className="group flex min-h-[116px] items-center justify-center gap-3 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-400 to-sky-500 px-5 text-sm font-black text-slate-950 shadow-[0_14px_34px_rgba(34,211,238,0.16),inset_0_1px_0_rgba(255,255,255,0.35)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/50 hover:from-cyan-300 hover:to-sky-400 hover:shadow-[0_18px_40px_rgba(34,211,238,0.24)] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 lg:min-h-full lg:min-w-[150px]"
             >
-              {drafts.map((draft) => (
-                <option key={draft.id} value={draft.id}>{draft.title}</option>
-              ))}
-            </select>
-            <span className="mt-2 block text-xs font-normal normal-case tracking-normal text-slate-400">
-              {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved in this browser. Changes save automatically.
-            </span>
-          </label>
-          <label className="block min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-cyan-300/80">
-            Report template
-            <select
-              value={form.reportTemplate}
-              onChange={(event) => updateField('reportTemplate', event.target.value)}
-              className={`${fieldClass} mt-2 normal-case tracking-normal`}
-              aria-label="Choose report template"
-            >
-              <option value="current">Current System Layout</option>
-              <option value="docx-template">narrative-report.docx Layout</option>
-            </select>
-            <span className="mt-2 block text-xs font-normal normal-case tracking-normal text-slate-400">
-              Choose the structure used for the generated Word report.
-            </span>
-          </label>
-          <button
-            type="button"
-            onClick={openNewDraftDialog}
-            disabled={!isMounted}
-            className="min-h-11 shrink-0 rounded-xl bg-cyan-500 px-5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            + New narrative
-          </button>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-950/10 bg-white/20 text-xl leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform group-hover:rotate-90">
+                +
+              </span>
+              <span>New narrative</span>
+            </button>
+          </div>
         </section>
 
         <section className="hidden gap-4 sm:grid sm:grid-cols-3 sm:gap-6">
@@ -1965,7 +2031,7 @@ export default function Home() {
                     <input value={form.submittedToTitle} onChange={(e) => updateField('submittedToTitle', e.target.value)} className={fieldClass} />
                   </label>
                 </div>
-                {form.reportTemplate === 'docx-template' && (
+                {(form.reportTemplate === 'docx-template' || form.reportTemplate === 'scanned-template') && (
                   <div className="grid gap-3 sm:gap-5 md:grid-cols-2">
                     <label className="block text-xs sm:text-sm font-medium text-slate-200">
                       <span className="text-cyan-300/70 text-[10px] uppercase tracking-wider block mb-1">Training Duration</span>
@@ -2046,12 +2112,12 @@ export default function Home() {
               <div className="space-y-4 sm:space-y-5">
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5">
                   <p className="mb-3 text-xs text-slate-300">
-                    {form.reportTemplate === 'docx-template'
+                    {(form.reportTemplate === 'docx-template' || form.reportTemplate === 'scanned-template')
                       ? 'The DOCX template layout generates this section automatically from the selected organizations, sections, appendices, and school placement.'
                       : 'This section appears immediately after the acknowledgement in the generated report and helps outline the main narrative sections.'}
                   </p>
                 </div>
-                {form.reportTemplate === 'docx-template' ? (
+                {(form.reportTemplate === 'docx-template' || form.reportTemplate === 'scanned-template') ? (
                   <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4 text-sm text-slate-300">
                     <span className="block font-semibold text-cyan-200">Automatic table of contents</span>
                     <span className="mt-1 block text-xs leading-relaxed text-slate-400">
@@ -2094,10 +2160,10 @@ export default function Home() {
                   </label>
                   <label className="block text-xs sm:text-sm font-medium text-slate-200">
                     <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">
-                      {form.reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
+                      {(form.reportTemplate === 'docx-template' || form.reportTemplate === 'scanned-template') ? 'Products and Services Offered' : 'Services'}
                     </span>
                     <ExpandableTextarea
-                      title={form.reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
+                      title={(form.reportTemplate === 'docx-template' || form.reportTemplate === 'scanned-template') ? 'Products and Services Offered' : 'Services'}
                       value={form.services}
                       onChange={(value) => updateField('services', value)}
                       rows={3}
@@ -2219,10 +2285,10 @@ export default function Home() {
                 </label>
                 <label className="block text-xs sm:text-sm font-medium text-slate-200">
                   <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">
-                    {form.reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
+                    {(form.reportTemplate === 'docx-template' || form.reportTemplate === 'scanned-template') ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
                   </span>
                   <ExpandableTextarea
-                    title={form.reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
+                    title={(form.reportTemplate === 'docx-template' || form.reportTemplate === 'scanned-template') ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
                     value={form.relevancy}
                     onChange={(value) => updateField('relevancy', value)}
                     rows={4}
@@ -2957,10 +3023,10 @@ function PlacementNarrativeFields({
             </label>
             <label className="block text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-orange-300/70 text-[10px] uppercase tracking-wider block mb-1">
-                {reportTemplate === 'docx-template' ? 'Products and Services Offered' : 'Services'}
+                {(reportTemplate === 'docx-template' || reportTemplate === 'scanned-template') ? 'Products and Services Offered' : 'Services'}
               </span>
               <ExpandableTextarea
-                title={reportTemplate === 'docx-template' ? 'School OJT Products and Services Offered' : 'School OJT Services'}
+                title={(reportTemplate === 'docx-template' || reportTemplate === 'scanned-template') ? 'School OJT Products and Services Offered' : 'School OJT Services'}
                 value={placement.services}
                 onChange={(value) => updateField('services', value)}
                 rows={3}
@@ -3046,10 +3112,10 @@ function PlacementNarrativeFields({
           </label>
           <label className="block text-xs sm:text-sm font-medium text-slate-200">
             <span className="text-violet-300/70 text-[10px] uppercase tracking-wider block mb-1">
-              {reportTemplate === 'docx-template' ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
+              {(reportTemplate === 'docx-template' || reportTemplate === 'scanned-template') ? 'Relevancy of the Organization' : 'Relevancy to Course & Goals'}
             </span>
             <ExpandableTextarea
-              title={reportTemplate === 'docx-template' ? 'School OJT Relevancy of the Organization' : 'School OJT Relevancy to Course & Goals'}
+              title={(reportTemplate === 'docx-template' || reportTemplate === 'scanned-template') ? 'School OJT Relevancy of the Organization' : 'School OJT Relevancy to Course & Goals'}
               value={placement.relevancy}
               onChange={(value) => updateField('relevancy', value)}
               rows={4}

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import JSZip from 'jszip';
 import { createClient } from '@supabase/supabase-js';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, TableLayoutType } from 'docx';
 
@@ -8,6 +9,8 @@ export const runtime = 'nodejs';
 const OUTPUT_FILE_NAME = process.env.OUTPUT_FILE_NAME || 'JRMSU_Narrative_Report.docx';
 const HEADER_IMAGE_PATH = path.join(process.cwd(), 'public', 'Picture1.png');
 const HEADER_IMAGE = fs.existsSync(HEADER_IMAGE_PATH) ? fs.readFileSync(HEADER_IMAGE_PATH) : null;
+const SCANNED_TEMPLATE_HEADER_PATH = path.join(process.cwd(), 'public', 'Untitled.png');
+const SCANNED_TEMPLATE_HEADER = fs.existsSync(SCANNED_TEMPLATE_HEADER_PATH) ? fs.readFileSync(SCANNED_TEMPLATE_HEADER_PATH) : null;
 
 interface AppendixImage {
   base64: string;
@@ -64,13 +67,13 @@ interface SectionData {
   isBullet?: boolean;
 }
 
-function buildHeaderImage() {
-  if (!HEADER_IMAGE) return [];
+function buildHeaderImage(headerImage: Buffer | null = HEADER_IMAGE, width = 624, height = 125) {
+  if (!headerImage) return [];
   return [
     new ImageRun({
-      data: HEADER_IMAGE,
+      data: headerImage,
       type: 'png',
-      transformation: { width: 624, height: 125 },
+      transformation: { width, height },
     }),
   ];
 }
@@ -85,6 +88,457 @@ function ensureArray(val: any): string[] {
     return val.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
   }
   return [];
+}
+
+function splitTemplateItems(value: any, count = 3): string[] {
+  const items = ensureArray(value);
+  const padded = [...items];
+  while (padded.length < count) padded.push('');
+  return padded.slice(0, count);
+}
+
+function escapeXml(value: any): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function decodeXmlText(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+function styleScannedAcknowledgementPage(xml: string, data: any): string {
+  let inAcknowledgement = false;
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+      text += decodeXmlText(encodedText);
+      return _match;
+    });
+
+    const trimmed = text.trim();
+    if (/^Acknowledgement$/i.test(trimmed)) {
+      inAcknowledgement = true;
+      let styled = paragraph.replace(/<w:jc\b[^>]*\/>/g, '');
+      styled = styled.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g,
+        '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="000000"/><w:b/><w:bCs/></w:rPr>');
+      styled = styled.replace(/<w:pPr>/, '<w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="360" w:line="360" w:lineRule="auto"/>');
+      if (!styled.includes('<w:pPr>')) {
+        styled = styled.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr><w:jc w:val="center"/></w:pPr>');
+      }
+      return styled;
+    }
+
+    if (!inAcknowledgement) return paragraph;
+    if (/^Table of Contents$/i.test(trimmed)) {
+      inAcknowledgement = false;
+      return paragraph;
+    }
+
+    if (!trimmed) return paragraph;
+
+    const isSignatureName = String(data.studentName || '').trim().length > 0
+      && trimmed === String(data.studentName).trim();
+    const isDegreeLine = /^.+\s+[-–]\s+.+Year$/i.test(trimmed)
+      || /^\[Program\]/.test(trimmed)
+      || /\bYear Level\b/i.test(trimmed);
+    const isCampusLine = /Jose Rizal Memorial State University/i.test(trimmed);
+
+    let size = '22';
+    let color = '666666';
+    let italic = true;
+    let bold = false;
+    let alignment = 'both';
+
+    if (isSignatureName) {
+      size = '20';
+      color = '000080';
+      italic = false;
+      bold = true;
+      alignment = 'right';
+    } else if (isDegreeLine || isCampusLine) {
+      size = '18';
+      color = '000000';
+      italic = false;
+      bold = isDegreeLine;
+      alignment = 'right';
+    } else {
+      size = '18';
+      color = '666666';
+      italic = true;
+      alignment = 'both';
+    }
+
+    const runProperties = `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="${color}"/>${bold ? '<w:b/><w:bCs/>' : ''}${italic ? '<w:i/><w:iCs/>': ''}</w:rPr>`;
+    let styled = paragraph.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, runProperties);
+    styled = styled.replace(/(<w:r\b[^>]*>)(?!<w:rPr>)/g, `$1${runProperties}`);
+    styled = styled.replace(/<w:jc\b[^>]*\/>/g, '');
+    if (styled.includes('<w:pPr>')) {
+      styled = styled.replace('<w:pPr>', `<w:pPr><w:jc w:val="${alignment}"/><w:spacing w:before="0" w:after="${isDegreeLine || isCampusLine ? '120' : '240'}" w:line="360" w:lineRule="auto"/>`);
+    } else {
+      styled = styled.replace(/^(<w:p\b[^>]*>)/, `$1<w:pPr><w:jc w:val="${alignment}"/></w:pPr>`);
+    }
+    return styled;
+  });
+}
+
+function buildScannedTableOfContents(data: any): { title: string; page: string; level: number }[] {
+  const secondPlacement = Boolean(data.schoolPlacement?.enabled);
+  const org1 = data.trainingOrganization || 'TRAINING ORGANIZATION';
+  const org2 = data.schoolPlacement?.trainingOrganization || 'SCHOOL TRAINING ORGANIZATION';
+  const appendicesStart = secondPlacement ? 11 : 6;
+  const appendix = data.appendices || {};
+
+  const entries: { title: string; page: string; level: number }[] = [
+    { title: 'Acknowledgement', page: 'i', level: 0 },
+    { title: 'Table of Contents', page: 'ii', level: 0 },
+    { title: 'List of Tables / Figures', page: 'iv', level: 0 },
+    { title: `I. ${org1.toUpperCase()}`, page: '1', level: 0 },
+    { title: 'Introduction', page: '1', level: 1 },
+    { title: 'Background of the Organization', page: '1', level: 2 },
+    { title: 'Vision, Mission, and Objectives', page: '1', level: 2 },
+    { title: 'Organizational Structure', page: '1', level: 2 },
+    { title: 'The Products and Services Offered', page: '1', level: 2 },
+    { title: 'Organization / Company Analysis', page: '2', level: 1 },
+    { title: 'Strengths and Weaknesses of the Organization', page: '2', level: 2 },
+    { title: 'Opportunities and Threats of the Organization', page: '2', level: 2 },
+    { title: 'Recommendations for Improvement', page: '2', level: 2 },
+    { title: 'Tasks and Duties', page: '3', level: 1 },
+    { title: 'Tasks and Responsibilities Assigned', page: '3', level: 2 },
+    { title: 'Duties and Procedures Conformed', page: '3', level: 2 },
+    { title: 'Case Analysis', page: '4', level: 1 },
+    { title: 'Identified Issues / Problems', page: '4', level: 2 },
+    { title: 'Strategies Undertaken', page: '4', level: 2 },
+    { title: 'Lessons Learned', page: '4', level: 2 },
+    { title: 'Reflections', page: '5', level: 1 },
+    { title: 'Self-Evaluation', page: '5', level: 2 },
+    { title: 'Relevance to Course and Goals', page: '5', level: 2 },
+  ];
+
+  if (secondPlacement) {
+    entries.push(
+      { title: `II. ${org2.toUpperCase()}`, page: '6', level: 0 },
+      { title: 'Introduction', page: '6', level: 1 },
+      { title: 'Background of the Organization', page: '6', level: 2 },
+      { title: 'Vision, Mission, and Objectives', page: '6', level: 2 },
+      { title: 'Organizational Structure', page: '6', level: 2 },
+      { title: 'The Products and Services Offered', page: '6', level: 2 },
+      { title: 'Organization / Company Analysis', page: '7', level: 1 },
+      { title: 'Strengths and Weaknesses of the Organization', page: '7', level: 2 },
+      { title: 'Opportunities and Threats of the Organization', page: '7', level: 2 },
+      { title: 'Recommendations for Improvement', page: '7', level: 2 },
+      { title: 'Tasks and Duties', page: '8', level: 1 },
+      { title: 'Tasks and Responsibilities Assigned', page: '8', level: 2 },
+      { title: 'Duties and Procedures Conformed', page: '8', level: 2 },
+      { title: 'Case Analysis', page: '9', level: 1 },
+      { title: 'Lessons Learned', page: '9', level: 2 },
+      { title: 'Reflections', page: '10', level: 1 },
+      { title: 'Self-Evaluation', page: '10', level: 2 },
+      { title: 'Relevance to Course and Goals', page: '10', level: 2 },
+    );
+  }
+
+  entries.push({ title: 'Appendices', page: String(appendicesStart), level: 0 });
+
+  const appendixDefinitions: { label: string; hasContent: boolean }[] = [
+    { label: 'Journal', hasContent: Array.isArray(appendix.dailyJournal) && appendix.dailyJournal.length > 0 },
+    { label: 'Certificate of Participation of Prime Seminar', hasContent: Boolean(appendix.certParticipation) },
+    { label: 'One-Page Narrative Report of PRIME', hasContent: Boolean(appendix.primeNarrative) },
+    { label: 'Resume and Application Letter', hasContent: Boolean(appendix.resume) },
+    { label: 'Evaluation of Grades from the Registrar', hasContent: Boolean(appendix.grades) },
+    { label: 'Validated Enrollment Form', hasContent: true },
+    { label: 'Medical Certificate', hasContent: Boolean(appendix.medicalWaiver) },
+    { label: 'Parent’s Waiver', hasContent: Boolean(appendix.medicalWaiver) },
+    { label: 'Letter of Acceptance', hasContent: Boolean(appendix.letterAcceptance) },
+    { label: 'Daily Time Record (Number of Hours Rendered)', hasContent: Boolean(appendix.dtr) },
+    { label: 'Student’s Intern Rating Sheet', hasContent: Boolean(appendix.ratingSheet) },
+    { label: 'Performance Evaluation', hasContent: true },
+    { label: 'Certificate of Completion', hasContent: Boolean(appendix.certCompletion) },
+    { label: 'Memorandum of Agreement', hasContent: true },
+  ];
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let page = appendicesStart + 1;
+  appendixDefinitions.forEach((item, index) => {
+    if (!item.hasContent) return;
+    entries.push({ title: `Appendix ${letters[index]}: ${item.label}`, page: String(page), level: 1 });
+    page += index === 0 && Array.isArray(appendix.dailyJournal)
+      ? Math.max(1, Math.ceil(appendix.dailyJournal.length / 4))
+      : 1;
+  });
+
+  return entries;
+}
+
+function replaceScannedTableOfContents(xml: string, data: any): string {
+  const entries = buildScannedTableOfContents(data);
+  const generatedParagraphs = entries.map((entry) => {
+    const indent = entry.level === 1 ? 360 : entry.level === 2 ? 720 : 0;
+    const bold = entry.level === 0 ? '<w:b/><w:bCs/>' : '';
+    const size = entry.level === 0 ? '18' : '16';
+    return `<w:p><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9360"/></w:tabs><w:ind w:left="${indent}" w:right="0"/><w:spacing w:before="0" w:after="20" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="000000"/>${bold}</w:rPr><w:t xml:space="preserve">${escapeXml(entry.title)}</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:tab/><w:t xml:space="preserve">${escapeXml(entry.page)}</w:t></w:r></w:p>`;
+  }).join('');
+
+  let inTableOfContents = false;
+  let inserted = false;
+  let sawContentsHeading = false;
+
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+      text += decodeXmlText(encodedText);
+      return _match;
+    });
+
+    const trimmed = text.trim();
+    if (/^Table of Contents$/i.test(trimmed) && !sawContentsHeading) {
+      sawContentsHeading = true;
+      inTableOfContents = true;
+      return paragraph;
+    }
+    if (!inTableOfContents) return paragraph;
+    if (/^List of Tables\s*\/\s*Figures$/i.test(trimmed)) {
+      inTableOfContents = false;
+      return inserted ? paragraph : generatedParagraphs + paragraph;
+    }
+    if (/^Acknowledgementi$|^Table of Contentsii$|^List of Tables\s*\/\s*Figuresiv$|^(?:I|II)\.\s|^Introduction\d*$|^Background of the Organization\d*$|^Vision, Mission, and Objectives\d*$|^Organizational Structure\d*$|^The Products and Services Offered\d*$|^Organization\s*\/\s*Company Analysis\d*$|^Strengths and Weaknesses|^Opportunities and Threats|^Recommendations for Improvement\d*$|^Tasks and Duties\d*$|^Tasks and Responsibilities Assigned\d*$|^Duties and Procedures Conformed\d*$|^Case Analysis\d*$|^Identified Issues\/Problems\d*$|^Strategies Undertaken\d*$|^Lessons Learned\d*$|^Reflections\d*$|^Self-Evaluation\d*$|^Relevance to Course and Goals\d*$|^Appendices\d*$|^Appendix [A-Z]:/i.test(trimmed)) {
+      if (!inserted) {
+        inserted = true;
+        return generatedParagraphs;
+      }
+      return '';
+    }
+    return paragraph;
+  });
+}
+
+function replaceTextAcrossRuns(xml: string, replacements: Record<string, string | string[]>): string {
+  const repeatedReplacementIndexes: Record<string, number> = {};
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (match, encodedText, offset) => {
+      const decodedText = decodeXmlText(encodedText);
+      text += decodedText;
+      return match;
+    });
+
+    if (!text.trim() && text.length === 0) return paragraph;
+
+    let updatedText = text;
+    for (const [placeholder, value] of Object.entries(replacements)) {
+      if (Array.isArray(value)) {
+        let searchFrom = 0;
+        while (searchFrom <= updatedText.length) {
+          const foundAt = updatedText.indexOf(placeholder, searchFrom);
+          if (foundAt < 0) break;
+          const repeatedIndex = repeatedReplacementIndexes[placeholder] ?? 0;
+          const replacement = repeatedIndex < value.length ? value[repeatedIndex] : '';
+          updatedText =
+            updatedText.slice(0, foundAt)
+            + String(replacement ?? '')
+            + updatedText.slice(foundAt + placeholder.length);
+          searchFrom = foundAt + String(replacement ?? '').length;
+          repeatedReplacementIndexes[placeholder] = repeatedIndex + 1;
+        }
+      } else {
+        updatedText = updatedText.split(placeholder).join(String(value ?? ''));
+      }
+    }
+
+    if (updatedText === text) return paragraph;
+
+    let firstTextNode = true;
+    return paragraph.replace(/<w:t(?:\s[^>]*)?>[\s\S]*?<\/w:t>/g, (match) => {
+      if (firstTextNode) {
+        firstTextNode = false;
+        return match.replace(/>[\s\S]*?</, `>${escapeXml(updatedText)}<`);
+      }
+      return match.replace(/>[\s\S]*?</, '><');
+    });
+  });
+}
+
+function styleScannedCoverPage(xml: string): string {
+  const coverStyles: Record<string, { size: string; color: string; bold: boolean; italic: boolean }> = {
+    'A NARRATIVE REPORT': { size: '22', color: 'C69C3A', bold: true, italic: false },
+    'on the On-the-Job Training conducted at': { size: '18', color: '000000', bold: false, italic: true },
+    'and': { size: '18', color: '000000', bold: false, italic: true },
+    'Presented to the faculty of': { size: '18', color: '000000', bold: false, italic: true },
+    'In partial fulfillment of the requirements for the degree of': { size: '18', color: '000000', bold: false, italic: true },
+    'Training Duration': { size: '18', color: '000000', bold: false, italic: true },
+    'Submitted by:': { size: '18', color: '000000', bold: false, italic: false },
+    'Submitted to:': { size: '18', color: '000000', bold: false, italic: false },
+  };
+
+  let reachedAcknowledgement = false;
+  let coverParagraphIndex = 0;
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+      text += decodeXmlText(encodedText);
+      return _match;
+    });
+
+    if (/^Acknowledgement$/i.test(text.trim())) reachedAcknowledgement = true;
+    if (reachedAcknowledgement || !text.trim()) return paragraph;
+    const currentIndex = coverParagraphIndex++;
+
+    const style = coverStyles[text.trim()];
+    const organizationName = currentIndex === 2
+      || currentIndex === 4
+      || /\bORGANIZATION\b/i.test(text)
+      || /^Live Preview Test Organization$/i.test(text)
+      || (text.trim().length > 0 && /organization/i.test(text.trim()) && !text.includes('/'));
+    const isFacultyOrDegree = text.startsWith('[') === false && (
+      paragraph.includes('[College Name]') || paragraph.includes('[Degree Program]')
+    );
+
+    let size = style?.size || '20';
+    let color = style?.color || '000080';
+    let bold = style?.bold || false;
+    let italic = style?.italic || false;
+
+    if (organizationName) {
+      size = '28';
+      color = '000080';
+      bold = true;
+    } else if (isFacultyOrDegree) {
+      size = '20';
+      color = '000000';
+      bold = false;
+      italic = true;
+    } else if (/Training Duration|Submitted by:|Submitted to:/.test(text.trim())) {
+      size = '18';
+      color = '000000';
+    } else if (text.includes('[Month YYYY]')) {
+      size = '18';
+      color = '666666';
+    }
+
+    const runProperties = `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="${color}"/>${bold ? '<w:b/><w:bCs/>' : ''}${italic ? '<w:i/><w:iCs/>' : ''}</w:rPr>`;
+    let styled = paragraph.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, runProperties);
+    styled = styled.replace(/(<w:r\b[^>]*>)(?!<w:rPr>)/g, `$1${runProperties}`);
+
+    styled = styled.replace(/<w:jc\b[^>]*\/>/g, '');
+    if (styled.includes('<w:pPr>')) {
+      styled = styled.replace('<w:pPr>', '<w:pPr><w:jc w:val="center"/>');
+    } else {
+      styled = styled.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr><w:jc w:val="center"/></w:pPr>');
+    }
+
+    return styled;
+  });
+}
+
+
+async function fillReferenceTemplate(data: any): Promise<Buffer> {
+  const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
+  const templateBuffer = fs.readFileSync(templatePath);
+  const zip = await JSZip.loadAsync(templateBuffer);
+
+  const objectives = splitTemplateItems(data.objectives);
+  const coreValues = splitTemplateItems(data.coreValues);
+  const services = splitTemplateItems(data.services);
+  const strengths = splitTemplateItems(data.strengths);
+  const weaknesses = splitTemplateItems(data.weaknesses);
+  const opportunities = splitTemplateItems(data.opportunities);
+  const threats = splitTemplateItems(data.threats);
+  const recommendations = splitTemplateItems(data.recommendations);
+  const procedures = splitTemplateItems(data.procedures);
+  const tasks = splitTemplateItems(data.tasks);
+  const trainingDuration = data.trainingDuration || '[Month DD - Month DD, YYYY]  ([000] HRS)';
+  const trainingYearMatch = String(trainingDuration).match(/(?:19|20)\d{2}/);
+  const trainingMonthYear = trainingYearMatch ? trainingYearMatch[0] : String(new Date().getFullYear());
+
+  const replacements: Record<string, string | string[]> = {
+    '[ORGANIZATION 1 NAME]': data.trainingOrganization || '',
+    '[ORGANIZATION 2 NAME]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingOrganization || '') : '',
+    '[Address / Location of Organization 1] and [Address / Location of Organization 2]':
+      [data.trainingLocation, data.schoolPlacement?.enabled ? data.schoolPlacement.trainingLocation : ''].filter(Boolean).join(' and '),
+    '[Address / Location of Organization 1]': data.trainingLocation || '',
+    '[Address / Location of Organization 2]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingLocation || '') : '',
+    '[College Name]': data.collegeFaculty || '',
+    '[Degree Program]': data.degreeProgram || '',
+    '[Month DD - Month DD, YYYY]  ([000] HRS)': trainingDuration,
+    '[Month DD – Month DD, YYYY]  ([000] HRS)': trainingDuration,
+    '[Month DD — Month DD, YYYY]  ([000] HRS)': trainingDuration,
+    '[Month YYYY]': trainingMonthYear,
+    '[STUDENT FULL NAME]': data.studentName || '',
+    '[Program] � [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
+    '[Program]': data.degreeProgram || '',
+    '[Year Level]': data.studentYear || '',
+    '[OJT COORDINATOR NAME]': data.submittedToName || '',
+    '[Express your gratitude to the host organizations, supervisors, the faculty OJT coordinator, and everyone who supported your training.]': data.acknowledgement || '',
+    '[Add a second paragraph to thank your family, classmates, and fellow trainees.]': '',
+    '[Student Name]': data.studentName || '',
+    '[Degree Program] � [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
+    '[Describe the history, location, and nature of the organization in two to three paragraphs.]': data.background || '',
+    '[Insert the organization�s vision statement.]': data.vision || '',
+    '[Insert the organization�s mission statement.]': data.mission || '',
+    '[Objective 1]': objectives[0],
+    '[Objective 2]': objectives[1],
+    '[Objective 3]': objectives[2],
+    '[Value 1]': coreValues[0],
+    '[Value 2]': coreValues[1],
+    '[Value 3]': coreValues[2],
+    '[Product or service 1]': services[0],
+    '[Product or service 2]': services[1],
+    '[Product or service 3]': services[2],
+    '[Strength 1]': strengths[0],
+    '[Strength 2]': strengths[1],
+    '[Strength 3]': strengths[2],
+    '[Weakness 1]': weaknesses[0],
+    '[Weakness 2]': weaknesses[1],
+    '[Weakness 3]': weaknesses[2],
+    '[Opportunity 1]': opportunities[0],
+    '[Opportunity 2]': opportunities[1],
+    '[Opportunity 3]': opportunities[2],
+    '[Threat 1]': threats[0],
+    '[Threat 2]': threats[1],
+    '[Threat 3]': threats[2],
+    '[Recommendation 1]': recommendations[0],
+    '[Recommendation 2]': recommendations[1],
+    '[Recommendation 3]': recommendations[2],
+    '[Describe the tasks you were assigned during the training period.]': data.tasks || '',
+    '[Duty or procedure 1]': procedures[0],
+    '[Duty or procedure 2]': procedures[1],
+    '[Duty or procedure 3]': procedures[2],
+    '[Describe the issue you encountered.]': [data.issue1 || '', data.issue2 || ''],
+    '[Explain what was done to address the issue.]': [data.issue1Action || '', data.issue2Action || ''],
+    '[Summarize what you learned from these situations.]': data.lessons || '',
+    '[Reflect on your growth, strengths, and areas to improve.]': data.selfEvaluation || '',
+    '[Explain how the training relates to your degree program and career goals.]': data.relevancy || '',
+  };
+
+  for (const name of Object.keys(zip.files)) {
+    if (!/^word\/(?:document|header\d+|footer\d+)\.xml$/.test(name)) continue;
+    let xml = await zip.file(name)?.async('string');
+    if (!xml) continue;
+    xml = replaceTextAcrossRuns(xml, replacements);
+    if (name === 'word/document.xml') {
+      xml = styleScannedCoverPage(xml);
+      xml = styleScannedAcknowledgementPage(xml, data);
+      xml = replaceScannedTableOfContents(xml, data);
+    }
+    zip.file(name, xml);
+  }
+
+  const untitledHeader = fs.existsSync(SCANNED_TEMPLATE_HEADER_PATH)
+    ? fs.readFileSync(SCANNED_TEMPLATE_HEADER_PATH)
+    : null;
+  if (untitledHeader) {
+    const mediaFiles = Object.keys(zip.files).filter((name) => /^word\/media\/.+\.(png|jpg|jpeg)$/i.test(name));
+    for (const mediaFile of mediaFiles) zip.file(mediaFile, untitledHeader);
+  }
+
+  return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
 
 function parseBase64Image(base64String: string): Buffer | null {
@@ -106,6 +560,17 @@ export async function POST(request: Request) {
 
     if (!data || typeof data !== 'object') {
       return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 });
+    }
+
+    if (data.reportTemplate === 'scanned-template') {
+      const filledTemplate = await fillReferenceTemplate(data);
+      return new Response(filledTemplate, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'Content-Disposition': `attachment; filename="${OUTPUT_FILE_NAME}"`,
+        },
+      });
     }
 
     const isPreviewRequest = request.headers.get('x-report-preview') === 'true';
@@ -247,6 +712,14 @@ export async function POST(request: Request) {
         0,
         documentSections.length,
         ...buildDocxTemplateSections(data),
+      );
+    }
+
+    if (data.reportTemplate === 'scanned-template') {
+      documentSections.splice(
+        0,
+        documentSections.length,
+        ...buildDocxTemplateSections(data, SCANNED_TEMPLATE_HEADER, true),
       );
     }
 
@@ -605,7 +1078,11 @@ function buildTemplateOrganizationPages(label: string, source: any, romanLabel =
   return children;
 }
 
-function buildDocxTemplateSections(data: any): any[] {
+function buildDocxTemplateSections(
+  data: any,
+  headerImage: Buffer | null = HEADER_IMAGE,
+  scannedTemplate = false,
+): any[] {
   const children: (Paragraph | Table)[] = [
     ...buildTemplateCoverPage(data),
     new Paragraph({ pageBreakBefore: true }),
@@ -659,13 +1136,24 @@ function buildDocxTemplateSections(data: any): any[] {
   return [{
     properties: {
       page: {
-        size: { width: 12242, height: 20163 },
-        margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 709, footer: 709 },
+        size: scannedTemplate
+          ? { width: 12240, height: 20160 }
+          : { width: 12242, height: 20163 },
+        margin: scannedTemplate
+          ? { top: 762000, bottom: 914400, left: 914400, right: 914400, header: 449580, footer: 449580 }
+          : { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 709, footer: 709 },
       },
     },
     headers: {
       default: new Header({
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: buildHeaderImage() })],
+        children: [new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: buildHeaderImage(
+            headerImage,
+            scannedTemplate ? 624 : 624,
+            scannedTemplate ? 234 : 125,
+          ),
+        })],
       }),
     },
     children,
