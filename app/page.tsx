@@ -1821,50 +1821,55 @@ export default function Home() {
       )}
 
       <div className="mx-auto min-w-0 max-w-7xl space-y-8 sm:space-y-12">
-        <header className="relative isolate min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-slate-900/80 shadow-[0_24px_80px_rgba(2,8,23,0.35)] backdrop-blur-xl sm:rounded-[32px]">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/80 to-transparent" />
-          <div className="absolute -right-24 -top-32 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
+        <header className="relative isolate min-w-0 overflow-hidden rounded-[28px] border border-white/[0.08] bg-slate-950/55 shadow-[0_28px_90px_rgba(2,8,23,0.48),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl sm:rounded-[36px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_15%,rgba(34,211,238,0.14),transparent_24%),radial-gradient(circle_at_88%_20%,rgba(139,92,246,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(15,23,42,0.72))]" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/90 to-transparent" />
+          <div className="absolute -right-20 -top-28 h-72 w-72 rounded-full border border-violet-300/10 bg-violet-400/[0.06] blur-2xl" />
+          <div className="absolute bottom-0 left-20 h-px w-1/2 bg-gradient-to-r from-cyan-400/25 to-transparent" />
 
-          <div className="relative flex flex-col gap-6 p-5 sm:p-8 md:flex-row md:items-center md:justify-between lg:p-10">
-            <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-              <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-400/20 to-violet-500/20 text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] sm:flex">
-                <FileText size={26} aria-hidden="true" />
+          <div className="relative grid gap-6 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-8 lg:p-10">
+            <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+              <div className="hidden h-16 w-16 shrink-0 items-center justify-center rounded-[20px] border border-cyan-200/15 bg-gradient-to-br from-cyan-300/20 via-sky-400/10 to-violet-400/20 text-cyan-100 shadow-[0_16px_38px_rgba(34,211,238,0.16),inset_0_1px_0_rgba(255,255,255,0.14)] sm:flex">
+                <FileText size={29} strokeWidth={1.8} aria-hidden="true" />
               </div>
-              <div className="min-w-0 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.9)]" />
-                  <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-300 sm:text-xs">
+              <div className="min-w-0 space-y-2.5">
+                <div className="flex w-fit items-center gap-2 rounded-full border border-cyan-300/10 bg-cyan-300/[0.07] px-3 py-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.95)]" />
+                  <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-200 sm:text-[10px]">
                     Jose Rizal Memorial State University
                   </p>
                 </div>
-                <h1 className="max-w-3xl text-3xl font-black leading-[1.05] tracking-tight text-white sm:text-4xl md:text-5xl">
-                  Narrative Report <span className="bg-gradient-to-r from-cyan-300 to-violet-300 bg-clip-text text-transparent">Generator</span>
+                <h1 className="max-w-3xl text-[2rem] font-black leading-[1.02] tracking-[-0.035em] text-white sm:text-4xl lg:text-[3.25rem]">
+                  Narrative Report <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-300 bg-clip-text text-transparent">Generator</span>
                 </h1>
-                <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                  Build a polished OJT narrative and export it as a clean Word document.
+                <p className="max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
+                  Create, preview, and export a polished OJT narrative.
                 </p>
               </div>
             </div>
 
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-stretch md:shrink-0 md:flex-col lg:flex-row lg:items-center">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:min-w-[330px] lg:flex-col xl:min-w-[360px]">
               <button
                 onClick={() => setRunTour(true)}
-                className="tour-start-btn flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 text-sm font-bold text-cyan-200 transition hover:border-cyan-300/50 hover:bg-cyan-400/20 active:scale-[0.98] sm:min-h-14 sm:px-5"
+                className="tour-start-btn group flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-cyan-300/20 bg-gradient-to-r from-cyan-400/15 to-sky-400/[0.08] px-5 text-sm font-bold text-cyan-100 shadow-[0_12px_30px_rgba(8,145,178,0.08),inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:from-cyan-400/20 hover:to-violet-400/10 hover:shadow-[0_16px_36px_rgba(34,211,238,0.12)] active:translate-y-0 active:scale-[0.98]"
                 type="button"
               >
-                <HelpCircle size={18} aria-hidden="true" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-cyan-300/15 bg-slate-950/30 transition group-hover:border-cyan-300/30 group-hover:bg-slate-950/50">
+                  <HelpCircle size={17} aria-hidden="true" />
+                </span>
                 <span>Show me how</span>
               </button>
 
-              <div className="flex min-h-12 items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-4 py-2.5 sm:min-h-14 sm:px-5">
-                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-30" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-cyan-300" />
+              <div className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/[0.08] bg-slate-950/35 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:px-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-300/15 bg-emerald-400/[0.08]">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
+                  </span>
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">System status</p>
-                  <p className="mt-0.5 truncate text-sm font-bold text-white sm:text-base">{status}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[10px]">System status</p>
+                  <p className="mt-1 truncate text-sm font-bold text-slate-100 sm:text-base">{status}</p>
                 </div>
               </div>
             </div>
