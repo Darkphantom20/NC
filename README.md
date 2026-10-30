@@ -42,6 +42,18 @@ npm run dev
 
 For Vercel, add both `GROQ_API_KEY` and `GEMINI_API_KEY` under **Project Settings → Environment Variables**, then redeploy. Optional `GEMINI_MODEL` defaults to `gemini-flash-latest`. Treat both keys as secrets and rotate any key that has been shared publicly.
 
+## Multiple API keys and automatic fallback
+
+To cycle through several keys for either provider, add comma-, semicolon-, or newline-separated keys to `GROQ_API_KEYS` or `GEMINI_API_KEYS`. The existing singular variables also remain supported.
+
+```powershell
+$env:GROQ_API_KEYS="groq_key_1,groq_key_2,groq_key_3"
+$env:GEMINI_API_KEYS="gemini_key_1,gemini_key_2"
+npm run dev
+```
+
+The API alternates provider priority, tries each available key once, and puts a key temporarily on cooldown for 60 seconds when Groq or Gemini reports a rate limit or quota error. After the cooldown, that key becomes available again automatically.
+
 ## Notes
 
 Narratives are saved automatically in this browser using IndexedDB, which supports much more data than `localStorage` and is better suited to reports with attached images. Existing drafts from the earlier `localStorage` format are migrated automatically after the first successful save. Use **New narrative** to start a separate report, then use **Current narrative** to switch between reports. Browser-local drafts are not shared across browsers or devices, and the browser can still enforce storage limits, so generate/download a copy to keep a separate backup.

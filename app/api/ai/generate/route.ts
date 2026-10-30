@@ -2,6 +2,44 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+const exhaustedUntil = new Map<string, number>();
+let providerCursor = 0;
+const keyCursor = new Map<string, number>();
+
+function getKeys(primary: string | undefined, list: string | undefined): string[] {
+  const raw = [list || '', primary || ''].join('\n');
+  return Array.from(new Set(
+    raw
+      .split(/[,\n;]/)
+      .map((key) => key.trim())
+      .filter(Boolean),
+  ));
+}
+
+function isRateLimit(errorText: string, status: number): boolean {
+  return status === 429 || /rate.?limit|quota|resource.?exhausted|too many requests|limit exceeded/i.test(errorText);
+}
+
+function availableKey(keys: string[], provider: string): string | undefined {
+  const now = Date.now();
+  const available: string[] = [];
+
+  for (const key of keys) {
+    const mapKey = `${provider}:${key}`;
+    const until = exhaustedUntil.get(mapKey) || 0;
+    if (until <= now) {
+      exhaustedUntil.delete(mapKey);
+      available.push(key);
+    }
+  }
+
+  if (!available.length) return undefined;
+  const cursor = keyCursor.get(provider) || 0;
+  const selected = available[cursor % available.length];
+  keyCursor.set(provider, (cursor + 1) % available.length);
+  return selected;
+}
+
 function prepareAIContext(value: unknown): string {
   const seen = new WeakSet();
 
@@ -34,9 +72,9 @@ function prepareAIContext(value: unknown): string {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GROQ_API_KEY;
-  const geminiApiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey && !geminiApiKey) {
+  const groqKeys = getKeys(process.env.GROQ_API_KEY, process.env.GROQ_API_KEYS);
+  const geminiKeys = getKeys(process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEYS);
+  if (!groqKeys.length && !geminiKeys.length) {
     return NextResponse.json(
       { error: 'Neither GROQ_API_KEY nor GEMINI_API_KEY is configured on the server.' },
       { status: 500 },
@@ -70,82 +108,97 @@ export async function POST(request: Request) {
     ].filter(Boolean).join('\n\n');
 
     let text = '';
-    let groqError = '';
+    const providerErrors: string[] = [];
     let provider = '';
 
-    if (apiKey) {
-      try {
-        const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + apiKey,
-          },
-          body: JSON.stringify({
-            model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.35,
-            max_tokens: 2200,
-          }),
-        });
+    const providers = providerCursor % 2 === 0
+      ? ['groq', 'gemini']
+      : ['gemini', 'groq'];
+    providerCursor += 1;
 
-        const groqResult = await groqResponse.json();
-        if (groqResponse.ok) {
-          text = String(groqResult?.choices?.[0]?.message?.content || '').trim();
-          if (text) provider = 'groq';
-        } else {
-          groqError = String(
-            groqResult?.error?.message || 'Groq could not generate the text.',
+    for (const providerName of providers) {
+      if (text) break;
+
+      const keys = providerName === 'groq' ? groqKeys : geminiKeys;
+      for (let rotation = 0; rotation < keys.length && !text; rotation += 1) {
+        const apiKey = availableKey(keys, providerName);
+        if (!apiKey) break;
+
+        try {
+          if (providerName === 'groq') {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + apiKey,
+              },
+              body: JSON.stringify({
+                model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.35,
+                max_tokens: 2200,
+              }),
+            });
+            const result = await response.json();
+            if (response.ok) {
+              text = String(result?.choices?.[0]?.message?.content || '').trim();
+              if (text) provider = 'groq';
+            } else {
+              const message = String(result?.error?.message || 'Groq could not generate the text.');
+              providerErrors.push(`Groq: ${message}`);
+              if (isRateLimit(message, response.status)) {
+                exhaustedUntil.set(`groq:${apiKey}`, Date.now() + 60_000);
+              }
+            }
+          } else {
+            const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-goog-api-key': apiKey,
+                },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                    temperature: 0.35,
+                    maxOutputTokens: 2200,
+                  },
+                }),
+              },
+            );
+            const result = await response.json();
+            if (response.ok) {
+              text = String(
+                result?.candidates?.[0]?.content?.parts
+                  ?.map((part: { text?: string }) => part.text || '')
+                  .join('')
+                  .trim() || '',
+              );
+              if (text) provider = 'gemini';
+            } else {
+              const message = String(result?.error?.message || 'Gemini could not generate the text.');
+              providerErrors.push(`Gemini: ${message}`);
+              if (isRateLimit(message, response.status)) {
+                exhaustedUntil.set(`gemini:${apiKey}`, Date.now() + 60_000);
+              }
+            }
+          }
+        } catch (error) {
+          providerErrors.push(
+            `${providerName === 'groq' ? 'Groq' : 'Gemini'}: ${
+              error instanceof Error ? error.message : 'Provider request failed.'
+            }`,
           );
         }
-      } catch (error) {
-        groqError = error instanceof Error ? error.message : 'Groq request failed.';
-      }
-    }
-
-    if (!text && geminiApiKey) {
-      const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-latest';
-      const geminiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-goog-api-key': geminiApiKey,
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.35,
-              maxOutputTokens: 2200,
-            },
-          }),
-        },
-      );
-
-      const geminiResult = await geminiResponse.json();
-      if (geminiResponse.ok) {
-        text = String(
-          geminiResult?.candidates?.[0]?.content?.parts
-            ?.map((part: { text?: string }) => part.text || '')
-            .join('')
-            .trim() || '',
-        );
-        if (text) provider = 'gemini';
-      } else {
-        const geminiError = String(
-          geminiResult?.error?.message || 'Gemini could not generate the text.',
-        );
-        return NextResponse.json(
-          { error: groqError ? `${groqError} Gemini fallback also failed: ${geminiError}` : geminiError },
-          { status: geminiResponse.status },
-        );
       }
     }
 
     if (!text) {
       return NextResponse.json(
-        { error: groqError || 'The AI provider returned no text.' },
+        { error: providerErrors.join(' | ') || 'The AI provider returned no text.' },
         { status: 502 },
       );
     }
