@@ -474,7 +474,7 @@ function replaceScannedJournalTable(
         cells[3] = replaceCellText(cells[3], '');
       }
 
-      return row.replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => cells.shift() || '');
+      return rows[dataRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => cells.shift() || '');
     });
 
     const totalHours = weeks.reduce((total, week) => {
