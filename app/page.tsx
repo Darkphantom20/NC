@@ -1903,14 +1903,9 @@ export default function Home() {
               >
                 <option value="current">Current System Layout</option>
                 <option value="docx-template">narrative-report.docx Layout</option>
-                <option value="modern-template">Modern Academic</option>
               </select>
               <span className="mt-2.5 block text-xs text-slate-400">
-                {form.reportTemplate === 'modern-template'
-                  ? 'Clean academic cover, structured headings, and modern spacing.'
-                  : form.reportTemplate === 'docx-template'
-                    ? 'JRMSU document-style layout with automatic contents and tables.'
-                    : 'Flexible system layout with compact or expanded section spacing.'}
+                Choose the structure for your Word report.
               </span>
             </label>
 
