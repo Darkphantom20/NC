@@ -1173,8 +1173,10 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     for (const relationshipFile of headerRelationshipFiles) {
       const relationshipXml = await zip.file(relationshipFile)?.async('string');
       if (!relationshipXml) continue;
-      for (const [, target] of relationshipXml.matchAll(/\bTarget="media\/([^"]+)"/g)) {
-        const headerImagePath = `word/media/${target}`;
+      const targetPattern = /\bTarget="media\/([^"]+)"/g;
+      let targetMatch: RegExpExecArray | null;
+      while ((targetMatch = targetPattern.exec(relationshipXml)) !== null) {
+        const headerImagePath = `word/media/${targetMatch[1]}`;
         if (zip.file(headerImagePath)) zip.file(headerImagePath, scannedHeader);
       }
     }
