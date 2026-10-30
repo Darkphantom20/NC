@@ -441,15 +441,17 @@ function styleScannedCoverPage(xml: string): string {
 
 function sizeScannedHeaderImage(xml: string): string {
   const headerWidthEmu = 5943600;
-  const headerHeightEmu = 1485900;
+  const headerHeightEmu = 1038000;
   let sized = xml
     .replace(/<wp:extent\b[^>]*>/g, `<wp:extent cx="${headerWidthEmu}" cy="${headerHeightEmu}"/>`)
     .replace(/<a:xfrm>\s*<a:off[^>]*\/>\s*<a:ext\b[^>]*\/>\s*<\/a:xfrm>/g,
       `<a:xfrm><a:off x="0" y="0"/><a:ext cx="${headerWidthEmu}" cy="${headerHeightEmu}"/></a:xfrm>`);
-  return sized.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (block, properties) =>
-    /<w:jc\b/.test(properties)
-      ? block.replace(/<w:jc\b[^>]*\/>/, '<w:jc w:val="center"/>')
-      : `<w:pPr><w:jc w:val="center"/>${properties}</w:pPr>`,
+  return sized.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, () =>
+    '<w:pPr>' +
+      '<w:jc w:val="center"/>' +
+      '<w:spacing w:after="60"/>' +
+      '<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="1" w:color="4472C4"/></w:pBdr>' +
+    '</w:pPr>',
   );
 }
 
@@ -1169,7 +1171,7 @@ function buildDocxTemplateSections(
           children: buildHeaderImage(
             headerImage,
             scannedTemplate ? 624 : 624,
-            scannedTemplate ? 234 : 125,
+            scannedTemplate ? 109 : 125,
           ),
         })],
       }),
