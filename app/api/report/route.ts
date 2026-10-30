@@ -450,7 +450,6 @@ function sizeScannedHeaderImage(xml: string): string {
     '<w:pPr>' +
       '<w:jc w:val="center"/>' +
       '<w:spacing w:after="60"/>' +
-      '<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="1" w:color="4472C4"/></w:pBdr>' +
     '</w:pPr>',
   );
 }
