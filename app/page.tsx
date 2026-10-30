@@ -1834,9 +1834,6 @@ export default function Home() {
                 <h1 className="max-w-3xl text-[2rem] font-black leading-[1.02] tracking-[-0.035em] text-white sm:text-4xl lg:text-[3.25rem]">
                   Narrative Report <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-300 bg-clip-text text-transparent">Generator</span>
                 </h1>
-                <p className="max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-                  Create a polished OJT narrative and export it as a clean Word document.
-                </p>
               </div>
             </div>
 
@@ -1868,47 +1865,62 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 lg:flex-row lg:items-end lg:justify-between sm:p-5">
-          <label className="block min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-cyan-300/80">
-            Current narrative
-            <select
-              value={activeDraftId}
-              onChange={(event) => switchNarrative(event.target.value)}
+        <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-slate-950/45 p-4 shadow-[0_18px_50px_rgba(2,8,23,0.2),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl sm:p-5">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent" />
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-stretch">
+            <label className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-cyan-300/20 hover:bg-slate-900/90 sm:px-5">
+              <span className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_9px_rgba(103,232,249,0.8)]" />
+                Current narrative
+              </span>
+              <select
+                value={activeDraftId}
+                onChange={(event) => switchNarrative(event.target.value)}
+                disabled={!isMounted}
+                className={`${fieldClass} w-full border-white/[0.08] bg-slate-950/50 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`}
+                aria-label="Select a narrative to edit"
+              >
+                {drafts.map((draft) => (
+                  <option key={draft.id} value={draft.id}>{draft.title}</option>
+                ))}
+              </select>
+              <span className="mt-2.5 flex items-center gap-2 text-xs text-slate-400">
+                <span className="h-1 w-1 rounded-full bg-emerald-300" />
+                {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved. Changes save automatically.
+              </span>
+            </label>
+
+            <label className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-violet-300/20 hover:bg-slate-900/90 sm:px-5">
+              <span className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-violet-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-300 shadow-[0_0_9px_rgba(196,181,253,0.8)]" />
+                Report template
+              </span>
+              <select
+                value={form.reportTemplate}
+                onChange={(event) => updateField('reportTemplate', event.target.value)}
+                className={`${fieldClass} w-full border-white/[0.08] bg-slate-950/50 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`}
+                aria-label="Choose report template"
+              >
+                <option value="current">Current System Layout</option>
+                <option value="docx-template">narrative-report.docx Layout</option>
+              </select>
+              <span className="mt-2.5 block text-xs text-slate-400">
+                Choose the structure for your Word report.
+              </span>
+            </label>
+
+            <button
+              type="button"
+              onClick={openNewDraftDialog}
               disabled={!isMounted}
-              className={`${fieldClass} mt-2 normal-case tracking-normal`}
-              aria-label="Select a narrative to edit"
+              className="group flex min-h-[116px] items-center justify-center gap-3 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-400 to-sky-500 px-5 text-sm font-black text-slate-950 shadow-[0_14px_34px_rgba(34,211,238,0.16),inset_0_1px_0_rgba(255,255,255,0.35)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/50 hover:from-cyan-300 hover:to-sky-400 hover:shadow-[0_18px_40px_rgba(34,211,238,0.24)] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 lg:min-h-full lg:min-w-[150px]"
             >
-              {drafts.map((draft) => (
-                <option key={draft.id} value={draft.id}>{draft.title}</option>
-              ))}
-            </select>
-            <span className="mt-2 block text-xs font-normal normal-case tracking-normal text-slate-400">
-              {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved in this browser. Changes save automatically.
-            </span>
-          </label>
-          <label className="block min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-cyan-300/80">
-            Report template
-            <select
-              value={form.reportTemplate}
-              onChange={(event) => updateField('reportTemplate', event.target.value)}
-              className={`${fieldClass} mt-2 normal-case tracking-normal`}
-              aria-label="Choose report template"
-            >
-              <option value="current">Current System Layout</option>
-              <option value="docx-template">narrative-report.docx Layout</option>
-            </select>
-            <span className="mt-2 block text-xs font-normal normal-case tracking-normal text-slate-400">
-              Choose the structure used for the generated Word report.
-            </span>
-          </label>
-          <button
-            type="button"
-            onClick={openNewDraftDialog}
-            disabled={!isMounted}
-            className="min-h-11 shrink-0 rounded-xl bg-cyan-500 px-5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            + New narrative
-          </button>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-950/10 bg-white/20 text-xl leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform group-hover:rotate-90">
+                +
+              </span>
+              <span>New narrative</span>
+            </button>
+          </div>
         </section>
 
         <section className="hidden gap-4 sm:grid sm:grid-cols-3 sm:gap-6">
