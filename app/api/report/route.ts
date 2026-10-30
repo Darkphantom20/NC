@@ -533,6 +533,15 @@ function formatScannedAppendixParagraphs(xml: string): string {
   });
 }
 
+function formatScannedTemplateDetails(xml: string): string {
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    if (!/<w:pStyle\b[^>]*w:val="Body"/.test(paragraph) || !getScannedParagraphText(paragraph)) {
+      return paragraph;
+    }
+    return formatScannedAppendixParagraphs(paragraph);
+  });
+}
+
 function replaceScannedAppendixSections(
   xml: string,
   relationshipsXml: string,
@@ -905,6 +914,7 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
       xml = appendixSections.xml;
       documentRelationshipsXml = appendixSections.relationshipsXml;
       journalImages.push(...appendixSections.images);
+      xml = formatScannedTemplateDetails(xml);
     }
     if (/^word\/header\d+\.xml$/.test(name)) {
       xml = sizeScannedHeaderImage(xml);
