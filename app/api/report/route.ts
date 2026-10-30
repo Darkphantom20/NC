@@ -161,6 +161,78 @@ function replaceTextAcrossRuns(xml: string, replacements: Record<string, string 
   });
 }
 
+function styleScannedCoverPage(xml: string): string {
+  const coverStyles: Record<string, { size: string; color: string; bold: boolean; italic: boolean }> = {
+    'A NARRATIVE REPORT': { size: '22', color: 'C69C3A', bold: true, italic: false },
+    'on the On-the-Job Training conducted at': { size: '18', color: '000000', bold: false, italic: true },
+    'and': { size: '18', color: '000000', bold: false, italic: true },
+    'Presented to the faculty of': { size: '18', color: '000000', bold: false, italic: true },
+    'In partial fulfillment of the requirements for the degree of': { size: '18', color: '000000', bold: false, italic: true },
+    'Training Duration': { size: '18', color: '000000', bold: false, italic: true },
+    'Submitted by:': { size: '18', color: '000000', bold: false, italic: false },
+    'Submitted to:': { size: '18', color: '000000', bold: false, italic: false },
+  };
+
+  let reachedAcknowledgement = false;
+  let coverParagraphIndex = 0;
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+      text += decodeXmlText(encodedText);
+      return _match;
+    });
+
+    if (/^Acknowledgement$/i.test(text.trim())) reachedAcknowledgement = true;
+    if (reachedAcknowledgement || !text.trim()) return paragraph;
+    const currentIndex = coverParagraphIndex++;
+
+    const style = coverStyles[text.trim()];
+    const organizationName = currentIndex === 2
+      || currentIndex === 4
+      || /\bORGANIZATION\b/i.test(text)
+      || /^Live Preview Test Organization$/i.test(text)
+      || (text.trim().length > 0 && /organization/i.test(text.trim()) && !text.includes('/'));
+    const isFacultyOrDegree = text.startsWith('[') === false && (
+      paragraph.includes('[College Name]') || paragraph.includes('[Degree Program]')
+    );
+
+    let size = style?.size || '20';
+    let color = style?.color || '000080';
+    let bold = style?.bold || false;
+    let italic = style?.italic || false;
+
+    if (organizationName) {
+      size = '28';
+      color = '000080';
+      bold = true;
+    } else if (isFacultyOrDegree) {
+      size = '20';
+      color = '000000';
+      bold = false;
+      italic = true;
+    } else if (/Training Duration|Submitted by:|Submitted to:/.test(text.trim())) {
+      size = '18';
+      color = '000000';
+    } else if (text.includes('[Month YYYY]')) {
+      size = '18';
+      color = '666666';
+    }
+
+    const runProperties = `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="${color}"/>${bold ? '<w:b/><w:bCs/>' : ''}${italic ? '<w:i/><w:iCs/>' : ''}</w:rPr>`;
+    let styled = paragraph.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, runProperties);
+    styled = styled.replace(/(<w:r\b[^>]*>)(?!<w:rPr>)/g, `$1${runProperties}`);
+
+    styled = styled.replace(/<w:jc\b[^>]*\/>/g, '');
+    if (styled.includes('<w:pPr>')) {
+      styled = styled.replace('<w:pPr>', '<w:pPr><w:jc w:val="center"/>');
+    } else {
+      styled = styled.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr><w:jc w:val="center"/></w:pPr>');
+    }
+
+    return styled;
+  });
+}
+
 
 async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
@@ -177,6 +249,9 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const recommendations = splitTemplateItems(data.recommendations);
   const procedures = splitTemplateItems(data.procedures);
   const tasks = splitTemplateItems(data.tasks);
+  const trainingDuration = data.trainingDuration || '[Month DD - Month DD, YYYY]  ([000] HRS)';
+  const trainingYearMatch = String(trainingDuration).match(/(?:19|20)\d{2}/);
+  const trainingMonthYear = trainingYearMatch ? trainingYearMatch[0] : String(new Date().getFullYear());
 
   const replacements: Record<string, string | string[]> = {
     '[ORGANIZATION 1 NAME]': data.trainingOrganization || '',
@@ -187,8 +262,10 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     '[Address / Location of Organization 2]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingLocation || '') : '',
     '[College Name]': data.collegeFaculty || '',
     '[Degree Program]': data.degreeProgram || '',
-    '[Month DD � Month DD, YYYY]  ([000] HRS)': data.trainingDuration || '',
-    '[Month YYYY]': '',
+    '[Month DD - Month DD, YYYY]  ([000] HRS)': trainingDuration,
+    '[Month DD – Month DD, YYYY]  ([000] HRS)': trainingDuration,
+    '[Month DD — Month DD, YYYY]  ([000] HRS)': trainingDuration,
+    '[Month YYYY]': trainingMonthYear,
     '[STUDENT FULL NAME]': data.studentName || '',
     '[Program] � [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
     '[Program]': data.degreeProgram || '',
@@ -241,6 +318,9 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     let xml = await zip.file(name)?.async('string');
     if (!xml) continue;
     xml = replaceTextAcrossRuns(xml, replacements);
+    if (name === 'word/document.xml') {
+      xml = styleScannedCoverPage(xml);
+    }
     zip.file(name, xml);
   }
 
