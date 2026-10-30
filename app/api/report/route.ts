@@ -1141,6 +1141,29 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
     entries = entries.filter((entry) => !isSchoolTOCLine(entry.title));
   }
 
+  const appendixEntries = [
+    ['Appendix A - Daily Journal', 12],
+    ['Appendix B - Certificate of Participation', 13],
+    ['Appendix C - PRIME Narrative Report', 14],
+    ['Appendix D - Resume', 15],
+    ['Appendix E - Grades', 16],
+    ['Appendix F - Medical Waiver', 17],
+    ['Appendix G - Acceptance Letter', 18],
+    ['Appendix H - DTR', 19],
+    ['Appendix I - Rating Sheet', 20],
+    ['Appendix J - Certificate of Completion', 21],
+  ] as const;
+  const appendicesHeadingIndex = entries.findIndex((entry) => normalizeTOCKey(entry.title) === 'appendices');
+  const formattedAppendixEntries = appendixEntries.map(([title, page]) => ({
+    title,
+    page: String(page),
+  }));
+  if (appendicesHeadingIndex >= 0) {
+    entries.splice(appendicesHeadingIndex + 1, 0, ...formattedAppendixEntries);
+  } else {
+    entries.push(...formattedAppendixEntries);
+  }
+
   const paragraphs: Paragraph[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -1187,7 +1210,7 @@ function buildTableOfContentsPage(data: any, compact = false, lineSpacing = 240)
     const resolvedPage = mappedPage ? String(mappedPage) : entry.page;
     const isSubsection = /^\d+\.\d+\s+/.test(titleText);
     const showPageNumber = (compact || !isSubsection) && Boolean(resolvedPage);
-    const fillLength = Math.max(1, showPageNumber ? 90 - titleText.length : 110 - titleText.length);
+    const fillLength = Math.max(4, showPageNumber ? 72 - titleText.length : 88 - titleText.length);
     const filler = '.'.repeat(fillLength);
     const indent = isSubsection ? 500 : 180;
 

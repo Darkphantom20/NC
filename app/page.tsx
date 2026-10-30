@@ -1402,6 +1402,16 @@ export default function Home() {
   };
 
   useEffect(() => {
+    if (!showPreview) return;
+
+    const timeoutId = window.setTimeout(() => {
+      void handlePreview();
+    }, 500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showPreview, form]);
+
+  useEffect(() => {
     const container = previewContainerRef.current;
     if (!showPreview || !previewBlob || !container) return;
 
