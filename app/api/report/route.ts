@@ -106,6 +106,62 @@ function escapeXml(value: any): string {
     .replace(/'/g, '&apos;');
 }
 
+function decodeXmlText(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+function replaceTextAcrossRuns(xml: string, replacements: Record<string, string | string[]>): string {
+  const repeatedReplacementIndexes: Record<string, number> = {};
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (match, encodedText, offset) => {
+      const decodedText = decodeXmlText(encodedText);
+      text += decodedText;
+      return match;
+    });
+
+    if (!text.trim() && text.length === 0) return paragraph;
+
+    let updatedText = text;
+    for (const [placeholder, value] of Object.entries(replacements)) {
+      if (Array.isArray(value)) {
+        let searchFrom = 0;
+        while (searchFrom <= updatedText.length) {
+          const foundAt = updatedText.indexOf(placeholder, searchFrom);
+          if (foundAt < 0) break;
+          const repeatedIndex = repeatedReplacementIndexes[placeholder] ?? 0;
+          const replacement = repeatedIndex < value.length ? value[repeatedIndex] : '';
+          updatedText =
+            updatedText.slice(0, foundAt)
+            + String(replacement ?? '')
+            + updatedText.slice(foundAt + placeholder.length);
+          searchFrom = foundAt + String(replacement ?? '').length;
+          repeatedReplacementIndexes[placeholder] = repeatedIndex + 1;
+        }
+      } else {
+        updatedText = updatedText.split(placeholder).join(String(value ?? ''));
+      }
+    }
+
+    if (updatedText === text) return paragraph;
+
+    let firstTextNode = true;
+    return paragraph.replace(/<w:t(?:\s[^>]*)?>[\s\S]*?<\/w:t>/g, (match) => {
+      if (firstTextNode) {
+        firstTextNode = false;
+        return match.replace(/>[\s\S]*?</, `>${escapeXml(updatedText)}<`);
+      }
+      return match.replace(/>[\s\S]*?</, '><');
+    });
+  });
+}
+
+
 async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
   const templateBuffer = fs.readFileSync(templatePath);
@@ -122,7 +178,7 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const procedures = splitTemplateItems(data.procedures);
   const tasks = splitTemplateItems(data.tasks);
 
-  const replacements: Record<string, string> = {
+  const replacements: Record<string, string | string[]> = {
     '[ORGANIZATION 1 NAME]': data.trainingOrganization || '',
     '[ORGANIZATION 2 NAME]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingOrganization || '') : '',
     '[Address / Location of Organization 1] and [Address / Location of Organization 2]':
@@ -173,8 +229,8 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     '[Duty or procedure 1]': procedures[0],
     '[Duty or procedure 2]': procedures[1],
     '[Duty or procedure 3]': procedures[2],
-    '[Describe the issue you encountered.]': data.issue1 || '',
-    '[Explain what was done to address the issue.]': data.issue1Action || '',
+    '[Describe the issue you encountered.]': [data.issue1 || '', data.issue2 || ''],
+    '[Explain what was done to address the issue.]': [data.issue1Action || '', data.issue2Action || ''],
     '[Summarize what you learned from these situations.]': data.lessons || '',
     '[Reflect on your growth, strengths, and areas to improve.]': data.selfEvaluation || '',
     '[Explain how the training relates to your degree program and career goals.]': data.relevancy || '',
@@ -184,10 +240,7 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     if (!/^word\/(?:document|header\d+|footer\d+)\.xml$/.test(name)) continue;
     let xml = await zip.file(name)?.async('string');
     if (!xml) continue;
-    for (const [placeholder, value] of Object.entries(replacements)) {
-      xml = xml.split(escapeXml(placeholder)).join(escapeXml(value));
-      xml = xml.split(placeholder).join(escapeXml(value));
-    }
+    xml = replaceTextAcrossRuns(xml, replacements);
     zip.file(name, xml);
   }
 
