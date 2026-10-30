@@ -530,12 +530,12 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     zip.file(name, xml);
   }
 
-  const untitledHeader = fs.existsSync(SCANNED_TEMPLATE_HEADER_PATH)
-    ? fs.readFileSync(SCANNED_TEMPLATE_HEADER_PATH)
+  const standardHeader = fs.existsSync(HEADER_IMAGE_PATH)
+    ? fs.readFileSync(HEADER_IMAGE_PATH)
     : null;
-  if (untitledHeader) {
+  if (standardHeader) {
     const mediaFiles = Object.keys(zip.files).filter((name) => /^word\/media\/.+\.(png|jpg|jpeg)$/i.test(name));
-    for (const mediaFile of mediaFiles) zip.file(mediaFile, untitledHeader);
+    for (const mediaFile of mediaFiles) zip.file(mediaFile, standardHeader);
   }
 
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
