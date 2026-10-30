@@ -117,81 +117,6 @@ function decodeXmlText(value: string): string {
     .replace(/&apos;/g, "'");
 }
 
-function styleScannedAcknowledgementPage(xml: string, data: any): string {
-  let inAcknowledgement = false;
-  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
-    let text = '';
-    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
-      text += decodeXmlText(encodedText);
-      return _match;
-    });
-
-    const trimmed = text.trim();
-    if (/^Acknowledgement$/i.test(trimmed)) {
-      inAcknowledgement = true;
-      let styled = paragraph.replace(/<w:jc\b[^>]*\/>/g, '');
-      styled = styled.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g,
-        '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="000000"/><w:b/><w:bCs/></w:rPr>');
-      styled = styled.replace(/<w:pPr>/, '<w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="360" w:line="360" w:lineRule="auto"/>');
-      if (!styled.includes('<w:pPr>')) {
-        styled = styled.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr><w:jc w:val="center"/></w:pPr>');
-      }
-      return styled;
-    }
-
-    if (!inAcknowledgement) return paragraph;
-    if (/^Table of Contents$/i.test(trimmed)) {
-      inAcknowledgement = false;
-      return paragraph;
-    }
-
-    if (!trimmed) return paragraph;
-
-    const isSignatureName = String(data.studentName || '').trim().length > 0
-      && trimmed === String(data.studentName).trim();
-    const isDegreeLine = /^.+\s+[-–]\s+.+Year$/i.test(trimmed)
-      || /^\[Program\]/.test(trimmed)
-      || /\bYear Level\b/i.test(trimmed);
-    const isCampusLine = /Jose Rizal Memorial State University/i.test(trimmed);
-
-    let size = '22';
-    let color = '666666';
-    let italic = true;
-    let bold = false;
-    let alignment = 'both';
-
-    if (isSignatureName) {
-      size = '20';
-      color = '000080';
-      italic = false;
-      bold = true;
-      alignment = 'right';
-    } else if (isDegreeLine || isCampusLine) {
-      size = '18';
-      color = '000000';
-      italic = false;
-      bold = isDegreeLine;
-      alignment = 'right';
-    } else {
-      size = '18';
-      color = '666666';
-      italic = true;
-      alignment = 'both';
-    }
-
-    const runProperties = `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="${color}"/>${bold ? '<w:b/><w:bCs/>' : ''}${italic ? '<w:i/><w:iCs/>': ''}</w:rPr>`;
-    let styled = paragraph.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, runProperties);
-    styled = styled.replace(/(<w:r\b[^>]*>)(?!<w:rPr>)/g, `$1${runProperties}`);
-    styled = styled.replace(/<w:jc\b[^>]*\/>/g, '');
-    if (styled.includes('<w:pPr>')) {
-      styled = styled.replace('<w:pPr>', `<w:pPr><w:jc w:val="${alignment}"/><w:spacing w:before="0" w:after="${isDegreeLine || isCampusLine ? '120' : '240'}" w:line="360" w:lineRule="auto"/>`);
-    } else {
-      styled = styled.replace(/^(<w:p\b[^>]*>)/, `$1<w:pPr><w:jc w:val="${alignment}"/></w:pPr>`);
-    }
-    return styled;
-  });
-}
-
 function buildScannedTableOfContents(data: any): { title: string; page: string; level: number }[] {
   const secondPlacement = Boolean(data.schoolPlacement?.enabled);
   const org1 = data.trainingOrganization || 'TRAINING ORGANIZATION';
@@ -284,7 +209,7 @@ function replaceScannedTableOfContents(xml: string, data: any): string {
   const generatedParagraphs = entries.map((entry) => {
     const indent = entry.level === 1 ? 360 : entry.level === 2 ? 720 : 0;
     const bold = entry.level === 0 ? '<w:b/><w:bCs/>' : '';
-    const size = entry.level === 0 ? '18' : '16';
+    const size = '22';
     return `<w:p><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9360"/></w:tabs><w:ind w:left="${indent}" w:right="0"/><w:spacing w:before="0" w:after="20" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="000000"/>${bold}</w:rPr><w:t xml:space="preserve">${escapeXml(entry.title)}</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:tab/><w:t xml:space="preserve">${escapeXml(entry.page)}</w:t></w:r></w:p>`;
   }).join('');
 
@@ -364,78 +289,6 @@ function replaceTextAcrossRuns(xml: string, replacements: Record<string, string 
       }
       return match.replace(/>[\s\S]*?</, '><');
     });
-  });
-}
-
-function styleScannedCoverPage(xml: string): string {
-  const coverStyles: Record<string, { size: string; color: string; bold: boolean; italic: boolean }> = {
-    'A NARRATIVE REPORT': { size: '22', color: 'C69C3A', bold: true, italic: false },
-    'on the On-the-Job Training conducted at': { size: '18', color: '000000', bold: false, italic: true },
-    'and': { size: '18', color: '000000', bold: false, italic: true },
-    'Presented to the faculty of': { size: '18', color: '000000', bold: false, italic: true },
-    'In partial fulfillment of the requirements for the degree of': { size: '18', color: '000000', bold: false, italic: true },
-    'Training Duration': { size: '18', color: '000000', bold: false, italic: true },
-    'Submitted by:': { size: '18', color: '000000', bold: false, italic: false },
-    'Submitted to:': { size: '18', color: '000000', bold: false, italic: false },
-  };
-
-  let reachedAcknowledgement = false;
-  let coverParagraphIndex = 0;
-  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
-    let text = '';
-    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
-      text += decodeXmlText(encodedText);
-      return _match;
-    });
-
-    if (/^Acknowledgement$/i.test(text.trim())) reachedAcknowledgement = true;
-    if (reachedAcknowledgement || !text.trim()) return paragraph;
-    const currentIndex = coverParagraphIndex++;
-
-    const style = coverStyles[text.trim()];
-    const organizationName = currentIndex === 2
-      || currentIndex === 4
-      || /\bORGANIZATION\b/i.test(text)
-      || /^Live Preview Test Organization$/i.test(text)
-      || (text.trim().length > 0 && /organization/i.test(text.trim()) && !text.includes('/'));
-    const isFacultyOrDegree = text.startsWith('[') === false && (
-      paragraph.includes('[College Name]') || paragraph.includes('[Degree Program]')
-    );
-
-    let size = style?.size || '20';
-    let color = style?.color || '000080';
-    let bold = style?.bold || false;
-    let italic = style?.italic || false;
-
-    if (organizationName) {
-      size = '28';
-      color = '000080';
-      bold = true;
-    } else if (isFacultyOrDegree) {
-      size = '20';
-      color = '000000';
-      bold = false;
-      italic = true;
-    } else if (/Training Duration|Submitted by:|Submitted to:/.test(text.trim())) {
-      size = '18';
-      color = '000000';
-    } else if (text.includes('[Month YYYY]')) {
-      size = '18';
-      color = '666666';
-    }
-
-    const runProperties = `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="${color}"/>${bold ? '<w:b/><w:bCs/>' : ''}${italic ? '<w:i/><w:iCs/>' : ''}</w:rPr>`;
-    let styled = paragraph.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, runProperties);
-    styled = styled.replace(/(<w:r\b[^>]*>)(?!<w:rPr>)/g, `$1${runProperties}`);
-
-    styled = styled.replace(/<w:jc\b[^>]*\/>/g, '');
-    if (styled.includes('<w:pPr>')) {
-      styled = styled.replace('<w:pPr>', '<w:pPr><w:jc w:val="center"/>');
-    } else {
-      styled = styled.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr><w:jc w:val="center"/></w:pPr>');
-    }
-
-    return styled;
   });
 }
 
@@ -539,8 +392,6 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     if (!xml) continue;
     xml = replaceTextAcrossRuns(xml, replacements);
     if (name === 'word/document.xml') {
-      xml = styleScannedCoverPage(xml);
-      xml = styleScannedAcknowledgementPage(xml, data);
       xml = replaceScannedTableOfContents(xml, data);
     }
     if (/^word\/header\d+\.xml$/.test(name)) {
