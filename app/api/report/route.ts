@@ -519,9 +519,7 @@ function formatScannedAppendixParagraphs(xml: string): string {
 
     return formatted.replace(/<w:r\b[^>]*>[\s\S]*?<\/w:r>/g, (run) => {
       const properties = run.match(/<w:rPr>([\s\S]*?)<\/w:rPr>/)?.[1] || '';
-      const boldProperties = [...properties.matchAll(/<w:b(?:\s[^>]*)?\/?>/g)]
-        .map(([boldProperty]) => boldProperty)
-        .join('');
+      const boldProperties = properties.match(/<w:b(?:\s[^>]*)?\/?>/g)?.join('') || '';
       const runProperties =
         '<w:rPr>' +
           '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/>' +
