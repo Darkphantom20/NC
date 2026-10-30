@@ -416,7 +416,7 @@ function removeScannedSchoolPlacementPages(xml: string, enabled: boolean): strin
     paragraph: match[0],
     text: getScannedParagraphText(match[0]),
   })).filter((entry) => /<w:pStyle\b[^>]*w:val="Heading1"/.test(entry.paragraph));
-  const placementHeading = headings.find((entry) => /^II\.\s/.test(entry.text));
+  const placementHeading = headings.find((entry) => /^II\.(?:\s|$)/.test(entry.text));
   const appendicesHeading = headings.find((entry) => entry.start > (placementHeading?.start ?? -1) && /^Appendices$/i.test(entry.text));
   if (!placementHeading || !appendicesHeading) return xml;
   return xml.slice(0, placementHeading.start) + xml.slice(appendicesHeading.start);
