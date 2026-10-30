@@ -318,10 +318,211 @@ function sizeScannedHeaderImage(xml: string): string {
   );
 }
 
+function getScannedJournalImage(week: DailyJournalWeek): { data: Buffer; extension: string; width: number; height: number } | null {
+  const image = [week.currentLayoutImages, week.images, week.reportLayoutImages]
+    .find((images) => images?.some(Boolean))
+    ?.find(Boolean);
+  if (!image) return null;
+
+  const dataUrl = typeof image === 'string' ? image : image.base64;
+  if (typeof dataUrl !== 'string') {
+    throw new Error(`The journal image for week ${week.weekNumber} is invalid.`);
+  }
+  const match = dataUrl.match(/^data:image\/(jpeg|jpg|png);base64,([\s\S]+)$/i);
+  if (!match) {
+    throw new Error(`The journal image for week ${week.weekNumber} must be a PNG or JPEG image.`);
+  }
+
+  const extension = match[1].toLowerCase() === 'png' ? 'png' : 'jpg';
+  const data = Buffer.from(match[2], 'base64');
+  if (data.length === 0) {
+    throw new Error(`The journal image for week ${week.weekNumber} is empty.`);
+  }
+
+  let width = 0;
+  let height = 0;
+  if (extension === 'png' && data.length >= 24) {
+    width = data.readUInt32BE(16);
+    height = data.readUInt32BE(20);
+  } else if (extension === 'jpg' && data.length >= 4) {
+    let offset = 2;
+    while (offset < data.length) {
+      if (data[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+
+      const marker = data[offset + 1];
+      offset += 2;
+      if (marker === undefined || marker === 0xd9 || marker === 0xda) break;
+      if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+      if (offset + 7 > data.length) break;
+
+      const segmentLength = data.readUInt16BE(offset);
+      if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker)) {
+        height = data.readUInt16BE(offset + 3);
+        width = data.readUInt16BE(offset + 5);
+        break;
+      }
+      if (segmentLength < 2) break;
+      offset += segmentLength;
+    }
+  }
+
+  if (!width || !height) {
+    throw new Error(`The journal image for week ${week.weekNumber} could not be read.`);
+  }
+
+  return { data, extension, width, height };
+}
+
+function buildScannedJournalImageRun(
+  image: { width: number; height: number },
+  relationshipId: string,
+  drawingId: number,
+  name: string,
+): string {
+  const maxWidth = 1.45 * 914400;
+  const maxHeight = 0.9 * 914400;
+  const scale = Math.min(maxWidth / image.width, maxHeight / image.height);
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+
+  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${drawingId}" name="${escapeXml(name)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${drawingId}" name="${escapeXml(name)}"/><pic:cNvPicPr><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${width}" cy="${height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+}
+
+function replaceScannedJournalTable(
+  xml: string,
+  relationshipsXml: string,
+  data: any,
+): { xml: string; relationshipsXml: string; images: { path: string; data: Buffer }[] } {
+  const weeks: DailyJournalWeek[] = Array.isArray(data.appendices?.dailyJournal)
+    ? data.appendices.dailyJournal
+    : [];
+  const images: { path: string; data: Buffer }[] = [];
+  const newRelationships: string[] = [];
+  const relationshipIds = Array.from(relationshipsXml.matchAll(/\bId="rId(\d+)"/g), (match) => Number(match[1]));
+  let nextRelationshipId = Math.max(0, ...relationshipIds) + 1;
+  let drawingId = 1000;
+
+  const replaceCellText = (cell: string, value: string) => {
+    let firstTextNode = true;
+    return cell.replace(/<w:t(?:\s[^>]*)?>[\s\S]*?<\/w:t>/g, () => {
+      if (!firstTextNode) return '';
+      firstTextNode = false;
+      return `<w:t xml:space="preserve">${escapeXml(value)}</w:t>`;
+    });
+  };
+
+  const replaceCellImage = (cell: string, imageRun: string) => cell.replace(
+    /<w:p\b[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${imageRun}</w:p>`,
+  );
+
+  const updatedXml = xml.replace(/<w:tbl\b[\s\S]*?<\/w:tbl>/g, (table) => {
+    const rows = Array.from(table.matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g), (match) => match[0]);
+    const rowCells = rows.map((row) => Array.from(row.matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g), (match) => match[0]));
+    const headerIndex = rowCells.findIndex((cells) => (
+      cells.length === 5
+      && cells[0].includes('>Week<')
+      && cells[1].includes('>Date<')
+      && cells[2].includes('Activities / Tasks Accomplished')
+      && cells[3].includes('>Image<')
+      && cells[4].includes('>Hours<')
+    ));
+    if (headerIndex < 0) return table;
+
+    const dataRowIndex = rowCells.findIndex((cells) => cells.some((cell) => cell.includes('[Date range]')));
+    const totalRowIndex = rowCells.findIndex((cells) => cells.some((cell) => cell.includes('TOTAL HOURS')));
+    if (dataRowIndex < 0 || totalRowIndex < 0 || rowCells[dataRowIndex].length !== 5) {
+      throw new Error('The scanned-template journal table has an unexpected layout.');
+    }
+
+    const templateDataCells = rowCells[dataRowIndex];
+    const populatedRows = weeks.map((week, index) => {
+      const activities = Array.isArray(week.activities) ? week.activities : [];
+      const dates = activities.map((activity) => String(activity.date || '').trim()).filter(Boolean);
+      const dateRange = dates.length > 1 && dates[0] !== dates[dates.length - 1]
+        ? `${dates[0]} - ${dates[dates.length - 1]}`
+        : dates[0] || '';
+      const activitySummary = activities
+        .map((activity) => [String(activity.day || '').trim(), String(activity.accomplishment || '').trim()].filter(Boolean).join(': '))
+        .filter(Boolean)
+        .join('; ');
+      const activityHours = activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0);
+      const weeklyHours = activities.some((activity) => activity.hours !== '' && activity.hours !== null && activity.hours !== undefined)
+        ? activityHours
+        : Number(week.totalHours) || 0;
+      const formattedHours = String(Number(weeklyHours.toFixed(2)));
+      const cells = [...templateDataCells];
+      cells[0] = replaceCellText(cells[0], `Week ${week.weekNumber || index + 1}`);
+      cells[1] = replaceCellText(cells[1], dateRange);
+      cells[2] = replaceCellText(cells[2], activitySummary);
+      cells[4] = replaceCellText(cells[4], formattedHours);
+
+      const image = getScannedJournalImage(week);
+      if (image) {
+        const relationshipId = `rId${nextRelationshipId}`;
+        const imagePath = `word/media/journal-week-${index + 1}.${image.extension}`;
+        const imageRun = buildScannedJournalImageRun(image, relationshipId, drawingId, `Journal week ${week.weekNumber || index + 1}`);
+        drawingId += 1;
+        nextRelationshipId += 1;
+        images.push({ path: imagePath, data: image.data });
+        newRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/journal-week-${index + 1}.${image.extension}"/>`);
+        cells[3] = replaceCellImage(cells[3], imageRun);
+      } else {
+        cells[3] = replaceCellText(cells[3], '');
+      }
+
+      return row.replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => cells.shift() || '');
+    });
+
+    const totalHours = weeks.reduce((total, week) => {
+      const activities = Array.isArray(week.activities) ? week.activities : [];
+      const hasActivityHours = activities.some((activity) => activity.hours !== '' && activity.hours !== null && activity.hours !== undefined);
+      return total + (hasActivityHours
+        ? activities.reduce((weeklyTotal, activity) => weeklyTotal + (Number(activity.hours) || 0), 0)
+        : Number(week.totalHours) || 0);
+    }, 0);
+    const totalCells = [...rowCells[totalRowIndex]];
+    totalCells[totalCells.length - 1] = replaceCellText(
+      totalCells[totalCells.length - 1],
+      String(Number(totalHours.toFixed(2))),
+    );
+    const totalRow = rows[totalRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => totalCells.shift() || '');
+    const replacementRows = [
+      rows[headerIndex],
+      ...populatedRows,
+      totalRow,
+    ].join('');
+    let rowIndex = -1;
+    return table.replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, () => {
+      rowIndex += 1;
+      return rowIndex === 0 ? replacementRows : '';
+    });
+  });
+
+  if (newRelationships.length > 0) {
+    if (!relationshipsXml.includes('</Relationships>')) {
+      throw new Error('The scanned-template image relationships are invalid.');
+    }
+    relationshipsXml = relationshipsXml.replace('</Relationships>', `${newRelationships.join('')}</Relationships>`);
+  }
+
+  return { xml: updatedXml, relationshipsXml, images };
+}
+
 async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
   const templateBuffer = fs.readFileSync(templatePath);
   const zip = await JSZip.loadAsync(templateBuffer);
+  const documentRelationshipsPath = 'word/_rels/document.xml.rels';
+  const documentRelationshipsFile = zip.file(documentRelationshipsPath);
+  if (!documentRelationshipsFile) {
+    throw new Error('The scanned-template document relationships are missing.');
+  }
+  let documentRelationshipsXml = await documentRelationshipsFile.async('string');
+  const journalImages: { path: string; data: Buffer }[] = [];
 
   const objectives = splitTemplateItems(data.objectives);
   const coreValues = splitTemplateItems(data.coreValues);
@@ -403,6 +604,10 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     if (!xml) continue;
     xml = replaceTextAcrossRuns(xml, replacements);
     if (name === 'word/document.xml') {
+      const journalTable = replaceScannedJournalTable(xml, documentRelationshipsXml, data);
+      xml = journalTable.xml;
+      documentRelationshipsXml = journalTable.relationshipsXml;
+      journalImages.push(...journalTable.images);
       xml = replaceScannedTableOfContents(xml, data);
     }
     if (/^word\/header\d+\.xml$/.test(name)) {
@@ -411,6 +616,8 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     zip.file(name, xml);
   }
 
+  zip.file(documentRelationshipsPath, documentRelationshipsXml);
+
   const scannedHeader = fs.existsSync(HD_TEMPLATE_HEADER_PATH)
     ? fs.readFileSync(HD_TEMPLATE_HEADER_PATH)
     : null;
@@ -418,6 +625,8 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
     const mediaFiles = Object.keys(zip.files).filter((name) => /^word\/media\/.+\.(png|jpg|jpeg)$/i.test(name));
     for (const mediaFile of mediaFiles) zip.file(mediaFile, scannedHeader);
   }
+
+  journalImages.forEach((image) => zip.file(image.path, image.data));
 
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
