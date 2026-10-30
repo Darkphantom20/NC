@@ -213,8 +213,29 @@ function replaceScannedTableOfContents(xml: string, data: any): string {
     return `<w:p><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9360"/></w:tabs><w:ind w:left="${indent}" w:right="0"/><w:spacing w:before="0" w:after="20" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="000000"/>${bold}</w:rPr><w:t xml:space="preserve">${escapeXml(entry.title)}</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:tab/><w:t xml:space="preserve">${escapeXml(entry.page)}</w:t></w:r></w:p>`;
   }).join('');
 
+  const paragraphTexts = Array.from(xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), ([paragraph]) => {
+    let text = '';
+    paragraph.replace(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g, (_match, encodedText) => {
+      text += decodeXmlText(encodedText);
+      return _match;
+    });
+    return text.trim();
+  });
+  let contentsHeadingIndex = -1;
+  let listHeadingIndex = -1;
+  for (let index = 0; index < paragraphTexts.length; index += 1) {
+    if (contentsHeadingIndex < 0 && /^Table of Contents$/i.test(paragraphTexts[index])) {
+      contentsHeadingIndex = index;
+      continue;
+    }
+    if (contentsHeadingIndex >= 0 && /^List of Tables\s*\/\s*Figures$/i.test(paragraphTexts[index])) {
+      listHeadingIndex = index;
+      break;
+    }
+  }
+  if (contentsHeadingIndex < 0 || listHeadingIndex < 0) return xml;
+
   let inTableOfContents = false;
-  let inserted = false;
   let sawContentsHeading = false;
 
   return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraph) => {
@@ -228,21 +249,14 @@ function replaceScannedTableOfContents(xml: string, data: any): string {
     if (/^Table of Contents$/i.test(trimmed) && !sawContentsHeading) {
       sawContentsHeading = true;
       inTableOfContents = true;
-      return paragraph;
+      return paragraph + generatedParagraphs;
     }
     if (!inTableOfContents) return paragraph;
     if (/^List of Tables\s*\/\s*Figures$/i.test(trimmed)) {
       inTableOfContents = false;
-      return inserted ? paragraph : generatedParagraphs + paragraph;
+      return paragraph;
     }
-    if (/^Acknowledgementi$|^Table of Contentsii$|^List of Tables\s*\/\s*Figuresiv$|^(?:I|II)\.\s|^Introduction\d*$|^Background of the Organization\d*$|^Vision, Mission, and Objectives\d*$|^Organizational Structure\d*$|^The Products and Services Offered\d*$|^Organization\s*\/\s*Company Analysis\d*$|^Strengths and Weaknesses|^Opportunities and Threats|^Recommendations for Improvement\d*$|^Tasks and Duties\d*$|^Tasks and Responsibilities Assigned\d*$|^Duties and Procedures Conformed\d*$|^Case Analysis\d*$|^Identified Issues\/Problems\d*$|^Strategies Undertaken\d*$|^Lessons Learned\d*$|^Reflections\d*$|^Self-Evaluation\d*$|^Relevance to Course and Goals\d*$|^Appendices\d*$|^Appendix [A-Z]:/i.test(trimmed)) {
-      if (!inserted) {
-        inserted = true;
-        return generatedParagraphs;
-      }
-      return '';
-    }
-    return paragraph;
+    return '';
   });
 }
 
