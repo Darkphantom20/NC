@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import JSZip from 'jszip';
 import { createClient } from '@supabase/supabase-js';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Header, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, TableLayoutType } from 'docx';
 
@@ -89,6 +90,118 @@ function ensureArray(val: any): string[] {
   return [];
 }
 
+function splitTemplateItems(value: any, count = 3): string[] {
+  const items = ensureArray(value);
+  const padded = [...items];
+  while (padded.length < count) padded.push('');
+  return padded.slice(0, count);
+}
+
+function escapeXml(value: any): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+async function fillReferenceTemplate(data: any): Promise<Buffer> {
+  const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
+  const templateBuffer = fs.readFileSync(templatePath);
+  const zip = await JSZip.loadAsync(templateBuffer);
+
+  const objectives = splitTemplateItems(data.objectives);
+  const coreValues = splitTemplateItems(data.coreValues);
+  const services = splitTemplateItems(data.services);
+  const strengths = splitTemplateItems(data.strengths);
+  const weaknesses = splitTemplateItems(data.weaknesses);
+  const opportunities = splitTemplateItems(data.opportunities);
+  const threats = splitTemplateItems(data.threats);
+  const recommendations = splitTemplateItems(data.recommendations);
+  const procedures = splitTemplateItems(data.procedures);
+  const tasks = splitTemplateItems(data.tasks);
+
+  const replacements: Record<string, string> = {
+    '[ORGANIZATION 1 NAME]': data.trainingOrganization || '',
+    '[ORGANIZATION 2 NAME]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingOrganization || '') : '',
+    '[Address / Location of Organization 1] and [Address / Location of Organization 2]':
+      [data.trainingLocation, data.schoolPlacement?.enabled ? data.schoolPlacement.trainingLocation : ''].filter(Boolean).join(' and '),
+    '[Address / Location of Organization 1]': data.trainingLocation || '',
+    '[Address / Location of Organization 2]': data.schoolPlacement?.enabled ? (data.schoolPlacement.trainingLocation || '') : '',
+    '[College Name]': data.collegeFaculty || '',
+    '[Degree Program]': data.degreeProgram || '',
+    '[Month DD � Month DD, YYYY]  ([000] HRS)': data.trainingDuration || '',
+    '[Month YYYY]': '',
+    '[STUDENT FULL NAME]': data.studentName || '',
+    '[Program] � [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
+    '[Program]': data.degreeProgram || '',
+    '[Year Level]': data.studentYear || '',
+    '[OJT COORDINATOR NAME]': data.submittedToName || '',
+    '[Express your gratitude to the host organizations, supervisors, the faculty OJT coordinator, and everyone who supported your training.]': data.acknowledgement || '',
+    '[Add a second paragraph to thank your family, classmates, and fellow trainees.]': '',
+    '[Student Name]': data.studentName || '',
+    '[Degree Program] � [Year Level]': `${data.degreeProgram || ''}${data.studentYear ? ` - ${data.studentYear}` : ''}`,
+    '[Describe the history, location, and nature of the organization in two to three paragraphs.]': data.background || '',
+    '[Insert the organization�s vision statement.]': data.vision || '',
+    '[Insert the organization�s mission statement.]': data.mission || '',
+    '[Objective 1]': objectives[0],
+    '[Objective 2]': objectives[1],
+    '[Objective 3]': objectives[2],
+    '[Value 1]': coreValues[0],
+    '[Value 2]': coreValues[1],
+    '[Value 3]': coreValues[2],
+    '[Product or service 1]': services[0],
+    '[Product or service 2]': services[1],
+    '[Product or service 3]': services[2],
+    '[Strength 1]': strengths[0],
+    '[Strength 2]': strengths[1],
+    '[Strength 3]': strengths[2],
+    '[Weakness 1]': weaknesses[0],
+    '[Weakness 2]': weaknesses[1],
+    '[Weakness 3]': weaknesses[2],
+    '[Opportunity 1]': opportunities[0],
+    '[Opportunity 2]': opportunities[1],
+    '[Opportunity 3]': opportunities[2],
+    '[Threat 1]': threats[0],
+    '[Threat 2]': threats[1],
+    '[Threat 3]': threats[2],
+    '[Recommendation 1]': recommendations[0],
+    '[Recommendation 2]': recommendations[1],
+    '[Recommendation 3]': recommendations[2],
+    '[Describe the tasks you were assigned during the training period.]': data.tasks || '',
+    '[Duty or procedure 1]': procedures[0],
+    '[Duty or procedure 2]': procedures[1],
+    '[Duty or procedure 3]': procedures[2],
+    '[Describe the issue you encountered.]': data.issue1 || '',
+    '[Explain what was done to address the issue.]': data.issue1Action || '',
+    '[Summarize what you learned from these situations.]': data.lessons || '',
+    '[Reflect on your growth, strengths, and areas to improve.]': data.selfEvaluation || '',
+    '[Explain how the training relates to your degree program and career goals.]': data.relevancy || '',
+  };
+
+  for (const name of Object.keys(zip.files)) {
+    if (!/^word\/(?:document|header\d+|footer\d+)\.xml$/.test(name)) continue;
+    let xml = await zip.file(name)?.async('string');
+    if (!xml) continue;
+    for (const [placeholder, value] of Object.entries(replacements)) {
+      xml = xml.split(escapeXml(placeholder)).join(escapeXml(value));
+      xml = xml.split(placeholder).join(escapeXml(value));
+    }
+    zip.file(name, xml);
+  }
+
+  const untitledHeader = fs.existsSync(SCANNED_TEMPLATE_HEADER_PATH)
+    ? fs.readFileSync(SCANNED_TEMPLATE_HEADER_PATH)
+    : null;
+  if (untitledHeader) {
+    const mediaFiles = Object.keys(zip.files).filter((name) => /^word\/media\/.+\.(png|jpg|jpeg)$/i.test(name));
+    for (const mediaFile of mediaFiles) zip.file(mediaFile, untitledHeader);
+  }
+
+  return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+}
+
 function parseBase64Image(base64String: string): Buffer | null {
   if (!base64String || typeof base64String !== 'string') return null;
   if (!base64String.startsWith('data:image/')) return null;
@@ -108,6 +221,17 @@ export async function POST(request: Request) {
 
     if (!data || typeof data !== 'object') {
       return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 });
+    }
+
+    if (data.reportTemplate === 'scanned-template') {
+      const filledTemplate = await fillReferenceTemplate(data);
+      return new Response(filledTemplate, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'Content-Disposition': `attachment; filename="${OUTPUT_FILE_NAME}"`,
+        },
+      });
     }
 
     const isPreviewRequest = request.headers.get('x-report-preview') === 'true';
