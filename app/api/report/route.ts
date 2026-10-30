@@ -122,7 +122,6 @@ function buildScannedTableOfContents(data: any): { title: string; page: string; 
   const org1 = data.trainingOrganization || 'TRAINING ORGANIZATION';
   const org2 = data.schoolPlacement?.trainingOrganization || 'SCHOOL TRAINING ORGANIZATION';
   const appendicesStart = secondPlacement ? 11 : 6;
-  const appendix = data.appendices || {};
 
   const entries: { title: string; page: string; level: number }[] = [
     { title: 'Acknowledgement', page: 'i', level: 0 },
@@ -166,6 +165,8 @@ function buildScannedTableOfContents(data: any): { title: string; page: string; 
       { title: 'Tasks and Responsibilities Assigned', page: '8', level: 2 },
       { title: 'Duties and Procedures Conformed', page: '8', level: 2 },
       { title: 'Case Analysis', page: '9', level: 1 },
+      { title: 'Identified Issues / Problems', page: '9', level: 2 },
+      { title: 'Strategies Undertaken', page: '9', level: 2 },
       { title: 'Lessons Learned', page: '9', level: 2 },
       { title: 'Reflections', page: '10', level: 1 },
       { title: 'Self-Evaluation', page: '10', level: 2 },
@@ -175,30 +176,28 @@ function buildScannedTableOfContents(data: any): { title: string; page: string; 
 
   entries.push({ title: 'Appendices', page: String(appendicesStart), level: 0 });
 
-  const appendixDefinitions: { label: string; hasContent: boolean }[] = [
-    { label: 'Journal', hasContent: Array.isArray(appendix.dailyJournal) && appendix.dailyJournal.length > 0 },
-    { label: 'Certificate of Participation of Prime Seminar', hasContent: Boolean(appendix.certParticipation) },
-    { label: 'One-Page Narrative Report of PRIME', hasContent: Boolean(appendix.primeNarrative) },
-    { label: 'Resume and Application Letter', hasContent: Boolean(appendix.resume) },
-    { label: 'Evaluation of Grades from the Registrar', hasContent: Boolean(appendix.grades) },
-    { label: 'Validated Enrollment Form', hasContent: true },
-    { label: 'Medical Certificate', hasContent: Boolean(appendix.medicalWaiver) },
-    { label: 'Parent’s Waiver', hasContent: Boolean(appendix.medicalWaiver) },
-    { label: 'Letter of Acceptance', hasContent: Boolean(appendix.letterAcceptance) },
-    { label: 'Daily Time Record (Number of Hours Rendered)', hasContent: Boolean(appendix.dtr) },
-    { label: 'Student’s Intern Rating Sheet', hasContent: Boolean(appendix.ratingSheet) },
-    { label: 'Performance Evaluation', hasContent: true },
-    { label: 'Certificate of Completion', hasContent: Boolean(appendix.certCompletion) },
-    { label: 'Memorandum of Agreement', hasContent: true },
+  const appendixEntries = [
+    'Journal',
+    'Certificate of Participation of Prime Seminar',
+    'One-Page Narrative Report of PRIME',
+    'Resume and Application Letter',
+    'Evaluation of Grades from the Registrar',
+    'Validated Enrollment Form',
+    'Medical Certificate',
+    'Parent’s Waiver',
+    'Letter of Acceptance',
+    'Daily Time Record (Number of Hours Rendered)',
+    'Student’s Intern Rating Sheet',
+    'Performance Evaluation',
+    'Certificate of Completion',
+    'Memorandum of Agreement',
   ];
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let page = appendicesStart + 1;
-  appendixDefinitions.forEach((item, index) => {
-    if (!item.hasContent) return;
-    entries.push({ title: `Appendix ${letters[index]}: ${item.label}`, page: String(page), level: 1 });
-    page += index === 0 && Array.isArray(appendix.dailyJournal)
-      ? Math.max(1, Math.ceil(appendix.dailyJournal.length / 4))
-      : 1;
+  appendixEntries.forEach((title, index) => {
+    entries.push({
+      title: `Appendix ${String.fromCharCode(65 + index)}: ${title}`,
+      page: String(appendicesStart + 1 + index),
+      level: 1,
+    });
   });
 
   return entries;
@@ -207,10 +206,8 @@ function buildScannedTableOfContents(data: any): { title: string; page: string; 
 function replaceScannedTableOfContents(xml: string, data: any): string {
   const entries = buildScannedTableOfContents(data);
   const generatedParagraphs = entries.map((entry) => {
-    const indent = entry.level === 1 ? 360 : entry.level === 2 ? 720 : 0;
-    const bold = entry.level === 0 ? '<w:b/><w:bCs/>' : '';
-    const size = '22';
-    return `<w:p><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9360"/></w:tabs><w:ind w:left="${indent}" w:right="0"/><w:spacing w:before="0" w:after="20" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/><w:color w:val="000000"/>${bold}</w:rPr><w:t xml:space="preserve">${escapeXml(entry.title)}</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:tab/><w:t xml:space="preserve">${escapeXml(entry.page)}</w:t></w:r></w:p>`;
+    const styleLevel = entry.level + 1;
+    return `<w:p><w:pPr><w:pStyle w:val="TOC${styleLevel}"/><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9360"/></w:tabs></w:pPr><w:r><w:t xml:space="preserve">${escapeXml(entry.title)}</w:t></w:r><w:r><w:tab/><w:t xml:space="preserve">${escapeXml(entry.page)}</w:t></w:r></w:p>`;
   }).join('');
 
   const paragraphTexts = Array.from(xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), ([paragraph]) => {
