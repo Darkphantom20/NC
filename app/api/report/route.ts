@@ -1162,8 +1162,12 @@ function replaceScannedJournalLayout(
     return tableMatch
       .replace(/<w:tblGrid>[\s\S]*?<\/w:tblGrid>/, `<w:tblGrid>${gridColumns}</w:tblGrid>`)
       .replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, (() => {
-        let index = 0;
-        return () => outputRows[index++] || '';
+        let isFirstRow = true;
+        return () => {
+          if (!isFirstRow) return '';
+          isFirstRow = false;
+          return outputRows.join('');
+        };
       })());
   };
 
