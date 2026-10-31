@@ -84,18 +84,14 @@ function hasScannedTemplateImage(image: string | { base64: string } | null | und
 }
 
 function getScannedTemplateJournal(appendices: NarrativeForm['appendices']): NarrativeJournalWeek[] {
-  const defaultWeek = defaultForm.appendices.dailyJournal[0];
+  const isUntouchedSample = JSON.stringify(appendices.dailyJournal) === JSON.stringify(defaultForm.appendices.dailyJournal);
+  if (isUntouchedSample) return [];
+
   return appendices.dailyJournal.map((week) => {
-    const activities = week.activities.filter((activity) => !defaultWeek.activities.some((sample) => (
-        activity.day === sample.day
-        && activity.date === sample.date
-        && activity.accomplishment === sample.accomplishment
-        && String(activity.hours ?? '') === String(sample.hours ?? '')
-      )));
     return {
       ...week,
-      activities,
-      totalHours: activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0),
+      activities: week.activities,
+      totalHours: week.activities.reduce((total, activity) => total + (Number(activity.hours) || 0), 0),
     };
   });
 }
