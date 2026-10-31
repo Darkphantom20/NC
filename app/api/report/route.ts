@@ -119,10 +119,9 @@ function getScannedJournalWeeks(data: any): DailyJournalWeek[] {
   });
 }
 
-function getScannedJournalCaption(layout: AppendicesData['dailyJournalLayout']): string {
+function getScannedJournalCaption(layout: AppendicesData['dailyJournalLayout'], weekNumber = 1): string {
   if (layout === 'report') return 'Table 1: Daily Accomplishment Journal';
-  if (layout === 'no-photo') return 'Table 1: Daily Journal (No Pictures)';
-  return 'Table 1: Weekly Journal';
+  return `Table ${weekNumber}: Week ${weekNumber}`;
 }
 
 function getScannedAppendixImages(data: any, letter: ScannedAppendixLetter): (string | AppendixImage)[] {
@@ -332,9 +331,15 @@ function replaceScannedTableOfContents(xml: string, data: any): string {
 
 function replaceScannedJournalList(xml: string, data: any): string {
   const weeks = getScannedJournalWeeks(data);
-  const generatedEntries = weeks.length > 0
-    ? `<w:p><w:pPr><w:pStyle w:val="Caption"/><w:keepNext/></w:pPr><w:r><w:t xml:space="preserve">${escapeXml(getScannedJournalCaption(data.appendices?.dailyJournalLayout))}</w:t></w:r></w:p>`
-    : '';
+  const isDailyLayout = data.appendices?.dailyJournalLayout === 'report';
+  const captions = isDailyLayout
+    ? weeks.length > 0 ? [getScannedJournalCaption('report')] : []
+    : data.appendices?.dailyJournalLayout === 'no-photo'
+      ? []
+      : weeks.map((week) => getScannedJournalCaption(data.appendices?.dailyJournalLayout, week.weekNumber));
+  const generatedEntries = captions.map((caption) =>
+    `<w:p><w:pPr><w:pStyle w:val="Caption"/><w:keepNext/></w:pPr><w:r><w:t xml:space="preserve">${escapeXml(caption)}</w:t></w:r></w:p>`,
+  ).join('');
   const paragraphs = Array.from(xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g), (match) => ({
     paragraph: match[0],
     text: getScannedParagraphText(match[0]),
@@ -1033,6 +1038,225 @@ function replaceScannedJournalTable(
   return { xml: captionUpdatedXml, relationshipsXml, images };
 }
 
+function replaceScannedJournalLayout(
+  xml: string,
+  relationshipsXml: string,
+  data: any,
+): { xml: string; relationshipsXml: string; images: { path: string; data: Buffer }[] } {
+  const weeks = getScannedJournalWeeks(data);
+  const layout = data.appendices?.dailyJournalLayout === 'report'
+    ? 'report'
+    : data.appendices?.dailyJournalLayout === 'no-photo' ? 'no-photo' : 'current';
+  const images: { path: string; data: Buffer }[] = [];
+  const newRelationships: string[] = [];
+  const relationshipIds = Array.from(relationshipsXml.matchAll(/\bId="rId(\d+)"/g), (match) => Number(match[1]));
+  let nextRelationshipId = Math.max(0, ...relationshipIds) + 1;
+  const drawingIds = Array.from(xml.matchAll(/<wp:docPr\b[^>]*\bid="(\d+)"/g), (match) => Number(match[1]));
+  let nextDrawingId = Math.max(0, ...drawingIds) + 1;
+  const tableMatch = xml.match(/<w:tbl\b[\s\S]*?<\/w:tbl>/g)?.find((table) => (
+    table.includes('Activities / Tasks Accomplished') && table.includes('[Date range]')
+  ));
+  if (!tableMatch) {
+    throw new Error('The scanned-template journal table is missing.');
+  }
+
+  const rows = Array.from(tableMatch.matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g), (match) => match[0]);
+  const rowCells = rows.map((row) => Array.from(row.matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g), (match) => match[0]));
+  const headerIndex = rowCells.findIndex((cells) => (
+    cells.length === 5
+    && cells[0].includes('>Week<')
+    && cells[1].includes('>Date<')
+    && cells[2].includes('Activities / Tasks Accomplished')
+    && cells[3].includes('>Image<')
+    && cells[4].includes('>Hours<')
+  ));
+  const dataRowIndex = rowCells.findIndex((cells) => cells.some((cell) => cell.includes('[Date range]')));
+  const totalRowIndex = rowCells.findIndex((cells) => cells.some((cell) => cell.includes('TOTAL HOURS')));
+  if (headerIndex < 0 || dataRowIndex < 0 || totalRowIndex < 0) {
+    throw new Error('The scanned-template journal table has an unexpected layout.');
+  }
+
+  const replaceCellText = (cell: string, value: string) => {
+    let replaced = false;
+    return cell.replace(/<w:t(?:\s[^>]*)?>[\s\S]*?<\/w:t>/g, () => {
+      if (replaced) return '';
+      replaced = true;
+      return `<w:t xml:space="preserve">${escapeXml(value)}</w:t>`;
+    });
+  };
+  const setCellWidth = (cell: string, width: number, gridSpan?: number) => {
+    let updated = cell.replace(/<w:tcW\b[^>]*\/>/, `<w:tcW w:type="dxa" w:w="${width}"/>`);
+    if (gridSpan !== undefined) {
+      updated = updated.replace(/<w:gridSpan\b[^>]*\/>/, `<w:gridSpan w:val="${gridSpan}"/>`);
+    }
+    return updated;
+  };
+  const imageParagraph = (source: string | AppendixImage, context: string, imageIndex: number): string => {
+    const image = getScannedImageData(source, context);
+    const relationshipId = `rId${nextRelationshipId++}`;
+    const imagePath = `word/media/scanned-journal-${imageIndex + 1}.${image.extension}`;
+    const drawing = buildScannedJournalImageRun(
+      image,
+      relationshipId,
+      nextDrawingId++,
+      context,
+      layout === 'report' ? 1.25 * 914400 : 5 * 914400,
+      layout === 'report' ? 0.9 * 914400 : 3.5 * 914400,
+    );
+    images.push({ path: imagePath, data: image.data });
+    newRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${imagePath.replace('word/', '')}"/>`);
+    const drawingParagraph = `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${drawing}</w:p>`;
+    const detail = typeof source === 'string' ? '' : source.detail?.trim() || '';
+    const detailParagraph = detail
+      ? `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="20"/></w:rPr><w:t xml:space="preserve">${escapeXml(detail)}</w:t></w:r></w:p>`
+      : '';
+    return drawingParagraph + detailParagraph;
+  };
+  const paragraph = (text: string, options: { bold?: boolean; pageBreakBefore?: boolean } = {}) => (
+    `<w:p><w:pPr><w:jc w:val="center"/>${options.pageBreakBefore ? '<w:pageBreakBefore/>' : ''}<w:spacing w:before="60" w:after="120"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/>${options.bold ? '<w:b/>' : ''}</w:rPr><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`
+  );
+  const projectedTable = (headers: string[], bodyRows: string[][], imagesByRow: (string | AppendixImage | null)[], totalHours?: number): string => {
+    const daily = layout === 'report';
+    const columns = daily ? [1, 2, 4, 3] : [0, 1, 2, 4];
+    const widths = daily ? [1700, 3300, 1000, 4000] : [1600, 1800, 5200, 1400];
+    const getProjectedCells = (row: string, values: string[], rowImages: (string | AppendixImage | null)[] = []) => {
+      const sourceCells = Array.from(row.matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g), (match) => match[0]);
+      return columns.map((columnIndex, index) => {
+        let cell = sourceCells[columnIndex];
+        if (columnIndex === 3 && rowImages.length > 0) {
+          const paragraphs = rowImages.map((source, imageIndex) => (
+            source ? imageParagraph(source, `Journal ${values[0]} image ${imageIndex + 1}`, images.length) : ''
+          )).join('');
+          if (paragraphs) {
+            cell = cell.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/, paragraphs);
+          } else {
+            cell = replaceCellText(cell, '');
+          }
+        } else {
+          cell = replaceCellText(cell, values[index] || '');
+        }
+        return setCellWidth(cell, widths[index]);
+      });
+    };
+    const headerCells = getProjectedCells(rows[headerIndex], headers);
+    const headerRow = rows[headerIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => headerCells.shift() || '');
+    const dataRows = bodyRows.map((values, index) => {
+      const cells = getProjectedCells(rows[dataRowIndex], values, [imagesByRow[index] || null]);
+      return rows[dataRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => cells.shift() || '');
+    });
+    const outputRows = [headerRow, ...dataRows];
+    if (typeof totalHours === 'number') {
+      const totalCells = Array.from(rows[totalRowIndex].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g), (match) => match[0]);
+      const firstTotalCell = setCellWidth(
+        replaceCellText(totalCells[0].replace(/<w:gridSpan\b[^>]*\/>/, '<w:gridSpan w:val="3"/>'), 'TOTAL NUMBER OF HOURS'),
+        widths.slice(0, 3).reduce((sum, width) => sum + width, 0),
+        3,
+      );
+      const lastTotalCell = setCellWidth(replaceCellText(totalCells[1], String(Number(totalHours.toFixed(2)))), widths[3], 1);
+      let totalCellIndex = 0;
+      outputRows.push(rows[totalRowIndex].replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => (
+        totalCellIndex++ === 0 ? firstTotalCell : lastTotalCell
+      )));
+    }
+    const gridColumns = widths.map((width) => `<w:gridCol w:w="${width}"/>`).join('');
+    return tableMatch
+      .replace(/<w:tblGrid>[\s\S]*?<\/w:tblGrid>/, `<w:tblGrid>${gridColumns}</w:tblGrid>`)
+      .replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, (() => {
+        let index = 0;
+        return () => outputRows[index++] || '';
+      })());
+  };
+
+  const weeklyRows = (week: DailyJournalWeek) => {
+    const activities = week.activities.length > 0
+      ? week.activities
+      : [{ day: 'Day 1', date: '', accomplishment: '', hours: '' }];
+    return activities.map((activity) => [
+      String(activity.day || ''),
+      String(activity.date || ''),
+      String(activity.accomplishment || 'No accomplishment added.'),
+      String(activity.hours ?? ''),
+    ]);
+  };
+  const weeklyHours = (week: DailyJournalWeek) => week.activities.reduce(
+    (total, activity) => total + (Number(activity.hours) || 0),
+    0,
+  );
+
+  let replacement = '';
+  if (layout === 'report') {
+    const dailyRows: string[][] = [];
+    const dailyImages: (string | AppendixImage | null)[] = [];
+    weeks.forEach((week, weekIndex) => {
+      const activities = week.activities.length > 0
+        ? week.activities
+        : [{ day: 'Day 1', date: '', accomplishment: '', hours: '' }];
+      const candidates = getScannedJournalImageCandidates(week, layout);
+      activities.forEach((activity, dayIndex) => {
+        dailyRows.push([
+          `Week ${week.weekNumber || weekIndex + 1} - ${activity.day || `Day ${dayIndex + 1}`}${activity.date ? `, ${activity.date}` : ''}`,
+          String(activity.accomplishment || 'No accomplishment added.'),
+          String(activity.hours ?? ''),
+          '',
+        ]);
+        const image = candidates[dayIndex];
+        dailyImages.push(image && (typeof image === 'string' ? image.trim() : image.base64.trim()) ? image : null);
+      });
+    });
+    if (dailyRows.length > 0) {
+      replacement = projectedTable(['DATE', 'ACCOMPLISHMENT', 'HOURS', 'DOCUMENTATION'], dailyRows, dailyImages);
+    }
+  } else {
+    replacement = weeks.map((week, weekIndex) => {
+      const rowsForWeek = weeklyRows(week);
+      const rowsWithWeekNumber = rowsForWeek.map((row) => [
+        row[0],
+        row[1],
+        row[2],
+        row[3],
+      ]);
+      const table = projectedTable(
+        ['DAY', 'DATE', 'ACCOMPLISHMENT', 'NO. OF WORKING HOURS'],
+        rowsWithWeekNumber,
+        [],
+        weeklyHours(week),
+      );
+      const weekHeading = paragraph(`WEEK ${week.weekNumber || weekIndex + 1}`, { bold: true, pageBreakBefore: layout === 'current' && weekIndex > 0 });
+      if (layout === 'no-photo') return weekHeading + table;
+      const caption = paragraph(getScannedJournalCaption(layout, week.weekNumber || weekIndex + 1));
+      const narrative = paragraph(String(week.narrative || 'No narrative provided.'));
+      const photoParagraphs = getScannedJournalImageSources(week, layout)
+        .map((image, imageIndex) => imageParagraph(image, `Journal week ${week.weekNumber} image ${imageIndex + 1}`, images.length))
+        .join('');
+      return weekHeading + table + caption + narrative + photoParagraphs;
+    }).join('');
+  }
+
+  let updatedXml = xml.replace(tableMatch, replacement);
+  updatedXml = updatedXml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (sourceParagraph) => {
+    const text = getScannedParagraphText(sourceParagraph);
+    if (text === '[Attach your weekly journal entries. Add one table per week using the format below.]') {
+      if (layout === 'report') return '';
+      return paragraph(layout === 'no-photo' ? 'DAILY JOURNAL' : 'WEEKLY WORK ACTIVITIES', { bold: true });
+    }
+    if (text === 'Table 1: Journal Week 1') {
+      return layout === 'report'
+        ? replaceTextAcrossRuns(sourceParagraph, { [text]: getScannedJournalCaption(layout) })
+        : '';
+    }
+    return sourceParagraph;
+  });
+
+  if (newRelationships.length > 0) {
+    if (!relationshipsXml.includes('</Relationships>')) {
+      throw new Error('The scanned-template image relationships are invalid.');
+    }
+    relationshipsXml = relationshipsXml.replace('</Relationships>', `${newRelationships.join('')}</Relationships>`);
+  }
+
+  return { xml: updatedXml, relationshipsXml, images };
+}
+
 async function fillReferenceTemplate(data: any): Promise<Buffer> {
   const templatePath = path.join(process.cwd(), 'public', 'narrative-report-template.docx');
   const templateBuffer = fs.readFileSync(templatePath);
@@ -1144,7 +1368,7 @@ async function fillReferenceTemplate(data: any): Promise<Buffer> {
       documentRelationshipsXml = organizationCharts.relationshipsXml;
       journalImages.push(...organizationCharts.images);
       xml = removeScannedSchoolPlacementPages(xml, Boolean(schoolPlacement));
-      const journalTable = replaceScannedJournalTable(xml, documentRelationshipsXml, data);
+      const journalTable = replaceScannedJournalLayout(xml, documentRelationshipsXml, data);
       xml = journalTable.xml;
       documentRelationshipsXml = journalTable.relationshipsXml;
       journalImages.push(...journalTable.images);
