@@ -14,6 +14,20 @@ npm install
 npm run dev
 ```
 
+## AI drafting
+
+Use **Draft with AI** to create editable text for the narrative report fields. Drafts are reviewed before they are applied to the form. The app supports Groq and Gemini through server-side API routes; it never sends provider keys to the browser.
+
+Add one provider key to `.env.local` (do not commit this file):
+
+```env
+GROQ_API_KEY=your-rotated-groq-key
+# or
+GEMINI_API_KEY=your-rotated-gemini-key
+```
+
+If both keys are configured, Groq is used by default. Set `AI_PROVIDER=gemini` or `AI_PROVIDER=groq` to choose explicitly. Optional model overrides are `GROQ_MODEL` and `GEMINI_MODEL`. Restart the development server after changing environment variables. For Vercel, add the same variables under the project's Environment Variables settings and redeploy.
+
 ## Deploy to Vercel
 
 1. Push this project to GitHub.

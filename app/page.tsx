@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText } from 'lucide-react';
+import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText, Sparkles } from 'lucide-react';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
 import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
@@ -24,6 +24,29 @@ const sectionOrder = [
   'Reflections',
   'Appendices'
 ];
+
+const aiNarrativeFieldLabels = {
+  background: 'Background of the Organization',
+  vision: 'Vision',
+  mission: 'Mission',
+  objectives: 'Objectives',
+  coreValues: 'Core Values',
+  services: 'Products and Services Offered',
+  strengths: 'Strengths',
+  weaknesses: 'Weaknesses',
+  opportunities: 'Opportunities',
+  threats: 'Threats',
+  recommendations: 'Recommendations for Improvement',
+  tasks: 'Assigned Tasks and Responsibilities',
+  procedures: 'Duties and Procedures Conformed',
+  issue1: 'Issue / Problem 1',
+  issue1Action: 'Strategy / Action for Problem 1',
+  issue2: 'Issue / Problem 2',
+  issue2Action: 'Strategy / Action for Problem 2',
+  lessons: 'Lessons Learned',
+  selfEvaluation: 'Self-Evaluation',
+  relevancy: 'Relevancy of the Organization',
+} as const;
 
 const schoolPlacementTOCEntries = [
   '6. Introduction',
@@ -339,6 +362,15 @@ type NarrativeForm = Omit<typeof defaultForm, 'appendices'> & {
   appendices: Omit<typeof defaultForm.appendices, 'dailyJournal'> & {
     dailyJournal: NarrativeJournalWeek[];
   };
+};
+
+type AiNarrativeFieldKey = keyof typeof aiNarrativeFieldLabels;
+type AiDraftField = {
+  scope: 'report' | 'schoolPlacement';
+  key: AiNarrativeFieldKey;
+  label: string;
+  value: string;
+  selected: boolean;
 };
 
 type ParsedJournalImport = {
@@ -883,6 +915,10 @@ export default function Home() {
   const [journalImportError, setJournalImportError] = useState('');
   const [isImportingJournal, setIsImportingJournal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isAiDrafting, setIsAiDrafting] = useState(false);
+  const [aiDraftError, setAiDraftError] = useState('');
+  const [aiDrafts, setAiDrafts] = useState<AiDraftField[]>([]);
+  const [showAiDraftReview, setShowAiDraftReview] = useState(false);
   const [status, setStatus] = useState('Draft ready');
   
   // Tour State
@@ -1631,8 +1667,179 @@ export default function Home() {
     }
   };
 
+  const handleAiDraft = async () => {
+    setIsAiDrafting(true);
+    setAiDraftError('');
+    setStatus('Drafting report text with AI...');
+    try {
+      const selectFields = (source: Record<AiNarrativeFieldKey, string>) =>
+        Object.fromEntries(
+          (Object.keys(aiNarrativeFieldLabels) as AiNarrativeFieldKey[]).map((key) => [key, source[key]])
+        );
+      const requestBody = {
+        organization: form.trainingOrganization,
+        location: form.trainingLocation,
+        degreeProgram: form.degreeProgram,
+        yearLevel: form.studentYear,
+        trainingDuration: form.trainingDuration,
+        report: selectFields(form),
+        dailyJournal: form.appendices.dailyJournal.flatMap((week) => week.activities.map((activity) => ({
+          day: activity.day,
+          date: activity.date,
+          accomplishment: activity.accomplishment,
+        }))),
+        schoolPlacement: form.schoolPlacement.enabled
+          ? {
+              enabled: true,
+              organization: form.schoolPlacement.trainingOrganization,
+              location: form.schoolPlacement.trainingLocation,
+              details: selectFields(form.schoolPlacement),
+            }
+          : { enabled: false },
+      };
+
+      const response = await fetch('/api/ai/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+      if (!response.ok) throw new Error(await readErrorMessage(response));
+
+      const generated: unknown = await response.json();
+      if (!isRecord(generated) || !isRecord(generated.report)) {
+        throw new Error('The AI service returned an invalid draft. Please try again.');
+      }
+
+      const fields: AiDraftField[] = [];
+      const appendGeneratedFields = (source: Record<string, unknown>, scope: AiDraftField['scope']) => {
+        for (const key of Object.keys(aiNarrativeFieldLabels) as AiNarrativeFieldKey[]) {
+          const value = source[key];
+          if (typeof value !== 'string') {
+            throw new Error('The AI service returned an incomplete draft. Please try again.');
+          }
+          fields.push({
+            scope,
+            key,
+            label: aiNarrativeFieldLabels[key],
+            value,
+            selected: true,
+          });
+        }
+      };
+
+      appendGeneratedFields(generated.report, 'report');
+      if (form.schoolPlacement.enabled) {
+        if (!isRecord(generated.schoolPlacement)) {
+          throw new Error('The AI service returned an incomplete school placement draft. Please try again.');
+        }
+        appendGeneratedFields(generated.schoolPlacement, 'schoolPlacement');
+      }
+
+      setAiDrafts(fields);
+      setShowAiDraftReview(true);
+      setStatus('AI draft ready for review');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI draft generation failed.';
+      setAiDraftError(message);
+      setStatus('AI draft failed');
+    } finally {
+      setIsAiDrafting(false);
+    }
+  };
+
+  const applyAiDrafts = () => {
+    const reportUpdates: Partial<Record<AiNarrativeFieldKey, string>> = {};
+    const schoolPlacementUpdates: Partial<Record<AiNarrativeFieldKey, string>> = {};
+    let selectedCount = 0;
+
+    for (const draft of aiDrafts) {
+      if (!draft.selected) continue;
+      selectedCount += 1;
+      if (draft.scope === 'report') reportUpdates[draft.key] = draft.value;
+      else schoolPlacementUpdates[draft.key] = draft.value;
+    }
+
+    if (selectedCount === 0) return;
+    setForm((previous) => ({
+      ...previous,
+      ...reportUpdates,
+      schoolPlacement: { ...previous.schoolPlacement, ...schoolPlacementUpdates },
+    }));
+    setShowAiDraftReview(false);
+    setStatus(`Applied ${selectedCount} AI-drafted fields. Review the report before exporting.`);
+  };
+
   return (
     <main className="min-h-screen min-w-0 overflow-x-hidden bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-6 pb-24 sm:py-8 sm:pb-8 md:py-12 text-slate-100">
+      {showAiDraftReview && (
+        <div
+          className="fixed inset-0 z-[1500] flex items-center justify-center bg-slate-950/85 p-3 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-draft-title"
+        >
+          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl sm:rounded-3xl">
+            <div className="border-b border-slate-800 p-4 sm:p-6">
+              <h2 id="ai-draft-title" className="text-xl font-bold text-white">Review AI-drafted report text</h2>
+              <p className="mt-2 text-sm text-slate-300">
+                Review and edit each draft before applying it. Uncheck any field you want to keep unchanged.
+              </p>
+            </div>
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+              {aiDrafts.map((draft, index) => (
+                <section key={`${draft.scope}-${draft.key}`} className="rounded-xl border border-slate-700 bg-slate-950/70 p-3 sm:p-4">
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={draft.selected}
+                      onChange={(event) => setAiDrafts((previous) => previous.map((item, itemIndex) => (
+                        itemIndex === index ? { ...item, selected: event.target.checked } : item
+                      )))}
+                      className="h-4 w-4 accent-cyan-400"
+                    />
+                    <span>{draft.scope === 'schoolPlacement' ? 'School placement · ' : ''}{draft.label}</span>
+                  </label>
+                  <textarea
+                    value={draft.value}
+                    onChange={(event) => setAiDrafts((previous) => previous.map((item, itemIndex) => (
+                      itemIndex === index ? { ...item, value: event.target.value } : item
+                    )))}
+                    rows={3}
+                    className="w-full resize-y rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm leading-6 text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+                  />
+                </section>
+              ))}
+            </div>
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <button
+                type="button"
+                onClick={() => setAiDrafts((previous) => previous.map((draft) => ({ ...draft, selected: true })))}
+                className="min-h-11 rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200"
+              >
+                Select all fields
+              </button>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setShowAiDraftReview(false)}
+                  className="min-h-11 rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={applyAiDrafts}
+                  disabled={!aiDrafts.some((draft) => draft.selected)}
+                  className="min-h-11 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Apply selected fields
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {mobileAccomplishmentEditor && (
         <div
           className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/80 sm:p-6"
@@ -2931,13 +3138,30 @@ export default function Home() {
               </button>
               <button
                 type="button"
+                onClick={handleAiDraft}
+                disabled={isAiDrafting || loading}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-violet-400/40 bg-violet-950/40 px-4 py-3.5 text-sm font-semibold text-violet-200 transition hover:border-violet-300 hover:bg-violet-900/50 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
+              >
+                <Sparkles size={16} aria-hidden="true" />
+                {isAiDrafting ? 'Drafting...' : 'Draft with AI'}
+              </button>
+              <button
+                type="button"
                 onClick={handleGenerate}
-                disabled={loading}
-                className="tour-generate-btn rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-3.5 text-sm font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
+                disabled={loading || isAiDrafting}
+                className="tour-generate-btn col-span-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-3.5 text-sm font-semibold text-white shadow-glow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
               >
                 {loading ? 'Generating...' : 'Generate Report'}
               </button>
             </div>
+            <p className="text-xs leading-5 text-slate-400">
+              AI drafting sends report details and journal text to your configured provider. Review drafts before applying them.
+            </p>
+            {aiDraftError && (
+              <p role="alert" className="rounded-lg border border-rose-400/30 bg-rose-950/60 p-3 text-xs leading-5 text-rose-200">
+                {aiDraftError}
+              </p>
+            )}
           </aside>
         </div>
 
@@ -2948,23 +3172,32 @@ export default function Home() {
         </footer>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-3 border-t border-slate-800 bg-slate-950/95 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(2,6,23,0.45)] backdrop-blur-xl sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 gap-2 border-t border-slate-800 bg-slate-950/95 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(2,6,23,0.45)] backdrop-blur-xl sm:hidden">
         <button
           type="button"
           onClick={handlePreview}
-          className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-slate-900 px-3 text-sm font-semibold text-cyan-200 active:bg-slate-800"
+          className="flex min-h-12 items-center justify-center gap-1 rounded-xl border border-cyan-500/40 bg-slate-900 px-2 text-xs font-semibold text-cyan-200 active:bg-slate-800"
         >
-          <Eye size={17} aria-hidden="true" />
+          <Eye size={15} aria-hidden="true" />
           Preview
         </button>
         <button
           type="button"
-          onClick={handleGenerate}
-          disabled={loading}
-          className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-3 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={handleAiDraft}
+          disabled={isAiDrafting || loading}
+          className="flex min-h-12 items-center justify-center gap-1 rounded-xl border border-violet-400/40 bg-violet-950/50 px-2 text-xs font-semibold text-violet-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <FileText size={17} aria-hidden="true" />
-          {loading ? 'Generating...' : 'Generate'}
+          <Sparkles size={15} aria-hidden="true" />
+          {isAiDrafting ? 'Drafting' : 'AI draft'}
+        </button>
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={loading || isAiDrafting}
+          className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-cyan-500 px-2 text-xs font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <FileText size={15} aria-hidden="true" />
+          {loading ? 'Exporting' : 'Export'}
         </button>
       </div>
     </main>
