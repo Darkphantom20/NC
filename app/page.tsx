@@ -351,6 +351,43 @@ type ParsedJournalImport = {
   hoursImported: boolean;
 };
 
+type NarrativeImportFields = Partial<Pick<NarrativeForm,
+  | 'studentName'
+  | 'trainingOrganization'
+  | 'trainingLocation'
+  | 'collegeFaculty'
+  | 'degreeProgram'
+  | 'submittedToName'
+  | 'trainingDuration'
+  | 'studentYear'
+  | 'acknowledgement'
+  | 'background'
+  | 'vision'
+  | 'mission'
+  | 'objectives'
+  | 'coreValues'
+  | 'services'
+  | 'strengths'
+  | 'weaknesses'
+  | 'opportunities'
+  | 'threats'
+  | 'recommendations'
+  | 'tasks'
+  | 'procedures'
+  | 'issue1'
+  | 'issue1Action'
+  | 'issue2'
+  | 'issue2Action'
+  | 'lessons'
+  | 'selfEvaluation'
+  | 'relevancy'
+>>;
+
+type ParsedNarrativeImport = {
+  fileName: string;
+  fields: NarrativeImportFields;
+};
+
 type NarrativeDraft = {
   id: string;
   title: string;
@@ -494,6 +531,103 @@ function getWordCellText(cell: Element): string {
 
 function normalizeJournalHeader(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function getNarrativeFieldForHeading(value: string): keyof NarrativeImportFields | null {
+  const heading = normalizeJournalHeader(value.replace(/^\s*\d+(?:\.\d+)*[.)]?\s*/, ''));
+  if (/^acknowledg(e)?ment$/.test(heading)) return 'acknowledgement';
+  if (/^background(?: of)? the organization$/.test(heading)) return 'background';
+  if (/^vision$/.test(heading)) return 'vision';
+  if (/^mission$/.test(heading)) return 'mission';
+  if (/^objectives?$/.test(heading)) return 'objectives';
+  if (/^(?:core values|values)$/.test(heading)) return 'coreValues';
+  if (/^(?:products and services offered|services offered)$/.test(heading)) return 'services';
+  if (/^strengths?$/.test(heading)) return 'strengths';
+  if (/^weaknesses?$/.test(heading)) return 'weaknesses';
+  if (/^opportunities$/.test(heading)) return 'opportunities';
+  if (/^threats$/.test(heading)) return 'threats';
+  if (/^recommendations?(?: for improvement)?$/.test(heading)) return 'recommendations';
+  if (/^(?:assigned tasks and responsibilities|tasks and responsibilities assigned)$/.test(heading)) return 'tasks';
+  if (/^(?:duties and procedures conformed|duties and procedures)$/.test(heading)) return 'procedures';
+  if (/^(?:issue|problem) 1(?: details)?$/.test(heading)) return 'issue1';
+  if (/^(?:(?:strategy action|strategy|action)(?: undertaken)? for (?:issue|problem) 1)$/.test(heading)) return 'issue1Action';
+  if (/^(?:issue|problem) 2(?: details)?$/.test(heading)) return 'issue2';
+  if (/^(?:(?:strategy action|strategy|action)(?: undertaken)? for (?:issue|problem) 2)$/.test(heading)) return 'issue2Action';
+  if (/^lessons learned(?: from the situations)?$/.test(heading)) return 'lessons';
+  if (/^self evaluation$/.test(heading)) return 'selfEvaluation';
+  if (/^(?:relevancy|relevance)(?: of the organization)?(?: with programme of study and expected goals)?$/.test(heading)) return 'relevancy';
+  return null;
+}
+
+function getNarrativeCoverField(line: string): keyof NarrativeImportFields | null {
+  const normalized = normalizeJournalHeader(line);
+  if (/^(?:student name|name of student)$/.test(normalized)) return 'studentName';
+  if (/^(?:training organization|host organization|organization|company)$/.test(normalized)) return 'trainingOrganization';
+  if (/^(?:training location|location)$/.test(normalized)) return 'trainingLocation';
+  if (/^(?:college|college faculty|faculty)$/.test(normalized)) return 'collegeFaculty';
+  if (/^(?:degree program|program of study)$/.test(normalized)) return 'degreeProgram';
+  if (/^(?:submitted to|adviser|advisor)$/.test(normalized)) return 'submittedToName';
+  if (/^(?:training duration|duration)$/.test(normalized)) return 'trainingDuration';
+  if (/^(?:student year level|year level|year)$/.test(normalized)) return 'studentYear';
+  return null;
+}
+
+async function parseNarrativeDocx(file: File): Promise<ParsedNarrativeImport> {
+  const { default: JSZip } = await import('jszip');
+  const archive = await JSZip.loadAsync(await file.arrayBuffer());
+  const documentEntry = archive.file('word/document.xml');
+  if (!documentEntry) throw new Error('This DOCX does not contain a readable Word document.');
+
+  const documentXml = new DOMParser().parseFromString(await documentEntry.async('string'), 'application/xml');
+  if (documentXml.getElementsByTagName('parsererror').length > 0) {
+    throw new Error('The DOCX contains invalid document data.');
+  }
+
+  const paragraphs = Array.from(documentXml.getElementsByTagNameNS(wordProcessingNamespace, 'p'))
+    .map((paragraph) => Array.from(paragraph.getElementsByTagNameNS(wordProcessingNamespace, 't'))
+      .map((text) => text.textContent || '')
+      .join('')
+      .trim())
+    .filter(Boolean);
+  const fields: NarrativeImportFields = {};
+  let activeField: keyof NarrativeImportFields | null = null;
+  let activeContent: string[] = [];
+
+  const saveActiveField = () => {
+    const content = activeContent.join('\n').trim();
+    if (activeField && content) fields[activeField] = content;
+    activeField = null;
+    activeContent = [];
+  };
+
+  for (const paragraph of paragraphs) {
+    const labelMatch = paragraph.match(/^([^:：]{2,50})\s*[:：]\s*(.*)$/);
+    if (labelMatch) {
+      const coverField = getNarrativeCoverField(labelMatch[1]);
+      if (coverField && labelMatch[2].trim()) fields[coverField] = labelMatch[2].trim();
+    }
+
+    const matchedField = getNarrativeFieldForHeading(paragraph);
+    if (matchedField) {
+      saveActiveField();
+      activeField = matchedField;
+      continue;
+    }
+
+    const normalized = normalizeJournalHeader(paragraph.replace(/^\s*\d+(?:\.\d+)*[.)]?\s*/, ''));
+    const isSectionHeading = /^(?:introduction|organization company analysis|tasks and duties|case analysis|reflections|appendices|table of contents)$/.test(normalized);
+    if (isSectionHeading) {
+      saveActiveField();
+      continue;
+    }
+    if (activeField) activeContent.push(paragraph);
+  }
+  saveActiveField();
+
+  if (Object.keys(fields).length === 0) {
+    throw new Error('No supported report headings or labeled cover details were found in this DOCX.');
+  }
+  return { fileName: file.name, fields };
 }
 
 function resolveDocxPath(target: string): string {
@@ -882,6 +1016,9 @@ export default function Home() {
   const [pendingJournalImport, setPendingJournalImport] = useState<ParsedJournalImport | null>(null);
   const [journalImportError, setJournalImportError] = useState('');
   const [isImportingJournal, setIsImportingJournal] = useState(false);
+  const [pendingNarrativeImport, setPendingNarrativeImport] = useState<ParsedNarrativeImport | null>(null);
+  const [narrativeImportError, setNarrativeImportError] = useState('');
+  const [isImportingNarrative, setIsImportingNarrative] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('Draft ready');
   
@@ -905,6 +1042,7 @@ export default function Home() {
   const previewCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
   const draftSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const journalImportFileRef = useRef<HTMLInputElement>(null);
+  const narrativeImportFileRef = useRef<HTMLInputElement>(null);
 
   const isMobileAccomplishmentEditorOpen = mobileAccomplishmentEditor !== null;
 
@@ -1232,6 +1370,46 @@ export default function Home() {
       ...prev,
       appendices: { ...prev.appendices, dailyJournalLayout: layout }
     }));
+  };
+
+  const handleNarrativeDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setPendingNarrativeImport(null);
+    setNarrativeImportError('');
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      setNarrativeImportError('Choose a Word .docx file.');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setNarrativeImportError('Choose a DOCX smaller than 20 MB.');
+      return;
+    }
+
+    setIsImportingNarrative(true);
+    setStatus('Reading full narrative DOCX...');
+    try {
+      const importedNarrative = await parseNarrativeDocx(file);
+      setPendingNarrativeImport(importedNarrative);
+      setStatus('Review imported narrative fields');
+    } catch (error) {
+      console.error('Error importing narrative DOCX:', error);
+      const message = error instanceof Error ? error.message : 'Could not read the DOCX file.';
+      setNarrativeImportError(message);
+      setStatus('Narrative import failed');
+    } finally {
+      setIsImportingNarrative(false);
+    }
+  };
+
+  const confirmNarrativeImport = () => {
+    if (!pendingNarrativeImport) return;
+    const importedFieldCount = Object.keys(pendingNarrativeImport.fields).length;
+    setForm((prev) => ({ ...prev, ...pendingNarrativeImport.fields }));
+    setStatus(`Imported ${importedFieldCount} narrative fields`);
+    setPendingNarrativeImport(null);
   };
 
   const handleDailyJournalDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2079,6 +2257,66 @@ export default function Home() {
               <span>New narrative</span>
             </button>
           </div>
+        </section>
+
+        <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-slate-950/45 p-4 shadow-[0_18px_50px_rgba(2,8,23,0.2)] backdrop-blur-xl sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-white sm:text-base">Import a full narrative DOCX</h2>
+              <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
+                Read report text from the cover details, paragraphs, and tables, then review the fields before applying. The generated document uses the selected system template; original styling and images are not copied.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <input
+                ref={narrativeImportFileRef}
+                type="file"
+                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={handleNarrativeDocxUpload}
+                className="hidden"
+                aria-label="Choose a full narrative DOCX file"
+              />
+              <button
+                type="button"
+                onClick={() => narrativeImportFileRef.current?.click()}
+                disabled={isImportingNarrative}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-wait disabled:opacity-60"
+              >
+                <FileText size={15} aria-hidden="true" />
+                {isImportingNarrative ? 'Reading DOCX...' : 'Choose DOCX'}
+              </button>
+              {pendingNarrativeImport && (
+                <>
+                  <button
+                    type="button"
+                    onClick={confirmNarrativeImport}
+                    className="min-h-10 rounded-xl bg-emerald-400 px-3.5 py-2 text-xs font-bold text-slate-950 transition hover:bg-emerald-300"
+                  >
+                    Apply {Object.keys(pendingNarrativeImport.fields).length} fields
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPendingNarrativeImport(null)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    aria-label="Discard imported narrative"
+                    title="Discard import"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          {pendingNarrativeImport && (
+            <p className="mt-3 text-xs text-emerald-200" role="status">
+              {pendingNarrativeImport.fileName}: {Object.keys(pendingNarrativeImport.fields).length} fields found. Applying replaces only matching fields.
+            </p>
+          )}
+          {narrativeImportError && (
+            <p role="alert" className="mt-3 rounded-lg border border-rose-400/30 bg-rose-950/40 p-3 text-xs text-rose-200">
+              {narrativeImportError}
+            </p>
+          )}
         </section>
 
         <section className="hidden gap-4 sm:grid sm:grid-cols-3 sm:gap-6">
