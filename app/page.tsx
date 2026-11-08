@@ -386,6 +386,7 @@ type NarrativeImportFields = Partial<Pick<NarrativeForm,
 type ParsedNarrativeImport = {
   fileName: string;
   fields: NarrativeImportFields;
+  journal?: ParsedJournalImport;
 };
 
 type NarrativeDraft = {
@@ -634,10 +635,18 @@ async function parseNarrativeDocx(file: File): Promise<ParsedNarrativeImport> {
   }
   saveActiveField();
 
-  if (Object.keys(fields).length === 0) {
+  let journal: ParsedJournalImport | undefined;
+  try {
+    journal = await parseDailyJournalDocx(file);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (!message.startsWith('No Daily Journal tables found.')) throw error;
+  }
+
+  if (Object.keys(fields).length === 0 && !journal) {
     throw new Error('No readable report text matched the supported headings. If this DOCX contains scanned pages, add a text version or run OCR first.');
   }
-  return { fileName: file.name, fields };
+  return { fileName: file.name, fields, journal };
 }
 
 function resolveDocxPath(target: string): string {
@@ -689,22 +698,24 @@ async function parseDailyJournalDocx(file: File): Promise<ParsedJournalImport> {
   const archive = await JSZip.loadAsync(await file.arrayBuffer());
   const documentEntry = archive.file('word/document.xml');
   const relationshipEntry = archive.file('word/_rels/document.xml.rels');
-  if (!documentEntry || !relationshipEntry) {
+  if (!documentEntry) {
     throw new Error('This DOCX does not contain a readable Word document.');
   }
 
   const parser = new DOMParser();
   const documentXml = parser.parseFromString(await documentEntry.async('string'), 'application/xml');
-  const relationshipsXml = parser.parseFromString(await relationshipEntry.async('string'), 'application/xml');
+  const relationshipsXml = relationshipEntry
+    ? parser.parseFromString(await relationshipEntry.async('string'), 'application/xml')
+    : null;
   if (
     documentXml.getElementsByTagName('parsererror').length > 0
-    || relationshipsXml.getElementsByTagName('parsererror').length > 0
+    || (relationshipsXml && relationshipsXml.getElementsByTagName('parsererror').length > 0)
   ) {
     throw new Error('The DOCX contains invalid document data.');
   }
 
   const relationships = new Map<string, string>();
-  for (const relationship of Array.from(relationshipsXml.getElementsByTagNameNS(packageRelationshipsNamespace, 'Relationship'))) {
+  for (const relationship of Array.from(relationshipsXml?.getElementsByTagNameNS(packageRelationshipsNamespace, 'Relationship') || [])) {
     const id = relationship.getAttribute('Id');
     const target = relationship.getAttribute('Target');
     const relationshipType = relationship.getAttribute('Type') || '';
@@ -1238,10 +1249,17 @@ export default function Home() {
 
   const createNarrative = () => {
     if (isImportingNewDraft) return;
-    const newForm = {
+    const importedFromDocx = Boolean(pendingNewDraftImport);
+    const newForm: NarrativeForm = {
       ...createDefaultNarrativeForm(),
       ...(pendingNewDraftImport?.fields || {})
     };
+    if (pendingNewDraftImport?.journal) {
+      newForm.appendices = {
+        ...newForm.appendices,
+        dailyJournal: pendingNewDraftImport.journal.weeks
+      };
+    }
     const newDraft: NarrativeDraft = {
       id: createNarrativeId(),
       title: newDraftTitle.trim() || `Narrative ${drafts.length + 1}`,
@@ -1256,8 +1274,9 @@ export default function Home() {
     ]);
     setActiveDraftId(newDraft.id);
     setForm(newDraft.form);
+    if (importedFromDocx) setShowPreview(true);
     closeNewDraftDialog();
-    setStatus(pendingNewDraftImport ? 'New narrative created from DOCX' : 'New narrative created');
+    setStatus(importedFromDocx ? 'New narrative created from DOCX; preparing preview' : 'New narrative created');
   };
 
   const switchNarrative = (draftId: string) => {
@@ -1480,8 +1499,19 @@ export default function Home() {
   const confirmNarrativeImport = () => {
     if (!pendingNarrativeImport) return;
     const importedFieldCount = Object.keys(pendingNarrativeImport.fields).length;
-    setForm((prev) => ({ ...prev, ...pendingNarrativeImport.fields }));
-    setStatus(`Imported ${importedFieldCount} narrative fields`);
+    const importedJournal = pendingNarrativeImport.journal;
+    setForm((prev) => ({
+      ...prev,
+      ...pendingNarrativeImport.fields,
+      ...(importedJournal ? {
+        appendices: { ...prev.appendices, dailyJournal: importedJournal.weeks }
+      } : {})
+    }));
+    const importSummary = [
+      importedFieldCount > 0 ? `${importedFieldCount} narrative fields` : '',
+      importedJournal ? `${importedJournal.activityCount} journal days` : ''
+    ].filter(Boolean).join(' and ');
+    setStatus(`Imported ${importSummary}`);
     setPendingNarrativeImport(null);
   };
 
@@ -1981,7 +2011,9 @@ export default function Home() {
             </div>
             {pendingNewDraftImport && (
               <p className="mt-2 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] p-2.5 text-[11px] leading-4 text-emerald-200" role="status">
-                {pendingNewDraftImport.fileName}: {Object.keys(pendingNewDraftImport.fields).length} fields found. They will be added when you create this narrative.
+                {pendingNewDraftImport.fileName}: {Object.keys(pendingNewDraftImport.fields).length} report fields
+                {pendingNewDraftImport.journal && `, ${pendingNewDraftImport.journal.weeks.length} journal weeks and ${pendingNewDraftImport.journal.activityCount} days`}
+                {' '}will be added when you create this narrative.
               </p>
             )}
             {newDraftImportError && (
@@ -2003,7 +2035,7 @@ export default function Home() {
                 disabled={isImportingNewDraft}
                 className="min-h-9 rounded-xl bg-cyan-500 px-3.5 text-xs font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-wait disabled:opacity-60"
               >
-                Create narrative
+                {pendingNewDraftImport ? 'Create & preview' : 'Create narrative'}
               </button>
             </div>
           </div>
@@ -2401,7 +2433,8 @@ export default function Home() {
                 {pendingNarrativeImport && (
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-2.5">
                     <p className="min-w-0 flex-1 text-[11px] leading-4 text-emerald-200" role="status">
-                      {pendingNarrativeImport.fileName}: {Object.keys(pendingNarrativeImport.fields).length} fields found.
+                      {pendingNarrativeImport.fileName}: {Object.keys(pendingNarrativeImport.fields).length} report fields
+                      {pendingNarrativeImport.journal && `, ${pendingNarrativeImport.journal.weeks.length} journal weeks and ${pendingNarrativeImport.journal.activityCount} days`}.
                     </p>
                     <div className="flex shrink-0 items-center gap-2">
                       <button
