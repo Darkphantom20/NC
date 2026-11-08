@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText } from 'lucide-react';
+import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText, Trash2 } from 'lucide-react';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
 import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
@@ -1012,6 +1012,7 @@ export default function Home() {
   const [drafts, setDrafts] = useState<NarrativeDraft[]>([]);
   const [activeDraftId, setActiveDraftId] = useState('');
   const [showNewDraftDialog, setShowNewDraftDialog] = useState(false);
+  const [showDeleteNarrativeDialog, setShowDeleteNarrativeDialog] = useState(false);
   const [newDraftTitle, setNewDraftTitle] = useState('');
   const [pendingJournalImport, setPendingJournalImport] = useState<ParsedJournalImport | null>(null);
   const [journalImportError, setJournalImportError] = useState('');
@@ -1241,6 +1242,23 @@ export default function Home() {
     setForm(selectedDraft.form);
     setActiveDraftId(selectedDraft.id);
     setStatus(`Opened ${selectedDraft.title}`);
+  };
+
+  const deleteCurrentNarrative = () => {
+    if (drafts.length <= 1) return;
+    const remainingDrafts = drafts
+      .map((draft) => draft.id === activeDraftId
+        ? { ...draft, form, updatedAt: new Date().toISOString() }
+        : draft)
+      .filter((draft) => draft.id !== activeDraftId);
+    const nextDraft = remainingDrafts[0];
+    if (!nextDraft) return;
+
+    setDrafts(remainingDrafts);
+    setActiveDraftId(nextDraft.id);
+    setForm(nextDraft.form);
+    setShowDeleteNarrativeDialog(false);
+    setStatus(`Deleted ${activeDraft?.title || 'narrative'}`);
   };
 
   const tourSteps: Step[] = [
@@ -1867,10 +1885,10 @@ export default function Home() {
             if (event.key === 'Escape') setShowNewDraftDialog(false);
           }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl sm:p-6">
-            <h2 id="new-narrative-title" className="text-xl font-bold text-white">Create a new narrative</h2>
-            <p className="mt-2 text-sm text-slate-300">Your current report will be saved so you can return to it later.</p>
-            <label className="mt-5 block text-sm font-medium text-slate-200">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-700/80 bg-slate-900 p-5 shadow-2xl">
+            <h2 id="new-narrative-title" className="text-base font-bold text-white">Create a new narrative</h2>
+            <p className="mt-2 text-xs leading-5 text-slate-300">Your current report will be saved so you can return to it later.</p>
+            <label className="mt-4 block text-xs font-semibold text-slate-200">
               Narrative name
               <input
                 autoFocus
@@ -1879,24 +1897,59 @@ export default function Home() {
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') createNarrative();
                 }}
-                className={fieldClass}
+                className="mt-2 w-full rounded-xl border border-cyan-400 bg-slate-950 px-3.5 py-3 text-xs font-semibold text-slate-100 outline-none ring-2 ring-cyan-400/15 placeholder:text-slate-500 focus:ring-cyan-400/30"
                 placeholder="For example, Office OJT"
               />
             </label>
-            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowNewDraftDialog(false)}
-                className="min-h-11 rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200"
+                className="min-h-9 rounded-xl border border-slate-700 px-3 text-xs font-semibold text-slate-200 transition hover:bg-white/5"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={createNarrative}
-                className="min-h-11 rounded-xl bg-cyan-500 px-4 text-sm font-bold text-slate-950"
+                className="min-h-9 rounded-xl bg-cyan-500 px-3.5 text-xs font-bold text-slate-950 transition hover:bg-cyan-400"
               >
                 Create narrative
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteNarrativeDialog && (
+        <div
+          className="fixed inset-0 z-[1400] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-narrative-title"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setShowDeleteNarrativeDialog(false);
+          }}
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-slate-700/80 bg-slate-900 p-5 shadow-2xl">
+            <h2 id="delete-narrative-title" className="text-base font-bold text-white">Delete this narrative?</h2>
+            <p className="mt-2 text-xs leading-5 text-slate-300">
+              “{activeDraft?.title || 'Current narrative'}” and its saved report data will be removed from this browser. This cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteNarrativeDialog(false)}
+                className="min-h-9 rounded-xl border border-slate-700 px-3 text-xs font-semibold text-slate-200 transition hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={deleteCurrentNarrative}
+                className="min-h-9 rounded-xl bg-rose-500 px-3.5 text-xs font-bold text-white transition hover:bg-rose-400"
+              >
+                Delete narrative
               </button>
             </div>
           </div>
@@ -2200,27 +2253,39 @@ export default function Home() {
         <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-slate-950/45 p-4 shadow-[0_18px_50px_rgba(2,8,23,0.2),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl sm:p-5">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent" />
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-stretch">
-            <label className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-cyan-300/20 hover:bg-slate-900/90 sm:px-5">
+            <div className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-cyan-300/20 hover:bg-slate-900/90 sm:px-5">
               <span className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_9px_rgba(103,232,249,0.8)]" />
                 Current narrative
               </span>
-              <select
-                value={activeDraftId}
-                onChange={(event) => switchNarrative(event.target.value)}
-                disabled={!isMounted}
-                className={`${fieldClass} w-full border-white/[0.08] bg-slate-950/50 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`}
-                aria-label="Select a narrative to edit"
-              >
-                {drafts.map((draft) => (
-                  <option key={draft.id} value={draft.id}>{draft.title}</option>
-                ))}
-              </select>
+              <div className="flex min-w-0 items-center gap-2">
+                <select
+                  value={activeDraftId}
+                  onChange={(event) => switchNarrative(event.target.value)}
+                  disabled={!isMounted}
+                  className={`${fieldClass} mt-0 min-w-0 flex-1 border-white/[0.08] bg-slate-950/50 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`}
+                  aria-label="Select a narrative to edit"
+                >
+                  {drafts.map((draft) => (
+                    <option key={draft.id} value={draft.id}>{draft.title}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteNarrativeDialog(true)}
+                  disabled={!isMounted || drafts.length <= 1}
+                  className="mt-2.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-rose-400/30 bg-rose-500/10 text-rose-200 transition hover:border-rose-300/60 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40 sm:mt-2.5 sm:h-12 sm:w-12"
+                  aria-label="Delete current narrative"
+                  title={drafts.length <= 1 ? 'Keep at least one narrative' : 'Delete current narrative'}
+                >
+                  <Trash2 size={17} aria-hidden="true" />
+                </button>
+              </div>
               <span className="mt-2.5 flex items-center gap-2 text-xs text-slate-400">
                 <span className="h-1 w-1 rounded-full bg-emerald-300" />
                 {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved. Changes save automatically.
               </span>
-            </label>
+            </div>
 
             <label className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-violet-300/20 hover:bg-slate-900/90 sm:px-5">
               <span className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-violet-300">
