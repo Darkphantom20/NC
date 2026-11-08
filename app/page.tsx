@@ -536,12 +536,12 @@ function normalizeJournalHeader(value: string): string {
 function getNarrativeFieldForHeading(value: string): keyof NarrativeImportFields | null {
   const heading = normalizeJournalHeader(value.replace(/^\s*\d+(?:\.\d+)*[.)]?\s*/, ''));
   if (/^acknowledg(e)?ment$/.test(heading)) return 'acknowledgement';
-  if (/^background(?: of)? the organization$/.test(heading)) return 'background';
+  if (/^(?:background(?: of)?(?: the)? organization|organizational background)$/.test(heading)) return 'background';
   if (/^vision$/.test(heading)) return 'vision';
   if (/^mission$/.test(heading)) return 'mission';
   if (/^objectives?$/.test(heading)) return 'objectives';
   if (/^(?:core values|values)$/.test(heading)) return 'coreValues';
-  if (/^(?:products and services offered|services offered)$/.test(heading)) return 'services';
+  if (/^(?:the )?(?:products and services offered|products and services|services offered)$/.test(heading)) return 'services';
   if (/^strengths?$/.test(heading)) return 'strengths';
   if (/^weaknesses?$/.test(heading)) return 'weaknesses';
   if (/^opportunities$/.test(heading)) return 'opportunities';
@@ -549,24 +549,24 @@ function getNarrativeFieldForHeading(value: string): keyof NarrativeImportFields
   if (/^recommendations?(?: for improvement)?$/.test(heading)) return 'recommendations';
   if (/^(?:assigned tasks and responsibilities|tasks and responsibilities assigned)$/.test(heading)) return 'tasks';
   if (/^(?:duties and procedures conformed|duties and procedures)$/.test(heading)) return 'procedures';
-  if (/^(?:issue|problem) 1(?: details)?$/.test(heading)) return 'issue1';
+  if (/^(?:(?:issue|problem)(?: issue| problem)?) 1(?: details)?$/.test(heading)) return 'issue1';
   if (/^(?:(?:strategy action|strategy|action)(?: undertaken)? for (?:issue|problem) 1)$/.test(heading)) return 'issue1Action';
-  if (/^(?:issue|problem) 2(?: details)?$/.test(heading)) return 'issue2';
+  if (/^(?:(?:issue|problem)(?: issue| problem)?) 2(?: details)?$/.test(heading)) return 'issue2';
   if (/^(?:(?:strategy action|strategy|action)(?: undertaken)? for (?:issue|problem) 2)$/.test(heading)) return 'issue2Action';
   if (/^lessons learned(?: from the situations)?$/.test(heading)) return 'lessons';
   if (/^self evaluation$/.test(heading)) return 'selfEvaluation';
-  if (/^(?:relevancy|relevance)(?: of the organization)?(?: with programme of study and expected goals)?$/.test(heading)) return 'relevancy';
+  if (/^(?:relevancy|relevance)(?: of the organization| to course and goals| with programme of study and expected goals)?$/.test(heading)) return 'relevancy';
   return null;
 }
 
 function getNarrativeCoverField(line: string): keyof NarrativeImportFields | null {
   const normalized = normalizeJournalHeader(line);
-  if (/^(?:student name|name of student)$/.test(normalized)) return 'studentName';
-  if (/^(?:training organization|host organization|organization|company)$/.test(normalized)) return 'trainingOrganization';
-  if (/^(?:training location|location)$/.test(normalized)) return 'trainingLocation';
-  if (/^(?:college|college faculty|faculty)$/.test(normalized)) return 'collegeFaculty';
-  if (/^(?:degree program|program of study)$/.test(normalized)) return 'degreeProgram';
-  if (/^(?:submitted to|adviser|advisor)$/.test(normalized)) return 'submittedToName';
+  if (/^(?:student name|name of student|student full name|full name|submitted by)$/.test(normalized)) return 'studentName';
+  if (/^(?:training organization|host organization|organization name|organization|company)$/.test(normalized)) return 'trainingOrganization';
+  if (/^(?:training location|address|location)$/.test(normalized)) return 'trainingLocation';
+  if (/^(?:college|college name|college faculty|faculty)$/.test(normalized)) return 'collegeFaculty';
+  if (/^(?:degree|degree program|program of study)$/.test(normalized)) return 'degreeProgram';
+  if (/^(?:submitted to|adviser|advisor|ojt coordinator)$/.test(normalized)) return 'submittedToName';
   if (/^(?:training duration|duration)$/.test(normalized)) return 'trainingDuration';
   if (/^(?:student year level|year level|year)$/.test(normalized)) return 'studentYear';
   return null;
@@ -592,6 +592,7 @@ async function parseNarrativeDocx(file: File): Promise<ParsedNarrativeImport> {
   const fields: NarrativeImportFields = {};
   let activeField: keyof NarrativeImportFields | null = null;
   let activeContent: string[] = [];
+  let pendingCoverField: keyof NarrativeImportFields | null = null;
 
   const saveActiveField = () => {
     const content = activeContent.join('\n').trim();
@@ -602,9 +603,18 @@ async function parseNarrativeDocx(file: File): Promise<ParsedNarrativeImport> {
 
   for (const paragraph of paragraphs) {
     const labelMatch = paragraph.match(/^([^:：]{2,50})\s*[:：]\s*(.*)$/);
-    if (labelMatch) {
-      const coverField = getNarrativeCoverField(labelMatch[1]);
-      if (coverField && labelMatch[2].trim()) fields[coverField] = labelMatch[2].trim();
+    const coverField = getNarrativeCoverField(labelMatch?.[1] || paragraph.replace(/[:：]$/, ''));
+    if (coverField) {
+      const coverValue = labelMatch?.[2].trim();
+      if (coverValue) fields[coverField] = coverValue;
+      else pendingCoverField = coverField;
+      continue;
+    }
+
+    if (pendingCoverField) {
+      const isPlaceholder = /^\[[^\]]+\]$/.test(paragraph);
+      if (!isPlaceholder) fields[pendingCoverField] = paragraph;
+      pendingCoverField = null;
     }
 
     const matchedField = getNarrativeFieldForHeading(paragraph);
@@ -615,7 +625,7 @@ async function parseNarrativeDocx(file: File): Promise<ParsedNarrativeImport> {
     }
 
     const normalized = normalizeJournalHeader(paragraph.replace(/^\s*\d+(?:\.\d+)*[.)]?\s*/, ''));
-    const isSectionHeading = /^(?:introduction|organization company analysis|tasks and duties|case analysis|reflections|appendices|table of contents)$/.test(normalized);
+    const isSectionHeading = /^(?:introduction|organization company analysis|tasks and duties|case analysis|reflections|appendices|table of contents|list of tables figures|vision mission and objectives|organizational structure|strengths and weaknesses of the organization|opportunities and threats of the organization|identified issues problems|strategies undertaken|lessons learned)$/.test(normalized);
     if (isSectionHeading) {
       saveActiveField();
       continue;
@@ -625,7 +635,7 @@ async function parseNarrativeDocx(file: File): Promise<ParsedNarrativeImport> {
   saveActiveField();
 
   if (Object.keys(fields).length === 0) {
-    throw new Error('No supported report headings or labeled cover details were found in this DOCX.');
+    throw new Error('No readable report text matched the supported headings. If this DOCX contains scanned pages, add a text version or run OCR first.');
   }
   return { fileName: file.name, fields };
 }
