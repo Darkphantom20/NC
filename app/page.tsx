@@ -1014,6 +1014,9 @@ export default function Home() {
   const [showNewDraftDialog, setShowNewDraftDialog] = useState(false);
   const [showDeleteNarrativeDialog, setShowDeleteNarrativeDialog] = useState(false);
   const [newDraftTitle, setNewDraftTitle] = useState('');
+  const [pendingNewDraftImport, setPendingNewDraftImport] = useState<ParsedNarrativeImport | null>(null);
+  const [newDraftImportError, setNewDraftImportError] = useState('');
+  const [isImportingNewDraft, setIsImportingNewDraft] = useState(false);
   const [pendingJournalImport, setPendingJournalImport] = useState<ParsedJournalImport | null>(null);
   const [journalImportError, setJournalImportError] = useState('');
   const [isImportingJournal, setIsImportingJournal] = useState(false);
@@ -1044,6 +1047,7 @@ export default function Home() {
   const draftSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const journalImportFileRef = useRef<HTMLInputElement>(null);
   const narrativeImportFileRef = useRef<HTMLInputElement>(null);
+  const newDraftImportFileRef = useRef<HTMLInputElement>(null);
 
   const isMobileAccomplishmentEditorOpen = mobileAccomplishmentEditor !== null;
 
@@ -1211,15 +1215,28 @@ export default function Home() {
 
   const openNewDraftDialog = () => {
     setNewDraftTitle(`Narrative ${drafts.length + 1}`);
+    setPendingNewDraftImport(null);
+    setNewDraftImportError('');
     setShowNewDraftDialog(true);
   };
 
+  const closeNewDraftDialog = () => {
+    setShowNewDraftDialog(false);
+    setPendingNewDraftImport(null);
+    setNewDraftImportError('');
+  };
+
   const createNarrative = () => {
+    if (isImportingNewDraft) return;
+    const newForm = {
+      ...createDefaultNarrativeForm(),
+      ...(pendingNewDraftImport?.fields || {})
+    };
     const newDraft: NarrativeDraft = {
       id: createNarrativeId(),
       title: newDraftTitle.trim() || `Narrative ${drafts.length + 1}`,
       updatedAt: new Date().toISOString(),
-      form: createDefaultNarrativeForm()
+      form: newForm
     };
     setDrafts((currentDrafts) => [
       ...currentDrafts.map((draft) => (
@@ -1229,8 +1246,8 @@ export default function Home() {
     ]);
     setActiveDraftId(newDraft.id);
     setForm(newDraft.form);
-    setShowNewDraftDialog(false);
-    setStatus('New narrative created');
+    closeNewDraftDialog();
+    setStatus(pendingNewDraftImport ? 'New narrative created from DOCX' : 'New narrative created');
   };
 
   const switchNarrative = (draftId: string) => {
@@ -1419,6 +1436,34 @@ export default function Home() {
       setStatus('Narrative import failed');
     } finally {
       setIsImportingNarrative(false);
+    }
+  };
+
+  const handleNewDraftDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setPendingNewDraftImport(null);
+    setNewDraftImportError('');
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      setNewDraftImportError('Choose a Word .docx file.');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setNewDraftImportError('Choose a DOCX smaller than 20 MB.');
+      return;
+    }
+
+    setIsImportingNewDraft(true);
+    try {
+      setPendingNewDraftImport(await parseNarrativeDocx(file));
+      setStatus('DOCX ready for new narrative');
+    } catch (error) {
+      console.error('Error reading DOCX for new narrative:', error);
+      setNewDraftImportError(error instanceof Error ? error.message : 'Could not read the DOCX file.');
+    } finally {
+      setIsImportingNewDraft(false);
     }
   };
 
@@ -1882,7 +1927,7 @@ export default function Home() {
           aria-modal="true"
           aria-labelledby="new-narrative-title"
           onKeyDown={(event) => {
-            if (event.key === 'Escape') setShowNewDraftDialog(false);
+            if (event.key === 'Escape') closeNewDraftDialog();
           }}
         >
           <div className="w-full max-w-sm rounded-2xl border border-slate-700/80 bg-slate-900 p-5 shadow-2xl">
@@ -1895,16 +1940,49 @@ export default function Home() {
                 value={newDraftTitle}
                 onChange={(event) => setNewDraftTitle(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') createNarrative();
+                  if (event.key === 'Enter' && !isImportingNewDraft) createNarrative();
                 }}
                 className="mt-2 w-full rounded-xl border border-cyan-400 bg-slate-950 px-3.5 py-3 text-xs font-semibold text-slate-100 outline-none ring-2 ring-cyan-400/15 placeholder:text-slate-500 focus:ring-cyan-400/30"
                 placeholder="For example, Office OJT"
               />
             </label>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold text-slate-200">Start from a full narrative DOCX</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">Import recognized report fields into this new draft.</p>
+              </div>
+              <input
+                ref={newDraftImportFileRef}
+                type="file"
+                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={handleNewDraftDocxUpload}
+                className="hidden"
+                aria-label="Choose a DOCX for the new narrative"
+              />
+              <button
+                type="button"
+                onClick={() => newDraftImportFileRef.current?.click()}
+                disabled={isImportingNewDraft}
+                className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-wait disabled:opacity-60"
+              >
+                <FileText size={14} aria-hidden="true" />
+                {isImportingNewDraft ? 'Reading DOCX...' : 'Choose DOCX'}
+              </button>
+            </div>
+            {pendingNewDraftImport && (
+              <p className="mt-2 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] p-2.5 text-[11px] leading-4 text-emerald-200" role="status">
+                {pendingNewDraftImport.fileName}: {Object.keys(pendingNewDraftImport.fields).length} fields found. They will be added when you create this narrative.
+              </p>
+            )}
+            {newDraftImportError && (
+              <p role="alert" className="mt-2 rounded-lg border border-rose-400/30 bg-rose-950/40 p-2.5 text-[11px] text-rose-200">
+                {newDraftImportError}
+              </p>
+            )}
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowNewDraftDialog(false)}
+                onClick={closeNewDraftDialog}
                 className="min-h-9 rounded-xl border border-slate-700 px-3 text-xs font-semibold text-slate-200 transition hover:bg-white/5"
               >
                 Cancel
@@ -1912,7 +1990,8 @@ export default function Home() {
               <button
                 type="button"
                 onClick={createNarrative}
-                className="min-h-9 rounded-xl bg-cyan-500 px-3.5 text-xs font-bold text-slate-950 transition hover:bg-cyan-400"
+                disabled={isImportingNewDraft}
+                className="min-h-9 rounded-xl bg-cyan-500 px-3.5 text-xs font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-wait disabled:opacity-60"
               >
                 Create narrative
               </button>
@@ -2285,6 +2364,61 @@ export default function Home() {
                 <span className="h-1 w-1 rounded-full bg-emerald-300" />
                 {drafts.length} {drafts.length === 1 ? 'narrative' : 'narratives'} saved. Changes save automatically.
               </span>
+              <div className="mt-3 border-t border-white/[0.07] pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-200">Full narrative DOCX</p>
+                    <p className="mt-0.5 text-[11px] leading-4 text-slate-400">Read and import report content</p>
+                  </div>
+                  <input
+                    ref={narrativeImportFileRef}
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handleNarrativeDocxUpload}
+                    className="hidden"
+                    aria-label="Choose a full narrative DOCX file"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => narrativeImportFileRef.current?.click()}
+                    disabled={isImportingNarrative}
+                    className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    <FileText size={14} aria-hidden="true" />
+                    {isImportingNarrative ? 'Reading DOCX...' : 'Choose DOCX'}
+                  </button>
+                </div>
+                {pendingNarrativeImport && (
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-2.5">
+                    <p className="min-w-0 flex-1 text-[11px] leading-4 text-emerald-200" role="status">
+                      {pendingNarrativeImport.fileName}: {Object.keys(pendingNarrativeImport.fields).length} fields found.
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={confirmNarrativeImport}
+                        className="min-h-8 rounded-lg bg-emerald-400 px-2.5 text-[11px] font-bold text-slate-950 transition hover:bg-emerald-300"
+                      >
+                        Apply fields
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPendingNarrativeImport(null)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5 hover:text-white"
+                        aria-label="Discard imported narrative"
+                        title="Discard import"
+                      >
+                        <X size={14} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {narrativeImportError && (
+                  <p role="alert" className="mt-2 rounded-lg border border-rose-400/30 bg-rose-950/40 p-2.5 text-[11px] text-rose-200">
+                    {narrativeImportError}
+                  </p>
+                )}
+              </div>
             </div>
 
             <label className="group relative min-w-0 rounded-2xl border border-white/[0.07] bg-slate-900/70 px-4 py-3.5 transition duration-200 hover:border-violet-300/20 hover:bg-slate-900/90 sm:px-5">
@@ -2322,66 +2456,6 @@ export default function Home() {
               <span>New narrative</span>
             </button>
           </div>
-        </section>
-
-        <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-slate-950/45 p-4 shadow-[0_18px_50px_rgba(2,8,23,0.2)] backdrop-blur-xl sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <h2 className="text-sm font-bold text-white sm:text-base">Import a full narrative DOCX</h2>
-              <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-                Read report text from the cover details, paragraphs, and tables, then review the fields before applying. The generated document uses the selected system template; original styling and images are not copied.
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <input
-                ref={narrativeImportFileRef}
-                type="file"
-                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onChange={handleNarrativeDocxUpload}
-                className="hidden"
-                aria-label="Choose a full narrative DOCX file"
-              />
-              <button
-                type="button"
-                onClick={() => narrativeImportFileRef.current?.click()}
-                disabled={isImportingNarrative}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-wait disabled:opacity-60"
-              >
-                <FileText size={15} aria-hidden="true" />
-                {isImportingNarrative ? 'Reading DOCX...' : 'Choose DOCX'}
-              </button>
-              {pendingNarrativeImport && (
-                <>
-                  <button
-                    type="button"
-                    onClick={confirmNarrativeImport}
-                    className="min-h-10 rounded-xl bg-emerald-400 px-3.5 py-2 text-xs font-bold text-slate-950 transition hover:bg-emerald-300"
-                  >
-                    Apply {Object.keys(pendingNarrativeImport.fields).length} fields
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPendingNarrativeImport(null)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-slate-300 transition hover:bg-white/5 hover:text-white"
-                    aria-label="Discard imported narrative"
-                    title="Discard import"
-                  >
-                    <X size={16} aria-hidden="true" />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-          {pendingNarrativeImport && (
-            <p className="mt-3 text-xs text-emerald-200" role="status">
-              {pendingNarrativeImport.fileName}: {Object.keys(pendingNarrativeImport.fields).length} fields found. Applying replaces only matching fields.
-            </p>
-          )}
-          {narrativeImportError && (
-            <p role="alert" className="mt-3 rounded-lg border border-rose-400/30 bg-rose-950/40 p-3 text-xs text-rose-200">
-              {narrativeImportError}
-            </p>
-          )}
         </section>
 
         <section className="hidden gap-4 sm:grid sm:grid-cols-3 sm:gap-6">
