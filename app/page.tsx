@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { STATUS, type EventData, type Step } from 'react-joyride';
-import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText, Trash2 } from 'lucide-react';
+import { HelpCircle, ImagePlus, ZoomIn, ZoomOut, Maximize2, X, Eye, FileText, Trash2, Sparkles } from 'lucide-react';
 import guideScene from '../05c9cb1a-009e-4c61-ab2f-30d279b5a02c.jpg';
 import memeScene from '../memes.gif';
 import completionScene from '../c0b37494-6751-46ac-9eae-3abd056aa8bf.jpg';
@@ -340,6 +340,16 @@ type NarrativeForm = Omit<typeof defaultForm, 'appendices'> & {
     dailyJournal: NarrativeJournalWeek[];
   };
 };
+
+function getDailyJournalPhoto(
+  week: NarrativeJournalWeek,
+  dayIndex: number,
+  layout: string,
+): JournalPhoto | null {
+  const preferredImages = layout === 'report' ? week.reportLayoutImages : week.currentLayoutImages;
+  const alternateImages = layout === 'report' ? week.currentLayoutImages : week.reportLayoutImages;
+  return preferredImages?.[dayIndex] ?? alternateImages?.[dayIndex] ?? week.images?.[dayIndex] ?? null;
+}
 
 type ParsedJournalImport = {
   fileName: string;
@@ -1057,6 +1067,12 @@ export default function Home() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const [previewZoom, setPreviewZoom] = useState(0.3);
+  const [aiGenerating, setAiGenerating] = useState('');
+  const [dailyJournalGenerationError, setDailyJournalGenerationError] = useState<{
+    weekIndex: number;
+    dayIndex: number;
+    message: string;
+  } | null>(null);
   const [mobileAccomplishmentEditor, setMobileAccomplishmentEditor] = useState<{
     weekIndex: number;
     dayIndex: number;
@@ -1635,6 +1651,57 @@ export default function Home() {
       mobileAccomplishmentEditor.draft
     );
     setMobileAccomplishmentEditor(null);
+  };
+
+  const generateDailyJournalAccomplishment = async (weekIndex: number, dayIndex: number) => {
+    if (aiGenerating) return;
+    const week = form.appendices.dailyJournal[weekIndex];
+    const activity = week?.activities[dayIndex];
+    const photo = week && getDailyJournalPhoto(week, dayIndex, form.appendices.dailyJournalLayout);
+    if (!week || !activity || !photo) {
+      setStatus('Attach a photo to this journal day before generating its accomplishment.');
+      return;
+    }
+
+    const generationKey = `journal-${weekIndex}-${dayIndex}`;
+    setAiGenerating(generationKey);
+    setDailyJournalGenerationError(null);
+    setStatus(`Generating ${activity.day || `Day ${dayIndex + 1}`} accomplishment from its photo...`);
+    try {
+      const example = defaultForm.appendices.dailyJournal[weekIndex]?.activities[dayIndex]?.accomplishment || '';
+      const currentText = activity.accomplishment.trim() === example.trim() ? '' : activity.accomplishment.trim();
+      const response = await fetch('/api/ai/journal-accomplishment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageData: photo.base64,
+          day: activity.day,
+          date: activity.date,
+          hours: activity.hours,
+          currentText,
+        }),
+      });
+      const result: unknown = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          isRecord(result) && typeof result.error === 'string'
+            ? result.error
+            : 'Could not generate the accomplishment. Please try again.',
+        );
+      }
+      if (!isRecord(result) || typeof result.text !== 'string' || !result.text.trim()) {
+        throw new Error('The AI service returned no text. Please try again.');
+      }
+
+      setMobileAccomplishmentEditor({ weekIndex, dayIndex, draft: result.text.trim() });
+      setStatus(`${activity.day || `Day ${dayIndex + 1}`} accomplishment drafted. Review it and select Save.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not generate the accomplishment.';
+      setDailyJournalGenerationError({ weekIndex, dayIndex, message });
+      setStatus(message);
+    } finally {
+      setAiGenerating('');
+    }
   };
 
   const removeDay = (weekIndex: number, dayIndex: number) => {
@@ -2985,6 +3052,23 @@ export default function Home() {
                                       <span className="line-clamp-2 min-w-0 flex-1 whitespace-pre-wrap break-words">{act.accomplishment || 'Tap to add accomplishment'}</span>
                                       <Maximize2 size={15} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
                                     </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void generateDailyJournalAccomplishment(weekIdx, dayIdx)}
+                                      disabled={Boolean(aiGenerating) || !getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout)}
+                                      title={getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout) ? 'Generate an accomplishment from this day’s photo' : 'Attach a photo to this day first'}
+                                      className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/10 px-2.5 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      <Sparkles size={14} aria-hidden="true" />
+                                      {aiGenerating === `journal-${weekIdx}-${dayIdx}` ? 'Generating...' : 'Generate with AI'}
+                                    </button>
+                                    {!getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout) && (
+                                      <p className="mt-1 text-[10px] text-slate-500">Attach a photo for this day first.</p>
+                                    )}
+                                    {dailyJournalGenerationError?.weekIndex === weekIdx
+                                      && dailyJournalGenerationError.dayIndex === dayIdx && (
+                                        <p role="alert" className="mt-1 text-xs text-rose-300">{dailyJournalGenerationError.message}</p>
+                                      )}
                                   </div>
                                   <div className="border-t border-slate-800 p-3 sm:border-t-0 sm:border-l">
                                     <label htmlFor={`no-photo-hours-${weekIdx}-${dayIdx}`} className="mb-2 block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:hidden">No. of Working Hours</label>
@@ -3066,6 +3150,23 @@ export default function Home() {
                                         <span className="line-clamp-2 min-w-0 flex-1 whitespace-pre-wrap break-words">{act.accomplishment || 'Tap to add accomplishment'}</span>
                                         <Maximize2 size={15} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
                                       </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void generateDailyJournalAccomplishment(weekIdx, dayIdx)}
+                                        disabled={Boolean(aiGenerating) || !getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout)}
+                                        title={getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout) ? 'Generate an accomplishment from this day’s photo' : 'Attach a photo to this day first'}
+                                        className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/10 px-2.5 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                      >
+                                        <Sparkles size={14} aria-hidden="true" />
+                                        {aiGenerating === `journal-${weekIdx}-${dayIdx}` ? 'Generating...' : 'Generate with AI'}
+                                      </button>
+                                      {!getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout) && (
+                                        <p className="mt-1 text-[10px] text-slate-500">Attach a photo for this day first.</p>
+                                      )}
+                                      {dailyJournalGenerationError?.weekIndex === weekIdx
+                                        && dailyJournalGenerationError.dayIndex === dayIdx && (
+                                          <p role="alert" className="mt-1 text-xs text-rose-300">{dailyJournalGenerationError.message}</p>
+                                        )}
                                     </div>
 
                                     <div className="border-b border-slate-800 p-3 sm:border-b-0 sm:border-r">
@@ -3197,6 +3298,23 @@ export default function Home() {
                                     <span className="line-clamp-2 min-w-0 flex-1 whitespace-pre-wrap break-words">{act.accomplishment || 'Tap to add accomplishment'}</span>
                                     <Maximize2 size={15} className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => void generateDailyJournalAccomplishment(weekIdx, dayIdx)}
+                                    disabled={Boolean(aiGenerating) || !getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout)}
+                                    title={getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout) ? 'Generate an accomplishment from this day’s photo' : 'Attach a photo to this day first'}
+                                    className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/10 px-2.5 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    <Sparkles size={14} aria-hidden="true" />
+                                    {aiGenerating === `journal-${weekIdx}-${dayIdx}` ? 'Generating...' : 'Generate with AI'}
+                                  </button>
+                                  {!getDailyJournalPhoto(week, dayIdx, form.appendices.dailyJournalLayout) && (
+                                    <p className="mt-1 text-[10px] text-slate-500">Attach a photo for this day first.</p>
+                                  )}
+                                  {dailyJournalGenerationError?.weekIndex === weekIdx
+                                    && dailyJournalGenerationError.dayIndex === dayIdx && (
+                                      <p role="alert" className="mt-1 text-xs text-rose-300">{dailyJournalGenerationError.message}</p>
+                                    )}
                                 </div>
                                 <div className="col-span-1">
                                   <label className="text-[9px] sm:text-xs text-slate-400 font-semibold uppercase tracking-wider">Hrs</label>
